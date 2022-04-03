@@ -1,0 +1,22 @@
+[package]
+name = "firmware"
+version = "0.1.0"
+authors = ["Riccardo Persello <riccardo.persello+i@icloud.com>"]
+edition = "2018"
+resolver = "2"
+
+[profile.release]
+opt-level = "s"
+
+[profile.dev]
+debug = true # Symbols are nice and they don't increase the size on Flash
+opt-level = "z"
+
+[dependencies]
+esp-idf-sys = { version = "0.31", features = ["binstart", "pio"] }
+esp-idf-hal = { version = "0.35.0" }
+embedded-hal = { version = "1.0.0-alpha.7" }
+
+[build-dependencies]
+embuild = "0.28"
+anyhow = "1"

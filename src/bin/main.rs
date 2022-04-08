@@ -1,3 +1,19 @@
+#![deny(clippy::all)]
+#![warn(clippy::pedantic)]
+#![warn(clippy::nursery)]
+#![warn(clippy::cargo)]
+#![allow(clippy::multiple_crate_versions)]
+
+// Documentation lints
+#![warn(missing_docs)]
+#![warn(clippy::missing_docs_in_private_items)]
+#![warn(invalid_doc_attributes)]
+#![warn(rustdoc::all)]
+
+//! Firmware for the pulse.loop wrist pulse oximeter.
+//! 
+//! This is the main file of the firmware.
+
 use std::{
     thread,
     time::{Duration, SystemTime, UNIX_EPOCH},
@@ -35,7 +51,7 @@ fn main() {
             sat: 255,
             val: 255,
         })];
-        led.write(gamma(brightness(color.iter().cloned(), 50)))
+        led.write(gamma(brightness(color.iter().copied(), 50)))
             .expect("Cannot write data to LED.");
         thread::sleep(Duration::from_millis(10));
     });

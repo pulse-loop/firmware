@@ -1,7 +1,13 @@
 [package]
 name = "firmware"
 version = "0.1.0"
-authors = ["Riccardo Persello <riccardo.persello+i@icloud.com>"]
+description = "Firmware for the pulse.loop wrist pulse oximeter."
+license = "MIT"
+authors = ["Riccardo Persello <riccardo.persello+i@icloud.com>", "Fabio Cragnolini <fbcragnolini@gmail.com>"]
+repository = "https://github.com/pulse-loop/firmware"
+readme = "README.md"
+keywords = ["pulse", "loop", "wrist", "oximeter", "firmware", "ble"]
+categories = ["embedded", "science"]
 edition = "2018"
 resolver = "2"
 

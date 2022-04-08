@@ -32,3 +32,6 @@ build-std = ["std", "panic_abort"]
 ESP_IDF_VERSION = { value = "branch:release/v4.4" }
 # Enables the esp-idf-sys "native" build feature (`cargo build --features native`) to build against ESP-IDF master (v5.0)
 #ESP_IDF_VERSION = { value = "master" }
+
+[net]
+git-fetch-with-cli = true

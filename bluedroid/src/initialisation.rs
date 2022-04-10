@@ -2,32 +2,12 @@
 //!
 //! Contains useful functions and defaults for initialising the Bluetooth radio.
 
-use esp_idf_sys::{
-    esp_ble_gap_register_callback, esp_ble_gatts_register_callback, esp_bluedroid_enable,
-    esp_bluedroid_init, esp_bt_controller_config_t, esp_bt_controller_enable,
-    esp_bt_controller_init, esp_bt_mode_t_ESP_BT_MODE_BLE, esp_gap_ble_cb_t, esp_gatts_cb_t,
-    esp_nofail, AGC_RECORRECT_EN, BLE_HW_TARGET_CODE_ESP32C3_CHIP_ECO0, CFG_NASK,
-    CONFIG_BT_CTRL_ADV_DUP_FILT_MAX, CONFIG_BT_CTRL_BLE_MAX_ACT_EFF,
-    CONFIG_BT_CTRL_BLE_STATIC_ACL_TX_BUF_NB, CONFIG_BT_CTRL_CE_LENGTH_TYPE_EFF,
-    CONFIG_BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM_EFF, CONFIG_BT_CTRL_DFT_TX_POWER_LEVEL_EFF,
-    CONFIG_BT_CTRL_HCI_TL_EFF, CONFIG_BT_CTRL_HW_CCA_EFF, CONFIG_BT_CTRL_HW_CCA_VAL,
-    CONFIG_BT_CTRL_MODE_EFF, CONFIG_BT_CTRL_PINNED_TO_CORE, CONFIG_BT_CTRL_RX_ANTENNA_INDEX_EFF,
-    CONFIG_BT_CTRL_SLEEP_CLOCK_EFF, CONFIG_BT_CTRL_SLEEP_MODE_EFF,
-    CONFIG_BT_CTRL_TX_ANTENNA_INDEX_EFF, ESP_BT_CTRL_CONFIG_MAGIC_VAL, ESP_BT_CTRL_CONFIG_VERSION,
-    ESP_TASK_BT_CONTROLLER_PRIO, ESP_TASK_BT_CONTROLLER_STACK, MESH_DUPLICATE_SCAN_CACHE_SIZE,
-    NORMAL_SCAN_DUPLICATE_CACHE_SIZE, SCAN_DUPLICATE_MODE, SCAN_DUPLICATE_TYPE_VALUE,
-    SLAVE_CE_LEN_MIN_DEFAULT,
-};
+use esp_idf_sys::*;
 
 /// Initialises the Bluetooth radio with the default configuration and enables it with the BLE mode.
 ///
-/// # Arguments
-///
-/// * `gap_callback`: The callback function for handling GAP events.
-/// * `gatts_callback`: The callback function for handling GATT server events.
-///
 /// returns: ()
-pub fn initialise(gap_callback: esp_gap_ble_cb_t, gatts_callback: esp_gatts_cb_t) {
+pub fn initialise(configuration: super::Configuration) {
     #[allow(clippy::cast_possible_truncation)]
     let mut default_configuration = esp_bt_controller_config_t {
         magic: ESP_BT_CTRL_CONFIG_MAGIC_VAL,
@@ -67,7 +47,9 @@ pub fn initialise(gap_callback: esp_gap_ble_cb_t, gatts_callback: esp_gatts_cb_t
         esp_nofail!(esp_bt_controller_enable(esp_bt_mode_t_ESP_BT_MODE_BLE));
         esp_nofail!(esp_bluedroid_init());
         esp_nofail!(esp_bluedroid_enable());
-        esp_nofail!(esp_ble_gap_register_callback(gap_callback));
-        esp_nofail!(esp_ble_gatts_register_callback(gatts_callback));
+        esp_nofail!(esp_ble_gatts_register_callback(Some(
+            super::gatts_event_handler::gatts_event_handler
+        )));
+        // esp_nofail!(esp_ble_gap_register_callback(gap_callback));
     }
 }

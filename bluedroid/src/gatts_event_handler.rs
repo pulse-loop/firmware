@@ -1,55 +1,140 @@
-use std::borrow::Borrow;
+//! The internal event handling loop for the GATT server.
+//!
+//! It dispatches various events to user-defined callbacks in the [`GATTSEventCallbacks`] struct.
 
-use esp_idf_sys::*;
+use esp_idf_sys::{
+    esp_ble_gatts_cb_param_t, esp_ble_gatts_cb_param_t_gatts_add_attr_tab_evt_param,
+    esp_ble_gatts_cb_param_t_gatts_add_char_descr_evt_param,
+    esp_ble_gatts_cb_param_t_gatts_add_char_evt_param,
+    esp_ble_gatts_cb_param_t_gatts_add_incl_srvc_evt_param,
+    esp_ble_gatts_cb_param_t_gatts_cancel_open_evt_param,
+    esp_ble_gatts_cb_param_t_gatts_close_evt_param, esp_ble_gatts_cb_param_t_gatts_conf_evt_param,
+    esp_ble_gatts_cb_param_t_gatts_congest_evt_param,
+    esp_ble_gatts_cb_param_t_gatts_connect_evt_param,
+    esp_ble_gatts_cb_param_t_gatts_create_evt_param,
+    esp_ble_gatts_cb_param_t_gatts_delete_evt_param,
+    esp_ble_gatts_cb_param_t_gatts_disconnect_evt_param,
+    esp_ble_gatts_cb_param_t_gatts_exec_write_evt_param,
+    esp_ble_gatts_cb_param_t_gatts_mtu_evt_param, esp_ble_gatts_cb_param_t_gatts_open_evt_param,
+    esp_ble_gatts_cb_param_t_gatts_read_evt_param, esp_ble_gatts_cb_param_t_gatts_reg_evt_param,
+    esp_ble_gatts_cb_param_t_gatts_rsp_evt_param,
+    esp_ble_gatts_cb_param_t_gatts_send_service_change_evt_param,
+    esp_ble_gatts_cb_param_t_gatts_set_attr_val_evt_param,
+    esp_ble_gatts_cb_param_t_gatts_start_evt_param, esp_ble_gatts_cb_param_t_gatts_stop_evt_param,
+    esp_ble_gatts_cb_param_t_gatts_write_evt_param, esp_gatts_cb_event_t,
+    esp_gatts_cb_event_t_ESP_GATTS_ADD_CHAR_DESCR_EVT, esp_gatts_cb_event_t_ESP_GATTS_ADD_CHAR_EVT,
+    esp_gatts_cb_event_t_ESP_GATTS_ADD_INCL_SRVC_EVT,
+    esp_gatts_cb_event_t_ESP_GATTS_CANCEL_OPEN_EVT, esp_gatts_cb_event_t_ESP_GATTS_CLOSE_EVT,
+    esp_gatts_cb_event_t_ESP_GATTS_CONF_EVT, esp_gatts_cb_event_t_ESP_GATTS_CONGEST_EVT,
+    esp_gatts_cb_event_t_ESP_GATTS_CONNECT_EVT, esp_gatts_cb_event_t_ESP_GATTS_CREATE_EVT,
+    esp_gatts_cb_event_t_ESP_GATTS_CREAT_ATTR_TAB_EVT, esp_gatts_cb_event_t_ESP_GATTS_DELETE_EVT,
+    esp_gatts_cb_event_t_ESP_GATTS_DISCONNECT_EVT, esp_gatts_cb_event_t_ESP_GATTS_EXEC_WRITE_EVT,
+    esp_gatts_cb_event_t_ESP_GATTS_LISTEN_EVT, esp_gatts_cb_event_t_ESP_GATTS_MTU_EVT,
+    esp_gatts_cb_event_t_ESP_GATTS_OPEN_EVT, esp_gatts_cb_event_t_ESP_GATTS_READ_EVT,
+    esp_gatts_cb_event_t_ESP_GATTS_REG_EVT, esp_gatts_cb_event_t_ESP_GATTS_RESPONSE_EVT,
+    esp_gatts_cb_event_t_ESP_GATTS_SEND_SERVICE_CHANGE_EVT,
+    esp_gatts_cb_event_t_ESP_GATTS_SET_ATTR_VAL_EVT, esp_gatts_cb_event_t_ESP_GATTS_START_EVT,
+    esp_gatts_cb_event_t_ESP_GATTS_STOP_EVT, esp_gatts_cb_event_t_ESP_GATTS_UNREG_EVT,
+    esp_gatts_cb_event_t_ESP_GATTS_WRITE_EVT,
+};
 
 #[derive(Copy, Clone)]
 /// GATT server events callback definitions.
 pub struct GATTSEventCallbacks {
+    /// Event called when an application is registered.
     pub application_registered:
         Option<fn(gatts_if: u8, param: esp_ble_gatts_cb_param_t_gatts_reg_evt_param)>,
+
+    /// Event called when the client requests to read an attribute.
     pub read_request:
         Option<fn(gatts_if: u8, param: esp_ble_gatts_cb_param_t_gatts_read_evt_param)>,
+
+    /// Event called when the client requests to write an attribute.
     pub write_request:
         Option<fn(gatts_if: u8, param: esp_ble_gatts_cb_param_t_gatts_write_evt_param)>,
+
+    /// Event called when the client requests to execute a write operation.
     pub execute_write_request:
         Option<fn(gatts_if: u8, param: esp_ble_gatts_cb_param_t_gatts_exec_write_evt_param)>,
+
+    /// Event called when MTU changes.
     pub mtu_set: Option<fn(gatts_if: u8, param: esp_ble_gatts_cb_param_t_gatts_mtu_evt_param)>,
+
+    /// Event called when a receive confirmation occurred.
     pub receive_confirmation:
         Option<fn(gatts_if: u8, param: esp_ble_gatts_cb_param_t_gatts_conf_evt_param)>,
+
+    /// Event called when an application is unregistered.
     pub application_unregistered: Option<fn(gatts_if: u8)>,
+
+    /// Event called when a service is registered.
     pub service_created:
         Option<fn(gatts_if: u8, param: esp_ble_gatts_cb_param_t_gatts_create_evt_param)>,
+
+    /// Event called when an include service is added.
     pub service_include_added:
         Option<fn(gatts_if: u8, param: esp_ble_gatts_cb_param_t_gatts_add_incl_srvc_evt_param)>,
+
+    /// Event called when a characteristic is added.
     pub characteristic_added:
         Option<fn(gatts_if: u8, param: esp_ble_gatts_cb_param_t_gatts_add_char_evt_param)>,
+
+    /// Event called when a characteristic descriptor is added.
     pub characteristic_descriptor_added:
         Option<fn(gatts_if: u8, param: esp_ble_gatts_cb_param_t_gatts_add_char_descr_evt_param)>,
+
+    /// Event called when a service is deleted.
     pub service_deleted:
         Option<fn(gatts_if: u8, param: esp_ble_gatts_cb_param_t_gatts_delete_evt_param)>,
+
+    /// Event called when a service is started.
     pub service_started:
         Option<fn(gatts_if: u8, param: esp_ble_gatts_cb_param_t_gatts_start_evt_param)>,
+
+    /// Event called when a service is stopped.
     pub service_stopped:
         Option<fn(gatts_if: u8, param: esp_ble_gatts_cb_param_t_gatts_stop_evt_param)>,
+
+    /// Event called when a client is connected.
     pub client_connected:
         Option<fn(gatts_if: u8, param: esp_ble_gatts_cb_param_t_gatts_connect_evt_param)>,
+
+    /// Event called when a client is disconnected.
     pub client_disconnected:
         Option<fn(gatts_if: u8, param: esp_ble_gatts_cb_param_t_gatts_disconnect_evt_param)>,
+
+    /// Event called when a peer is connected.
     pub peer_connected:
         Option<fn(gatts_if: u8, param: esp_ble_gatts_cb_param_t_gatts_open_evt_param)>,
+
+    /// Event called when a peer is disconnected.
     pub peer_disconnected:
         Option<fn(gatts_if: u8, param: esp_ble_gatts_cb_param_t_gatts_cancel_open_evt_param)>,
+
+    /// Event called when the server closes.
     pub server_closed:
         Option<fn(gatts_if: u8, param: esp_ble_gatts_cb_param_t_gatts_close_evt_param)>,
+
+    /// Event called when the server listens for connections.
     pub server_listen: Option<fn(gatts_if: u8)>,
+
+    /// Event called when a congestion occurs.
     pub congestion_occurred:
         Option<fn(gatts_if: u8, param: esp_ble_gatts_cb_param_t_gatts_congest_evt_param)>,
+
+    /// Event called when a response is sent.
     pub response_sent:
         Option<fn(gatts_if: u8, param: esp_ble_gatts_cb_param_t_gatts_rsp_evt_param)>,
+
+    /// Event called when the attribute table is created.
     pub attribute_table_created:
         Option<fn(gatts_if: u8, param: esp_ble_gatts_cb_param_t_gatts_add_attr_tab_evt_param)>,
+
+    /// Event called when an attribute value is set.
     pub attribute_value_set:
         Option<fn(gatts_if: u8, param: esp_ble_gatts_cb_param_t_gatts_set_attr_val_evt_param)>,
+
+    /// Event called when a service change indication is sent.
     pub service_change_indication_sent: Option<
         fn(gatts_if: u8, param: esp_ble_gatts_cb_param_t_gatts_send_service_change_evt_param),
     >,

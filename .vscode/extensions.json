@@ -2,7 +2,7 @@
     "recommendations": [
         "panicbit.cargo",
         "bungcip.better-toml",
-        "matklad.rust-analyzer",
-        "serayuzgur.crates"
+        "serayuzgur.crates",
+        "rust-lang.rust-analyzer"
     ]
 }

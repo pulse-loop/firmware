@@ -19,12 +19,13 @@ debug = true # Symbols are nice and they don't increase the size on Flash
 opt-level = "z"
 
 [dependencies]
-esp-idf-sys = { version = "0.31.0", features = ["binstart", "native"] }
-esp-idf-hal = { version = "0.35.0" }
-embedded-hal = { version = "1.0.0-alpha.7" }
+esp-idf-sys = { version = "0.31.6", features = ["binstart", "native"] }
+esp-idf-hal = { version = "0.38.0" }
+esp_idf_logger = { version = "0.1.1" }
+log = { version = "0.4.17" }
+embedded-hal = { version = "1.0.0-alpha.8" }
 smart-leds = { version = "0.3.0" }
 ws2812-esp32-rmt-driver = { git = "https://github.com/cat-in-136/ws2812-esp32-rmt-driver" }
-bluedroid = { path = "./bluedroid" }
 
 [build-dependencies]
 embuild = "0.28"

@@ -13,23 +13,23 @@
 //!
 //! This is the main file of the firmware.
 
-use std::{
-    thread,
-    time::{Duration},
-};
+use std::{thread, time::Duration};
 
 // If using the `binstart` feature of `esp-idf-sys`, always keep this module imported
 use esp_idf_sys as _;
 
-mod bluetooth_services;
+mod bluetooth;
 
 fn main() {
     // Temporary. Will disappear once ESP-IDF 4.4 is released, but for now it is necessary to call this function once,
     // or else some patches to the runtime implemented by esp-idf-sys might not link properly.
-    esp_idf_sys::link_patches();
+    // esp_idf_sys::link_patches();
 
-    // TODO: Use ESP-IDF logging!
-    println!("Hello, world!");
+    // Initialise logger.
+    esp_idf_logger::init().unwrap();
+    log::info!("Logger initialised.");
+
+    bluetooth::initialise();
 
     thread::spawn(|| loop {
         thread::sleep(Duration::from_millis(500));

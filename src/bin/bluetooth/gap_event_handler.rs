@@ -17,20 +17,24 @@ pub unsafe extern "C" fn gap_event_handler(
     event: esp_gap_ble_cb_event_t,
     param: *mut esp_ble_gap_cb_param_t,
 ) {
-    let mut configuration = Configuration::default();
-
     #[allow(non_upper_case_globals)]
     match event {
         esp_gap_ble_cb_event_t_ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT => {
+            log::info!("Handling advertisement data set complete event.");
+            log::info!("Starting advertising.");
+            let mut configuration = Configuration::default();
             esp_nofail!(esp_ble_gap_start_advertising(
                 &mut configuration.advertising_parameters
             ));
         }
         esp_gap_ble_cb_event_t_ESP_GAP_BLE_ADV_START_COMPLETE_EVT => {
+            log::info!("Handling advertisement startup completion.");
             if (*param).adv_start_cmpl.status != esp_bt_status_t_ESP_BT_STATUS_SUCCESS {
-                log::error!("Advertising start failed.");
+                log::error!("Advertising startup failed.");
             }
         }
-        _ => {}
+        _ => {
+            log::warn!("Unhandled event #{}.", event);
+        }
     };
 }

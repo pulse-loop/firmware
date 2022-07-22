@@ -13,6 +13,8 @@
 //!
 //! This is the main file of the firmware.
 
+extern crate core;
+
 use std::{thread, time::Duration};
 
 // If using the `binstart` feature of `esp-idf-sys`, always keep this module imported
@@ -26,7 +28,7 @@ fn main() {
     // esp_idf_sys::link_patches();
 
     // Initialise logger.
-    esp_idf_logger::init().unwrap();
+    esp_idf_svc::log::EspLogger::initialize_default();
     log::info!("Logger initialised.");
 
     bluetooth::initialise();

@@ -43,11 +43,9 @@ impl Configuration {
     /// # Examples
     ///
     /// ```
-    /// let x = 0x12345678;
-    /// let mut buf = [0u8; 4];
-    /// let ptr = BluetoothSelf::u32_to_u8_array(x);
-    /// let slice = unsafe { std::slice::from_raw_parts(ptr, 4) };
-    /// assert_eq!(slice, &[0x12, 0x34, 0x56, 0x78]);
+    /// let id = 0x12345678;
+    /// let ptr = esp_uuid_as_u8_ptr(id);
+    /// assert_eq!(ptr.as_ref(), &[0x12, 0x34, 0x56, 0x78]);
     /// ```
     pub fn esp_uuid_as_u8_ptr(val: u32) -> *mut u8 {
         // Convert the value to a u8 array.
@@ -62,17 +60,24 @@ impl Configuration {
     }
 }
 
+impl Configuration {
+    #[allow(clippy::cast_possible_wrap)]
+    /// The default appearance for our device is a wrist-worn pulse-oximeter.
+    pub const APPEARANCE: i32 = ESP_BLE_APPEARANCE_PULSE_OXIMETER_WRIST as i32;
+
+    /// Slave connection interval, lower boundary.
+    pub const MIN_INTERVAL_MS: f32 = 7.5;
+
+    /// Slave connection interval, upper boundary.
+    pub const MAX_INTERVAL_MS: f32 = 12.5;
+
+    /// Device name.
+    pub const MANUFACTURER_NAME_STRING: &'static str = "pulse.loop";
+}
+
 impl Default for Configuration {
     fn default() -> Self {
-        #[allow(clippy::cast_possible_wrap)]
-        /// The default appearance for our device is a wrist-worn pulse-oximeter.
-        const APPEARANCE: i32 = ESP_BLE_APPEARANCE_PULSE_OXIMETER_WRIST as i32;
-
-        /// Slave connection interval, lower boundary.
-        const MIN_INTERVAL_MS: f32 = 7.5; // Slave connection minimum interval
-
-        /// Slave connection interval, upper boundary.
-        const MAX_INTERVAL_MS: f32 = 12.5; // Slave connection maximum interval
+        let mut mfr_name: String = String::from(Self::MANUFACTURER_NAME_STRING);
 
         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
         Self {
@@ -80,9 +85,9 @@ impl Default for Configuration {
                 set_scan_rsp: false,
                 include_name: true,
                 include_txpower: true,
-                min_interval: ((MIN_INTERVAL_MS / 1.25) as u16).into(),
-                max_interval: ((MAX_INTERVAL_MS / 1.25) as u16).into(),
-                appearance: APPEARANCE,
+                min_interval: ((Self::MIN_INTERVAL_MS / 1.25) as u16).into(),
+                max_interval: ((Self::MAX_INTERVAL_MS / 1.25) as u16).into(),
+                appearance: Self::APPEARANCE,
                 manufacturer_len: 0,
                 p_manufacturer_data: std::ptr::null_mut(),
                 service_data_len: 0,
@@ -104,9 +109,9 @@ impl Default for Configuration {
                 set_scan_rsp: true,
                 include_name: true,
                 include_txpower: true,
-                min_interval: ((MIN_INTERVAL_MS / 1.25) as u16).into(), // Slave connection min interval, Time = min_interval * 1.25 msec
-                max_interval: ((MAX_INTERVAL_MS / 1.25) as u16).into(), // Slave connection max interval, Time = max_interval * 1.25 msec
-                appearance: APPEARANCE,
+                min_interval: ((Self::MIN_INTERVAL_MS / 1.25) as u16).into(), // Slave connection min interval, Time = min_interval * 1.25 msec
+                max_interval: ((Self::MAX_INTERVAL_MS / 1.25) as u16).into(), // Slave connection max interval, Time = max_interval * 1.25 msec
+                appearance: Self::APPEARANCE,
                 manufacturer_len: 0,
                 p_manufacturer_data: std::ptr::null_mut(),
                 service_data_len: 0,
@@ -153,9 +158,9 @@ impl Default for Configuration {
                         uuid_length: ESP_UUID_LEN_16 as u16,
                         uuid_p: Self::esp_uuid_as_u8_ptr(ESP_GATT_UUID_MANU_NAME),
                         perm: ESP_GATT_PERM_READ as u16,
-                        max_length: std::mem::size_of_val("pulse.loop") as u16,
-                        length: std::mem::size_of_val("pulse.loop") as u16,
-                        value: "pulse.loop".as_ptr() as *mut u8,
+                        max_length: mfr_name.len() as u16,
+                        length: mfr_name.len() as u16,
+                        value: mfr_name.as_mut_ptr(),
                     },
                 },
             ],

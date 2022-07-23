@@ -81,7 +81,7 @@ pub unsafe extern "C" fn gatts_event_handler(
                 // TODO: Panic.
             } else {
                 log::info!(
-                    "Attribute table successfully created, handle {}.",
+                    "Attribute table successfully created, {} handles.",
                     (*param).add_attr_tab.num_handle
                 );
 
@@ -94,10 +94,10 @@ pub unsafe extern "C" fn gatts_event_handler(
 
                 log::info!("Handles: {:?}", handles);
 
-                for index in configuration.active_services {
-                    // let handle = handles[index.clone() as usize];
-                    // log::info!("Starting service {:?} with handle {}.", index, handle);
-                    esp_nofail!(esp_ble_gatts_start_service(index as u16));
+                for service in configuration.services {
+                    let handle = handles[service.0.clone() as usize];
+                    log::info!("Starting service {:?} with handle {}.", service.0, handle);
+                    esp_nofail!(esp_ble_gatts_start_service(handle));
                 }
             }
         }

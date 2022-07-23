@@ -3,21 +3,14 @@
 //!
 //! Every value is set in the `Default` implementation.
 
-use esp_idf_sys::{
-    esp_attr_control_t, esp_attr_desc_t, esp_ble_addr_type_t_BLE_ADDR_TYPE_PUBLIC,
-    esp_ble_adv_channel_t_ADV_CHNL_ALL, esp_ble_adv_data_t,
-    esp_ble_adv_filter_t_ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY, esp_ble_adv_params_t,
-    esp_ble_adv_type_t_ADV_TYPE_IND, esp_gatts_attr_db_t, ESP_BLE_ADV_FLAG_BREDR_NOT_SPT,
-    ESP_BLE_ADV_FLAG_GEN_DISC, ESP_BLE_APPEARANCE_PULSE_OXIMETER_WRIST, ESP_GATT_AUTO_RSP,
-    ESP_GATT_PERM_READ, ESP_GATT_UUID_CHAR_DECLARE, ESP_GATT_UUID_DEVICE_INFO_SVC,
-    ESP_GATT_UUID_MANU_NAME, ESP_GATT_UUID_PRI_SERVICE, ESP_UUID_LEN_16,
-};
+use esp_idf_sys::*;
+use std::slice;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 #[repr(usize)]
 #[allow(non_camel_case_types)]
 pub enum AttributeIndex {
-    SVC_DeviceInformation,
+    SVC_DeviceInformation = 1,
     CHD_DeviceInformation_ManufacturerNameString,
     CHV_DeviceInformation_ManufacturerNameString,
 }
@@ -34,42 +27,11 @@ pub struct Configuration {
     /// Data advertised on scan.
     pub scan_response_data: esp_ble_adv_data_t,
 
-    /// Active GATT services.
-    pub active_services: Vec<AttributeIndex>,
-
-    /// The GATT server attribute table.
+    /// GATT database.
     pub gatt_db: Vec<(AttributeIndex, esp_gatts_attr_db_t)>,
-}
 
-impl Configuration {
-    #[allow(clippy::cast_possible_truncation)]
-    #[must_use]
-    /// Converts an unsigned integer to a `u8` array.
-    ///
-    /// # Arguments
-    ///
-    /// * `val`: The unsigned integer.
-    ///
-    /// returns: *mut u8
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let id = 0x12345678;
-    /// let ptr = esp_uuid_as_u8_ptr(id);
-    /// assert_eq!(ptr.as_ref(), &[0x12, 0x34, 0x56, 0x78]);
-    /// ```
-    pub fn esp_uuid_as_u8_ptr(val: u32) -> *mut u8 {
-        // Convert the value to a u8 array.
-        let mut u8_array: [u8; 4] = [0; 4];
-        u8_array[0] = (val >> 24) as u8;
-        u8_array[1] = (val >> 16) as u8;
-        u8_array[2] = (val >> 8) as u8;
-        u8_array[3] = val as u8;
-
-        // Return the pointer to the array.
-        u8_array.as_mut_ptr()
-    }
+    /// All the services in the database.
+    pub services: Vec<(AttributeIndex, esp_gatts_attr_db_t)>,
 }
 
 impl Configuration {
@@ -85,11 +47,151 @@ impl Configuration {
 
     /// Device name.
     pub const MANUFACTURER_NAME_STRING: &'static str = "pulse.loop";
+
+    /// Base BLE UUID.
+    const BLE_BASE_UUID: [u8; 16] = [
+        0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00,
+    ];
 }
 
 impl Default for Configuration {
     fn default() -> Self {
-        let mut mfr_name: String = String::from(Self::MANUFACTURER_NAME_STRING);
+        // Special UUIDs.
+        let mut uuid_pri_service: [u8; 2] = (ESP_GATT_UUID_PRI_SERVICE as u16).to_be_bytes();
+        let mut uuid_char_declare: [u8; 2] = (ESP_GATT_UUID_CHAR_DECLARE as u16).to_be_bytes();
+
+        // Standard UUIDs.
+        let mut uuid_device_info_svc: [u8; 2] =
+            (ESP_GATT_UUID_DEVICE_INFO_SVC as u16).to_be_bytes();
+        let mut uuid_manu_name: [u8; 2] = (ESP_GATT_UUID_MANU_NAME as u16).to_be_bytes();
+
+        // GATT server database.
+        let gatt_db: Vec<(AttributeIndex, esp_gatts_attr_db_t)> = unsafe {
+            vec![
+                // Service Declaration: Device Information
+                (
+                    AttributeIndex::SVC_DeviceInformation,
+                    esp_gatts_attr_db_t {
+                        attr_control: esp_attr_control_t {
+                            auto_rsp: ESP_GATT_AUTO_RSP as u8,
+                        },
+                        att_desc: esp_attr_desc_t {
+                            uuid_length: ESP_UUID_LEN_16 as u16,
+                            uuid_p: Box::into_raw(Box::new(uuid_pri_service)) as *mut u8,
+                            perm: ESP_GATT_PERM_READ as u16,
+                            max_length: ESP_UUID_LEN_16 as u16,
+                            length: ESP_UUID_LEN_16 as u16,
+                            value: Box::into_raw(Box::new(*uuid_device_info_svc.as_mut_ptr())),
+                        },
+                    },
+                ),
+                // Characteristic Declaration: Manufacturer Name String
+                (
+                    AttributeIndex::CHD_DeviceInformation_ManufacturerNameString,
+                    esp_gatts_attr_db_t {
+                        attr_control: esp_attr_control_t {
+                            auto_rsp: ESP_GATT_AUTO_RSP as u8,
+                        },
+                        att_desc: esp_attr_desc_t {
+                            uuid_length: ESP_UUID_LEN_16 as u16,
+                            uuid_p: Box::into_raw(Box::new(*uuid_char_declare.as_mut_ptr())),
+                            perm: ESP_GATT_PERM_READ as u16,
+                            max_length: ESP_UUID_LEN_16 as u16,
+                            length: ESP_UUID_LEN_16 as u16,
+                            value: Box::into_raw(Box::new(*uuid_manu_name.as_mut_ptr())),
+                        },
+                    },
+                ),
+                // Characteristic Value: Manufacturer Name String
+                (
+                    AttributeIndex::CHV_DeviceInformation_ManufacturerNameString,
+                    esp_gatts_attr_db_t {
+                        attr_control: esp_attr_control_t {
+                            auto_rsp: ESP_GATT_AUTO_RSP as u8,
+                        },
+                        att_desc: esp_attr_desc_t {
+                            uuid_length: ESP_UUID_LEN_16 as u16,
+                            uuid_p: uuid_manu_name.as_mut_ptr(),
+                            perm: ESP_GATT_PERM_READ as u16,
+                            max_length: String::from(Self::MANUFACTURER_NAME_STRING).len() as u16,
+                            length: String::from(Self::MANUFACTURER_NAME_STRING).len() as u16,
+                            value: Box::into_raw(Box::new(
+                                *String::from(Self::MANUFACTURER_NAME_STRING).as_mut_ptr(),
+                            )),
+                        },
+                    },
+                ),
+            ]
+        };
+
+        log::info!("Creating default BLE configuration.");
+
+        // Discover all the services in the GATT database.
+        let services: Vec<(AttributeIndex, esp_gatts_attr_db_t)> = gatt_db
+            .iter()
+            .filter(|(i, attr)| unsafe {
+                // Get the UUID from the attribute table.
+                let attribute_uuid = slice::from_raw_parts(attr.att_desc.uuid_p, 2);
+
+                // Let's keep this slice in scope during comparisons.
+                let pri_slice = (ESP_GATT_UUID_PRI_SERVICE as u16).to_be_bytes().clone();
+                let pri_service_uuid = slice::from_raw_parts(pri_slice.as_ptr(), 2);
+
+                // Compare.
+                attribute_uuid == pri_service_uuid
+            })
+            .map(|(i, attr)| (i.clone(), attr.clone()))
+            .collect::<Vec<_>>();
+
+        log::info!(
+            "Discovered {} services: {:?}.",
+            services.len(),
+            services.iter().map(|(i, _)| i).collect::<Vec<_>>()
+        );
+
+        // For each service, obtain its UUID information.
+        let normalised_uuids = services
+            .iter()
+            .map(|(i, attr)| unsafe {
+                slice::from_raw_parts(attr.att_desc.value, attr.att_desc.length as usize)
+            })
+            .map(|uuid_slice| {
+                let mut normalised_uuid: [u8; 16] = Self::BLE_BASE_UUID;
+
+                match uuid_slice.len() as u32 {
+                    ESP_UUID_LEN_16 => {
+                        normalised_uuid[12] = uuid_slice[1];
+                        normalised_uuid[13] = uuid_slice[0];
+                    }
+                    ESP_UUID_LEN_32 => {
+                        normalised_uuid[12] = uuid_slice[3];
+                        normalised_uuid[13] = uuid_slice[2];
+                        normalised_uuid[14] = uuid_slice[1];
+                        normalised_uuid[15] = uuid_slice[0];
+                    }
+                    ESP_UUID_LEN_128 => unsafe {
+                        normalised_uuid.copy_from_slice(&uuid_slice);
+                    },
+                    _ => {}
+                }
+
+                normalised_uuid
+            })
+            .collect::<Vec<_>>();
+
+        log::info!(
+            "The UUIDs of the discovered services are: {:?}.",
+            normalised_uuids
+                .iter()
+                .map(|u| u.to_vec())
+                .collect::<Vec<_>>()
+        );
+
+        let mut normalised_uuids_data: Vec<u8> = vec![];
+        for uuid in normalised_uuids {
+            normalised_uuids_data.append(&mut uuid.to_vec());
+        }
 
         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
         Self {
@@ -104,8 +206,8 @@ impl Default for Configuration {
                 p_manufacturer_data: std::ptr::null_mut(),
                 service_data_len: 0,
                 p_service_data: std::ptr::null_mut(),
-                service_uuid_len: 0,
-                p_service_uuid: std::ptr::null_mut(),
+                service_uuid_len: normalised_uuids_data.len() as u16,
+                p_service_uuid: normalised_uuids_data.as_mut_ptr(),
                 flag: (ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT) as u8,
             },
             advertising_parameters: esp_ble_adv_params_t {
@@ -128,65 +230,12 @@ impl Default for Configuration {
                 p_manufacturer_data: std::ptr::null_mut(),
                 service_data_len: 0,
                 p_service_data: std::ptr::null_mut(),
-                service_uuid_len: 0,
-                p_service_uuid: std::ptr::null_mut(),
+                service_uuid_len: normalised_uuids_data.len() as u16,
+                p_service_uuid: normalised_uuids_data.as_mut_ptr(),
                 flag: (ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT) as u8,
             },
-            active_services: vec![AttributeIndex::SVC_DeviceInformation],
-            gatt_db: vec![
-                // Service Declaration: Device Information
-                (
-                    AttributeIndex::SVC_DeviceInformation,
-                    esp_gatts_attr_db_t {
-                        attr_control: esp_attr_control_t {
-                            auto_rsp: ESP_GATT_AUTO_RSP as u8,
-                        },
-                        att_desc: esp_attr_desc_t {
-                            uuid_length: ESP_UUID_LEN_16 as u16,
-                            uuid_p: Self::esp_uuid_as_u8_ptr(ESP_GATT_UUID_PRI_SERVICE),
-                            perm: ESP_GATT_PERM_READ as u16,
-                            max_length: std::mem::size_of_val(&ESP_GATT_UUID_DEVICE_INFO_SVC)
-                                as u16,
-                            length: std::mem::size_of_val(&ESP_GATT_UUID_DEVICE_INFO_SVC) as u16,
-                            value: Self::esp_uuid_as_u8_ptr(ESP_GATT_UUID_DEVICE_INFO_SVC),
-                        },
-                    },
-                ),
-                // Characteristic Declaration: Manufacturer Name String
-                (
-                    AttributeIndex::CHD_DeviceInformation_ManufacturerNameString,
-                    esp_gatts_attr_db_t {
-                        attr_control: esp_attr_control_t {
-                            auto_rsp: ESP_GATT_AUTO_RSP as u8,
-                        },
-                        att_desc: esp_attr_desc_t {
-                            uuid_length: ESP_UUID_LEN_16 as u16,
-                            uuid_p: Self::esp_uuid_as_u8_ptr(ESP_GATT_UUID_CHAR_DECLARE),
-                            perm: ESP_GATT_PERM_READ as u16,
-                            max_length: std::mem::size_of_val(&ESP_GATT_UUID_MANU_NAME) as u16,
-                            length: std::mem::size_of_val(&ESP_GATT_UUID_MANU_NAME) as u16,
-                            value: Self::esp_uuid_as_u8_ptr(ESP_GATT_UUID_MANU_NAME),
-                        },
-                    },
-                ),
-                // Characteristic Value: Manufacturer Name String
-                (
-                    AttributeIndex::CHV_DeviceInformation_ManufacturerNameString,
-                    esp_gatts_attr_db_t {
-                        attr_control: esp_attr_control_t {
-                            auto_rsp: ESP_GATT_AUTO_RSP as u8,
-                        },
-                        att_desc: esp_attr_desc_t {
-                            uuid_length: ESP_UUID_LEN_16 as u16,
-                            uuid_p: Self::esp_uuid_as_u8_ptr(ESP_GATT_UUID_MANU_NAME),
-                            perm: ESP_GATT_PERM_READ as u16,
-                            max_length: mfr_name.len() as u16,
-                            length: mfr_name.len() as u16,
-                            value: mfr_name.as_mut_ptr(),
-                        },
-                    },
-                ),
-            ],
+            gatt_db,
+            services,
         }
     }
 }

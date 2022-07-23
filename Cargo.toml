@@ -26,6 +26,7 @@ log = { version = "0.4.17" }
 embedded-hal = { version = "1.0.0-alpha.8" }
 # smart-leds = { version = "0.3.0" }
 # ws2812-esp32-rmt-driver = { git = "https://github.com/cat-in-136/ws2812-esp32-rmt-driver" }
+lazy_static = { version = "1.4.0" }
 
 [build-dependencies]
 embuild = "0.28"

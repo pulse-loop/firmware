@@ -1,4 +1,4 @@
-use crate::bluetooth::configuration::Configuration;
+use crate::bluetooth::configuration::{AttributeIndex, Configuration};
 use esp_idf_sys::{
     esp_ble_gap_config_adv_data, esp_ble_gap_set_device_name, esp_ble_gatts_cb_param_t,
     esp_ble_gatts_create_attr_tab, esp_ble_gatts_start_service, esp_gatt_if_t,
@@ -7,7 +7,7 @@ use esp_idf_sys::{
     esp_nofail, ESP_GATT_UUID_PRI_SERVICE,
 };
 use std::ffi::CString;
-use std::ptr;
+use std::slice;
 
 /// GATT server event handler.
 ///
@@ -48,10 +48,16 @@ pub unsafe extern "C" fn gatts_event_handler(
 
             #[allow(clippy::cast_possible_truncation)]
             {
+                let attr_tab_without_indices = configuration
+                    .gatt_db
+                    .iter()
+                    .map(|x| x.1)
+                    .collect::<Vec<_>>();
+
                 esp_nofail!(esp_ble_gatts_create_attr_tab(
-                    configuration.gatt_db.as_ptr(),
+                    attr_tab_without_indices.as_ptr(),
                     gatts_if,
-                    configuration.gatt_db.len() as u8,
+                    attr_tab_without_indices.len() as u8,
                     0,
                 ));
             }
@@ -61,43 +67,38 @@ pub unsafe extern "C" fn gatts_event_handler(
 
             #[allow(clippy::cast_possible_truncation)]
             if (*param).add_attr_tab.status != esp_gatt_status_t_ESP_GATT_OK {
-                log::error!("Attribute table creation failed.");
+                log::error!(
+                    "Attribute table creation failed, error {}.",
+                    (*param).add_attr_tab.status
+                );
                 // TODO: Panic.
             } else if (*param).add_attr_tab.num_handle != configuration.gatt_db.len() as u16 {
-                log::error!("Attribute table created with wrong handle.");
+                log::error!(
+                    "Attribute table created with wrong handle {} (instead of {}).",
+                    (*param).add_attr_tab.num_handle,
+                    configuration.gatt_db.len()
+                );
                 // TODO: Panic.
             } else {
-                log::info!("Attribute table successfully created.");
+                log::info!(
+                    "Attribute table successfully created, handle {}.",
+                    (*param).add_attr_tab.num_handle
+                );
 
-                configuration
-                    .gatt_db
-                    .iter()
-                    .enumerate()
-                    .filter(|tuple| {
-                        // Filter all the attributes that actually are primary services.
-                        let (_i, item) = tuple;
-                        log::info!("Checking if attribute is a primary service.");
-                        item.att_desc.uuid_p
-                            == Configuration::esp_uuid_as_u8_ptr(ESP_GATT_UUID_PRI_SERVICE)
-                    })
-                    .map(|tuple| {
-                        // Get the index.
-                        let (i, _item) = tuple;
-                        log::info!("Attribute #{} is a primary service.", i);
-                        i
-                    })
-                    .for_each(|index| {
-                        // For each index, register the service.
-                        #[allow(clippy::ptr_offset_with_cast, clippy::cast_possible_wrap)]
-                        let handle = *(*param).add_attr_tab.handles.offset(index as isize);
-                        esp_ble_gatts_start_service(hand);
+                let handles = slice::from_raw_parts(
+                    (*param).add_attr_tab.handles,
+                    configuration.gatt_db.len(),
+                );
 
-                        log::info!(
-                            "Starting service from attribute #{} with handle {}.",
-                            index,
-                            handle
-                        );
-                    });
+                // TODO: Fix zero handles.
+
+                log::info!("Handles: {:?}", handles);
+
+                for index in configuration.active_services {
+                    // let handle = handles[index.clone() as usize];
+                    // log::info!("Starting service {:?} with handle {}.", index, handle);
+                    esp_nofail!(esp_ble_gatts_start_service(index as u16));
+                }
             }
         }
         _ => {

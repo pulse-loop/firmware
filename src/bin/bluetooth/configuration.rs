@@ -13,6 +13,15 @@ use esp_idf_sys::{
     ESP_GATT_UUID_MANU_NAME, ESP_GATT_UUID_PRI_SERVICE, ESP_UUID_LEN_16,
 };
 
+#[derive(Clone, Debug)]
+#[repr(usize)]
+#[allow(non_camel_case_types)]
+pub enum AttributeIndex {
+    SVC_DeviceInformation,
+    CHD_DeviceInformation_ManufacturerNameString,
+    CHV_DeviceInformation_ManufacturerNameString,
+}
+
 #[derive(Clone)]
 /// Global Bluetooth LE Self.
 pub struct Configuration {
@@ -25,8 +34,11 @@ pub struct Configuration {
     /// Data advertised on scan.
     pub scan_response_data: esp_ble_adv_data_t,
 
+    /// Active GATT services.
+    pub active_services: Vec<AttributeIndex>,
+
     /// The GATT server attribute table.
-    pub gatt_db: Vec<esp_gatts_attr_db_t>,
+    pub gatt_db: Vec<(AttributeIndex, esp_gatts_attr_db_t)>,
 }
 
 impl Configuration {
@@ -120,49 +132,60 @@ impl Default for Configuration {
                 p_service_uuid: std::ptr::null_mut(),
                 flag: (ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT) as u8,
             },
+            active_services: vec![AttributeIndex::SVC_DeviceInformation],
             gatt_db: vec![
                 // Service Declaration: Device Information
-                esp_gatts_attr_db_t {
-                    attr_control: esp_attr_control_t {
-                        auto_rsp: ESP_GATT_AUTO_RSP as u8,
+                (
+                    AttributeIndex::SVC_DeviceInformation,
+                    esp_gatts_attr_db_t {
+                        attr_control: esp_attr_control_t {
+                            auto_rsp: ESP_GATT_AUTO_RSP as u8,
+                        },
+                        att_desc: esp_attr_desc_t {
+                            uuid_length: ESP_UUID_LEN_16 as u16,
+                            uuid_p: Self::esp_uuid_as_u8_ptr(ESP_GATT_UUID_PRI_SERVICE),
+                            perm: ESP_GATT_PERM_READ as u16,
+                            max_length: std::mem::size_of_val(&ESP_GATT_UUID_DEVICE_INFO_SVC)
+                                as u16,
+                            length: std::mem::size_of_val(&ESP_GATT_UUID_DEVICE_INFO_SVC) as u16,
+                            value: Self::esp_uuid_as_u8_ptr(ESP_GATT_UUID_DEVICE_INFO_SVC),
+                        },
                     },
-                    att_desc: esp_attr_desc_t {
-                        uuid_length: ESP_UUID_LEN_16 as u16,
-                        uuid_p: Self::esp_uuid_as_u8_ptr(ESP_GATT_UUID_PRI_SERVICE),
-                        perm: ESP_GATT_PERM_READ as u16,
-                        max_length: std::mem::size_of_val(&ESP_GATT_UUID_DEVICE_INFO_SVC) as u16,
-                        length: std::mem::size_of_val(&ESP_GATT_UUID_DEVICE_INFO_SVC) as u16,
-                        value: Self::esp_uuid_as_u8_ptr(ESP_GATT_UUID_DEVICE_INFO_SVC),
-                    },
-                },
+                ),
                 // Characteristic Declaration: Manufacturer Name String
-                esp_gatts_attr_db_t {
-                    attr_control: esp_attr_control_t {
-                        auto_rsp: ESP_GATT_AUTO_RSP as u8,
+                (
+                    AttributeIndex::CHD_DeviceInformation_ManufacturerNameString,
+                    esp_gatts_attr_db_t {
+                        attr_control: esp_attr_control_t {
+                            auto_rsp: ESP_GATT_AUTO_RSP as u8,
+                        },
+                        att_desc: esp_attr_desc_t {
+                            uuid_length: ESP_UUID_LEN_16 as u16,
+                            uuid_p: Self::esp_uuid_as_u8_ptr(ESP_GATT_UUID_CHAR_DECLARE),
+                            perm: ESP_GATT_PERM_READ as u16,
+                            max_length: std::mem::size_of_val(&ESP_GATT_UUID_MANU_NAME) as u16,
+                            length: std::mem::size_of_val(&ESP_GATT_UUID_MANU_NAME) as u16,
+                            value: Self::esp_uuid_as_u8_ptr(ESP_GATT_UUID_MANU_NAME),
+                        },
                     },
-                    att_desc: esp_attr_desc_t {
-                        uuid_length: ESP_UUID_LEN_16 as u16,
-                        uuid_p: Self::esp_uuid_as_u8_ptr(ESP_GATT_UUID_CHAR_DECLARE),
-                        perm: ESP_GATT_PERM_READ as u16,
-                        max_length: std::mem::size_of_val(&ESP_GATT_UUID_MANU_NAME) as u16,
-                        length: std::mem::size_of_val(&ESP_GATT_UUID_MANU_NAME) as u16,
-                        value: Self::esp_uuid_as_u8_ptr(ESP_GATT_UUID_MANU_NAME),
-                    },
-                },
+                ),
                 // Characteristic Value: Manufacturer Name String
-                esp_gatts_attr_db_t {
-                    attr_control: esp_attr_control_t {
-                        auto_rsp: ESP_GATT_AUTO_RSP as u8,
+                (
+                    AttributeIndex::CHV_DeviceInformation_ManufacturerNameString,
+                    esp_gatts_attr_db_t {
+                        attr_control: esp_attr_control_t {
+                            auto_rsp: ESP_GATT_AUTO_RSP as u8,
+                        },
+                        att_desc: esp_attr_desc_t {
+                            uuid_length: ESP_UUID_LEN_16 as u16,
+                            uuid_p: Self::esp_uuid_as_u8_ptr(ESP_GATT_UUID_MANU_NAME),
+                            perm: ESP_GATT_PERM_READ as u16,
+                            max_length: mfr_name.len() as u16,
+                            length: mfr_name.len() as u16,
+                            value: mfr_name.as_mut_ptr(),
+                        },
                     },
-                    att_desc: esp_attr_desc_t {
-                        uuid_length: ESP_UUID_LEN_16 as u16,
-                        uuid_p: Self::esp_uuid_as_u8_ptr(ESP_GATT_UUID_MANU_NAME),
-                        perm: ESP_GATT_PERM_READ as u16,
-                        max_length: mfr_name.len() as u16,
-                        length: mfr_name.len() as u16,
-                        value: mfr_name.as_mut_ptr(),
-                    },
-                },
+                ),
             ],
         }
     }

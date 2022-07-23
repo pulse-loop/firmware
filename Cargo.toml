@@ -24,8 +24,8 @@ esp-idf-hal = { version = "0.38.0" }
 esp-idf-svc = { version = "0.42.1" }
 log = { version = "0.4.17" }
 embedded-hal = { version = "1.0.0-alpha.8" }
-smart-leds = { version = "0.3.0" }
-ws2812-esp32-rmt-driver = { git = "https://github.com/cat-in-136/ws2812-esp32-rmt-driver" }
+# smart-leds = { version = "0.3.0" }
+# ws2812-esp32-rmt-driver = { git = "https://github.com/cat-in-136/ws2812-esp32-rmt-driver" }
 
 [build-dependencies]
 embuild = "0.28"

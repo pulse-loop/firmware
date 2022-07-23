@@ -1,5 +1,4 @@
 //! List of services.
-
 pub mod advanced_configuration;
 pub mod battery;
 pub mod current_time;

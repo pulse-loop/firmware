@@ -4,7 +4,12 @@
 //! Every value is set in the `Default` implementation.
 
 use esp_idf_sys::*;
+use lazy_static::lazy_static;
 use std::slice;
+
+lazy_static! {
+    pub static ref GLOBAL_CONFIGURATION: Configuration = Configuration::default();
+}
 
 #[derive(Clone, Debug, PartialEq)]
 #[repr(usize)]
@@ -55,19 +60,15 @@ impl Configuration {
     ];
 }
 
+/// Configuration raw pointers require to be mut and can't be safely shared across threads.
+/// This is a workaround to make them Send-able, because we know that we're not modifying them.
+unsafe impl Send for Configuration {}
+unsafe impl Sync for Configuration {}
+
 impl Default for Configuration {
     fn default() -> Self {
-        // Special UUIDs.
-        let mut uuid_pri_service: [u8; 2] = (ESP_GATT_UUID_PRI_SERVICE as u16).to_be_bytes();
-        let mut uuid_char_declare: [u8; 2] = (ESP_GATT_UUID_CHAR_DECLARE as u16).to_be_bytes();
-
-        // Standard UUIDs.
-        let mut uuid_device_info_svc: [u8; 2] =
-            (ESP_GATT_UUID_DEVICE_INFO_SVC as u16).to_be_bytes();
-        let mut uuid_manu_name: [u8; 2] = (ESP_GATT_UUID_MANU_NAME as u16).to_be_bytes();
-
         // GATT server database.
-        let gatt_db: Vec<(AttributeIndex, esp_gatts_attr_db_t)> = unsafe {
+        let gatt_db: Vec<(AttributeIndex, esp_gatts_attr_db_t)> = {
             vec![
                 // Service Declaration: Device Information
                 (
@@ -78,11 +79,11 @@ impl Default for Configuration {
                         },
                         att_desc: esp_attr_desc_t {
                             uuid_length: ESP_UUID_LEN_16 as u16,
-                            uuid_p: Box::into_raw(Box::new(uuid_pri_service)) as *mut u8,
+                            uuid_p: leaky_box_be_bytes!(ESP_GATT_UUID_PRI_SERVICE as u16),
                             perm: ESP_GATT_PERM_READ as u16,
                             max_length: ESP_UUID_LEN_16 as u16,
                             length: ESP_UUID_LEN_16 as u16,
-                            value: Box::into_raw(Box::new(*uuid_device_info_svc.as_mut_ptr())),
+                            value: leaky_box_be_bytes!(ESP_GATT_UUID_DEVICE_INFO_SVC as u16),
                         },
                     },
                 ),
@@ -95,11 +96,11 @@ impl Default for Configuration {
                         },
                         att_desc: esp_attr_desc_t {
                             uuid_length: ESP_UUID_LEN_16 as u16,
-                            uuid_p: Box::into_raw(Box::new(*uuid_char_declare.as_mut_ptr())),
+                            uuid_p: leaky_box_be_bytes!(ESP_GATT_UUID_CHAR_DECLARE as u16),
                             perm: ESP_GATT_PERM_READ as u16,
                             max_length: ESP_UUID_LEN_16 as u16,
                             length: ESP_UUID_LEN_16 as u16,
-                            value: Box::into_raw(Box::new(*uuid_manu_name.as_mut_ptr())),
+                            value: leaky_box_be_bytes!(ESP_GATT_UUID_MANU_NAME as u16),
                         },
                     },
                 ),
@@ -112,13 +113,11 @@ impl Default for Configuration {
                         },
                         att_desc: esp_attr_desc_t {
                             uuid_length: ESP_UUID_LEN_16 as u16,
-                            uuid_p: uuid_manu_name.as_mut_ptr(),
+                            uuid_p: leaky_box_be_bytes!(ESP_GATT_UUID_MANU_NAME as u16),
                             perm: ESP_GATT_PERM_READ as u16,
                             max_length: String::from(Self::MANUFACTURER_NAME_STRING).len() as u16,
                             length: String::from(Self::MANUFACTURER_NAME_STRING).len() as u16,
-                            value: Box::into_raw(Box::new(
-                                *String::from(Self::MANUFACTURER_NAME_STRING).as_mut_ptr(),
-                            )),
+                            value: leaky_box_u8!(Self::MANUFACTURER_NAME_STRING),
                         },
                     },
                 ),
@@ -207,7 +206,7 @@ impl Default for Configuration {
                 service_data_len: 0,
                 p_service_data: std::ptr::null_mut(),
                 service_uuid_len: normalised_uuids_data.len() as u16,
-                p_service_uuid: normalised_uuids_data.as_mut_ptr(),
+                p_service_uuid: leaky_box_u8!(normalised_uuids_data.clone()),
                 flag: (ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT) as u8,
             },
             advertising_parameters: esp_ble_adv_params_t {
@@ -231,7 +230,7 @@ impl Default for Configuration {
                 service_data_len: 0,
                 p_service_data: std::ptr::null_mut(),
                 service_uuid_len: normalised_uuids_data.len() as u16,
-                p_service_uuid: normalised_uuids_data.as_mut_ptr(),
+                p_service_uuid: leaky_box_u8!(normalised_uuids_data),
                 flag: (ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT) as u8,
             },
             gatt_db,

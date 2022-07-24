@@ -22,7 +22,7 @@ linker = "ldproxy"
 rustflags = ["-C", "default-linker-libraries"]
 
 [unstable]
-
+configurable-env = true
 build-std = ["std", "panic_abort"]
 #build-std-features = ["panic_immediate_abort"] # Required for older ESP-IDF versions without a realpath implementation
 
@@ -32,6 +32,11 @@ build-std = ["std", "panic_abort"]
 ESP_IDF_VERSION = { value = "branch:release/v4.4" }
 # Enables the esp-idf-sys "native" build feature (`cargo build --features native`) to build against ESP-IDF master (v5.0)
 #ESP_IDF_VERSION = { value = "master" }
+
+# Include partition table and other useful files.
+ESP_IDF_GLOB_CONFIG_FILES_BASE = { value = ".", relative = true }
+ESP_IDF_GLOB_CONFIG_FILES_1 = { value = "/partitions.csv" }
+ESP_IDF_GLOB_CONFIG_FILES_2 = { value = "/sdkconfig" }
 
 [net]
 git-fetch-with-cli = true

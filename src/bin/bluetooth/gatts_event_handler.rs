@@ -1,11 +1,5 @@
-use crate::bluetooth::configuration::{AttributeIndex, Configuration};
-use esp_idf_sys::{
-    esp_ble_gap_config_adv_data, esp_ble_gap_set_device_name, esp_ble_gatts_cb_param_t,
-    esp_ble_gatts_create_attr_tab, esp_ble_gatts_start_service, esp_gatt_if_t,
-    esp_gatt_status_t_ESP_GATT_OK, esp_gatts_cb_event_t,
-    esp_gatts_cb_event_t_ESP_GATTS_CREAT_ATTR_TAB_EVT, esp_gatts_cb_event_t_ESP_GATTS_REG_EVT,
-    esp_nofail, ESP_GATT_UUID_PRI_SERVICE,
-};
+use crate::bluetooth::configuration::{AttributeIndex, Configuration, GLOBAL_CONFIGURATION};
+use esp_idf_sys::*;
 use std::ffi::CString;
 use std::slice;
 
@@ -28,34 +22,33 @@ pub unsafe extern "C" fn gatts_event_handler(
         esp_gatts_cb_event_t_ESP_GATTS_REG_EVT => {
             log::info!("Handling registration event.");
 
-            let mut configuration = Configuration::default();
             let mfr_name = CString::new(Configuration::MANUFACTURER_NAME_STRING).unwrap();
             esp_nofail!(esp_ble_gap_set_device_name(mfr_name.as_ptr()));
 
             log::info!("Manufacturer name string set.");
 
-            esp_nofail!(esp_ble_gap_config_adv_data(
-                &mut configuration.advertising_data
-            ));
+            esp_nofail!(esp_ble_gap_config_adv_data(leaky_box_raw!(
+                GLOBAL_CONFIGURATION.advertising_data
+            ),));
 
             log::info!("Advertising data set.");
 
-            esp_nofail!(esp_ble_gap_config_adv_data(
-                &mut configuration.scan_response_data
-            ));
+            esp_nofail!(esp_ble_gap_config_adv_data(leaky_box_raw!(
+                GLOBAL_CONFIGURATION.scan_response_data
+            ),));
 
             log::info!("Scan response data set.");
 
             #[allow(clippy::cast_possible_truncation)]
             {
-                let attr_tab_without_indices = configuration
+                let attr_tab_without_indices = GLOBAL_CONFIGURATION
                     .gatt_db
                     .iter()
                     .map(|x| x.1)
                     .collect::<Vec<_>>();
 
                 esp_nofail!(esp_ble_gatts_create_attr_tab(
-                    attr_tab_without_indices.as_ptr(),
+                    leaky_box_raw!(attr_tab_without_indices.clone()) as *const esp_gatts_attr_db_t,
                     gatts_if,
                     attr_tab_without_indices.len() as u8,
                     0,
@@ -63,7 +56,7 @@ pub unsafe extern "C" fn gatts_event_handler(
             }
         }
         esp_gatts_cb_event_t_ESP_GATTS_CREAT_ATTR_TAB_EVT => {
-            let configuration = Configuration::default();
+            log::info!("Handling attribute table creation event.");
 
             #[allow(clippy::cast_possible_truncation)]
             if (*param).add_attr_tab.status != esp_gatt_status_t_ESP_GATT_OK {
@@ -72,11 +65,12 @@ pub unsafe extern "C" fn gatts_event_handler(
                     (*param).add_attr_tab.status
                 );
                 // TODO: Panic.
-            } else if (*param).add_attr_tab.num_handle != configuration.gatt_db.len() as u16 {
+            } else if (*param).add_attr_tab.num_handle != GLOBAL_CONFIGURATION.gatt_db.len() as u16
+            {
                 log::error!(
                     "Attribute table created with wrong handle {} (instead of {}).",
                     (*param).add_attr_tab.num_handle,
-                    configuration.gatt_db.len()
+                    GLOBAL_CONFIGURATION.gatt_db.len()
                 );
                 // TODO: Panic.
             } else {
@@ -87,19 +81,42 @@ pub unsafe extern "C" fn gatts_event_handler(
 
                 let handles = slice::from_raw_parts(
                     (*param).add_attr_tab.handles,
-                    configuration.gatt_db.len(),
+                    GLOBAL_CONFIGURATION.gatt_db.len(),
                 );
 
                 // TODO: Fix zero handles.
 
                 log::info!("Handles: {:?}", handles);
 
-                for service in configuration.services {
+                for service in GLOBAL_CONFIGURATION.services.as_slice() {
                     let handle = handles[service.0.clone() as usize];
                     log::info!("Starting service {:?} with handle {}.", service.0, handle);
                     esp_nofail!(esp_ble_gatts_start_service(handle));
                 }
             }
+        }
+        esp_gatts_cb_event_t_ESP_GATTS_CONNECT_EVT => {
+            log::info!("Handling connection event.");
+            let conn_params: esp_ble_conn_update_params_t = esp_ble_conn_update_params_t {
+                bda: (*param).connect.remote_bda,
+                latency: 0,
+                max_int: 0x20, // 40ms
+                min_int: 0x10, // 20ms
+                timeout: 400,  // 4s
+            };
+
+            esp_nofail!(esp_ble_gap_update_conn_params(leaky_box_raw!(conn_params)));
+
+            log::info!("Updating connection parameters.");
+        }
+        esp_gatts_cb_event_t_ESP_GATTS_DISCONNECT_EVT => {
+            log::info!("Handling disconnection event.");
+
+            esp_nofail!(esp_ble_gap_start_advertising(leaky_box_raw!(
+                GLOBAL_CONFIGURATION.advertising_parameters
+            )));
+
+            log::info!("Restarting GAP advertising.");
         }
         _ => {
             log::warn!("Unhandled event #{}.", event);

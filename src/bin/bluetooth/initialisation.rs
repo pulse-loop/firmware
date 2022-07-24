@@ -46,7 +46,12 @@ pub fn initialise() {
             esp_nofail!(nvs_flash_erase());
             esp_nofail!(nvs_flash_init());
         }
-        esp_nofail!(esp_bt_controller_init(&mut default_configuration));
+        esp_nofail!(esp_bt_controller_mem_release(
+            esp_bt_mode_t_ESP_BT_MODE_CLASSIC_BT
+        ));
+        esp_nofail!(esp_bt_controller_init(leaky_box_raw!(
+            default_configuration
+        )));
         esp_nofail!(esp_bt_controller_enable(esp_bt_mode_t_ESP_BT_MODE_BLE));
         esp_nofail!(esp_bluedroid_init());
         esp_nofail!(esp_bluedroid_enable());
@@ -56,6 +61,7 @@ pub fn initialise() {
         esp_nofail!(esp_ble_gap_register_callback(Some(
             crate::bluetooth::gap_event_handler::gap_event_handler
         )));
-        esp_nofail!(esp_ble_gatts_app_register(0x00));
+        esp_nofail!(esp_ble_gatts_app_register(0x55));
+        esp_nofail!(esp_ble_gatt_set_local_mtu(500));
     }
 }

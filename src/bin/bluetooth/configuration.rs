@@ -3,9 +3,10 @@
 //!
 //! Every value is set in the `Default` implementation.
 
+use std::slice;
+
 use esp_idf_sys::*;
 use lazy_static::lazy_static;
-use std::slice;
 
 lazy_static! {
     pub static ref GLOBAL_CONFIGURATION: Configuration = Configuration::default();
@@ -100,7 +101,7 @@ impl Default for Configuration {
                             perm: ESP_GATT_PERM_READ as u16,
                             max_length: ESP_UUID_LEN_16 as u16,
                             length: ESP_UUID_LEN_16 as u16,
-                            value: leaky_box_be_bytes!(ESP_GATT_UUID_MANU_NAME as u16),
+                            value: leaky_box_be_bytes!(ESP_GATT_CHAR_PROP_BIT_READ as u16),
                         },
                     },
                 ),

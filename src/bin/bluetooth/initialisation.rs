@@ -5,7 +5,7 @@ use esp_idf_sys::*;
 /// Starts the Bluetooth LE stack and initialises it with default values for this device.
 pub fn initialise() {
     #[allow(clippy::cast_possible_truncation)]
-    let mut default_configuration = esp_bt_controller_config_t {
+    let default_configuration = esp_bt_controller_config_t {
         magic: ESP_BT_CTRL_CONFIG_MAGIC_VAL,
         version: ESP_BT_CTRL_CONFIG_VERSION,
         controller_task_stack_size: ESP_TASK_BT_CONTROLLER_STACK as u16,

@@ -19,9 +19,9 @@ debug = true # Symbols are nice and they don't increase the size on Flash
 opt-level = "z"
 
 [dependencies]
-esp-idf-sys = { version = "0.31.6", features = ["binstart", "native"] }
-esp-idf-hal = { version = "0.38.0" }
-esp-idf-svc = { version = "0.42.3" }
+esp-idf-sys = { version = "0.31.10", features = ["binstart", "native"] }
+esp-idf-hal = { version = "0.38.1" }
+esp-idf-svc = { version = "0.42.5" }
 log = { version = "0.4.17" }
 embedded-hal = { version = "1.0.0-alpha.8" }
 # smart-leds = { version = "0.3.0" }
@@ -29,5 +29,5 @@ embedded-hal = { version = "1.0.0-alpha.8" }
 lazy_static = { version = "1.4.0" }
 
 [build-dependencies]
-embuild = "0.30.2"
+embuild = "0.30.4"
 anyhow = "1"

@@ -33,8 +33,6 @@ fn main() {
     esp_idf_svc::log::EspLogger::initialize_default();
     log::info!("Logger initialised.");
 
-    bluetooth::initialise();
-
     thread::spawn(|| loop {
         thread::sleep(Duration::from_millis(500));
     });

@@ -4,9 +4,8 @@
 #![warn(clippy::cargo)]
 #![allow(clippy::multiple_crate_versions)]
 // Documentation lints
-#![warn(missing_docs)]
-#![warn(clippy::missing_docs_in_private_items)]
-#![warn(invalid_doc_attributes)]
+// #![warn(missing_docs)]
+// #![warn(clippy::missing_docs_in_private_items)]
 #![warn(rustdoc::all)]
 
 //! Firmware for the pulse.loop wrist pulse oximeter.

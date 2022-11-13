@@ -1,9 +1,9 @@
 use std::sync::{RwLock, Arc};
 
-use bluedroid::gatt_server::{Characteristic, Service, Descriptor};
+use bluedroid::gatt_server::{Characteristic, Service};
 use bluedroid::utilities::{BleUuid, AttributePermissions, CharacteristicProperties};
 
-pub(crate) struct RawSensorDataServiceContainer {
+pub struct RawSensorDataServiceContainer {
     pub(crate) service: Arc<RwLock<Service>>,
     pub(crate) ambient_reading_characteristic: Arc<RwLock<Characteristic>>,
     pub(crate) led1_minus_ambient_reading_characteristic: Arc<RwLock<Characteristic>>,

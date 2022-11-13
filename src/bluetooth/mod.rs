@@ -1,3 +1,5 @@
+#![allow(clippy::module_name_repetitions, dead_code)]
+
 use bluedroid::gatt_server::{Profile, GLOBAL_GATT_SERVER};
 
 mod battery;
@@ -12,7 +14,7 @@ mod pulse_oximeter;
 mod raw_sensor_data;
 mod settings;
 
-pub(crate) struct BluetoothAPI {
+pub struct BluetoothAPI {
     // pub(crate) pulse_oximeter: pulse_oximeter::PulseOximeterServiceContainer,
     // pub(crate) heart_rate: heart_rate::HeartRateServiceContainer,
     // pub(crate) historic_data: historic_data::HistoricDataServiceContainer,
@@ -22,11 +24,11 @@ pub(crate) struct BluetoothAPI {
     // pub(crate) battery: battery::BatteryServiceContainer,
     pub(crate) pulse_loop: pulse_loop::PulseLoopServiceContainer,
     pub(crate) raw_sensor_data: raw_sensor_data::RawSensorDataServiceContainer,
-    // pub(crate) optical_frontend_configuration: optical_frontend_configuration::OpticalFrontendConfigurationServiceContainer,
+    pub(crate) optical_frontend_configuration: optical_frontend_configuration::OpticalFrontendConfigurationServiceContainer,
     // pub(crate) firmware_upgrade: firmware_upgrade::FirmwareUpgradeServiceContainer,
 }
 
-pub(crate) fn initialise() -> BluetoothAPI {
+pub fn initialise() -> BluetoothAPI {
     // let pulse_oximeter = pulse_oximeter::PulseOximeterServiceContainer::initialise();
     // let heart_rate = heart_rate::HeartRateServiceContainer::initialise();
     // let historic_data = historic_data::HistoricDataServiceContainer::initialise();
@@ -36,14 +38,14 @@ pub(crate) fn initialise() -> BluetoothAPI {
     // let battery = battery::BatteryServiceContainer::initialise();
     let pulse_loop = pulse_loop::PulseLoopServiceContainer::initialise();
     let raw_sensor_data = raw_sensor_data::RawSensorDataServiceContainer::initialise();
-    // let optical_frontend_configuration =
-    //     optical_frontend_configuration::OpticalFrontendConfigurationServiceContainer::initialise();
+    let optical_frontend_configuration = optical_frontend_configuration::OpticalFrontendConfigurationServiceContainer::initialise();
     // let firmware_upgrade = firmware_upgrade::FirmwareUpgradeServiceContainer::initialise();
 
     let profile = Profile::new(0x0001)
     .name("Main profile")
     .service(&pulse_loop.service)
     .service(&raw_sensor_data.service)
+    .service(&optical_frontend_configuration.service)
     .build();
 
     GLOBAL_GATT_SERVER.lock().unwrap()
@@ -56,5 +58,6 @@ pub(crate) fn initialise() -> BluetoothAPI {
     BluetoothAPI {
         pulse_loop,
         raw_sensor_data,
+        optical_frontend_configuration
     }
 }

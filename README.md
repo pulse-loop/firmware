@@ -70,11 +70,11 @@ Data from the optical frontend and other sensors.
 
 | Characteristic        | Access | Type  | UUID                                   | Description                                                       |
 |-----------------------|--------|-------|----------------------------------------|-------------------------------------------------------------------|
-| Ambient phase reading | Read   | `u32` | `33EAF25F-7A5C-4327-A95B-B602DA54C443` | The latest reading during the ambient phase.                      |
-| LED1 - Ambient        | Read   | `u32` | `CF66D344-584D-4E67-AC30-17D28B099A30` | The latest reading during the LED1 phase minus the ambient phase. |
-| LED1 ADC reading      | Read   | `u32` | `05500B81-516D-4BD9-95BA-C0B87C911DDB` | The latest reading during the LED1 phase.                         |
-| LED2 ADC reading      | Read   | `u32` | `A93B639D-8A8D-43EA-8A5A-8175D7C09E0B` | The latest reading during the LED2 phase.                         |
-| LED3 ADC reading      | Read   | `u32` | `C0A12246-79E4-4BD7-8A4F-B841D5590F70` | The latest reading during the LED3 phase.                         |
+| Ambient phase reading | Read   | `f32` | `33EAF25F-7A5C-4327-A95B-B602DA54C443` | The latest reading during the ambient phase.                      |
+| LED1 - Ambient        | Read   | `f32` | `CF66D344-584D-4E67-AC30-17D28B099A30` | The latest reading during the LED1 phase minus the ambient phase. |
+| LED1 ADC reading      | Read   | `f32` | `05500B81-516D-4BD9-95BA-C0B87C911DDB` | The latest reading during the LED1 phase.                         |
+| LED2 ADC reading      | Read   | `f32` | `A93B639D-8A8D-43EA-8A5A-8175D7C09E0B` | The latest reading during the LED2 phase.                         |
+| LED3 ADC reading      | Read   | `f32` | `C0A12246-79E4-4BD7-8A4F-B841D5590F70` | The latest reading during the LED3 phase.                         |
 
 #### Optical frontend configuration
 

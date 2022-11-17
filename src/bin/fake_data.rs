@@ -35,28 +35,20 @@ fn main() {
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     std::thread::spawn(move || {
         loop {
-            std::thread::sleep(std::time::Duration::from_millis(10));
+            std::thread::sleep(std::time::Duration::from_millis(100));
             let now = std::time::SystemTime::now();
-            let milliseconds: f64 = ((now
+            let milliseconds: f32 = (now
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
-                .as_millis()
-                % u128::from(u32::MAX)) as u32)
-                .into();
+                .as_millis() % 1000000000) as f32;
             let seconds = milliseconds / 1000.0;
 
             // Sine wave
             let ambient_value = seconds.sin().mul_add(100.0, 50.0);
             let led1_minus_ambient_value = ambient_value + 50.0;
             let led1_value = seconds.cos().mul_add(100.0, 50.0);
-            let led2_value = seconds % 100.0;
-            let led3_value = (led1_value - led2_value).abs();
-
-            let ambient_value = ambient_value.trunc() as u32;
-            let led1_minus_ambient_value = led1_minus_ambient_value.trunc() as u32;
-            let led1_value = led1_value.trunc() as u32;
-            let led2_value = led2_value.trunc() as u32;
-            let led3_value = led3_value.trunc() as u32;
+            let led2_value = seconds % 10.0;
+            let led3_value = (seconds * 3.0).sin() * led2_value;
 
             ble_api
                 .raw_sensor_data

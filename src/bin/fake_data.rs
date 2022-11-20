@@ -32,7 +32,7 @@ fn main() {
     let ble_api = bluetooth::initialise();
 
     // Fake data generation.
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    #[allow(clippy::cast_possible_truncation, clippy::cast_precision_loss)]
     std::thread::spawn(move || {
         loop {
             std::thread::sleep(std::time::Duration::from_millis(100));
@@ -40,13 +40,13 @@ fn main() {
             let milliseconds: f32 = (now
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
-                .as_millis() % 1000000000) as f32;
+                .as_millis() % 1_000_000_000) as f32;
             let seconds = milliseconds / 1000.0;
 
             // Sine wave
-            let ambient_value = seconds.sin().mul_add(100.0, 50.0);
+            let ambient_value = seconds.sin().mul_add(100.0, 100.0);
             let led1_minus_ambient_value = ambient_value + 50.0;
-            let led1_value = seconds.cos().mul_add(100.0, 50.0);
+            let led1_value = seconds.cos().mul_add(100.0, 100.0);
             let led2_value = seconds % 10.0;
             let led3_value = (seconds * 3.0).sin() * led2_value;
 

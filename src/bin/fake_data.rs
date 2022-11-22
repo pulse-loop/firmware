@@ -29,7 +29,19 @@ fn main() {
     esp_idf_svc::log::EspLogger::initialize_default();
     log::info!("Logger initialised.");
 
-    let ble_api = bluetooth::initialise();
+    let ble_api = bluetooth::BluetoothAPI::initialise();
+
+    // Fake data callbacks.
+    ble_api.optical_frontend_configuration.dynamic_power_down_start_characteristic.write().unwrap().on_read(|_| {
+        log::info!("Dynamic power down start characteristic read.");
+        100f32.to_le_bytes().to_vec()
+    }).on_write(|value,  _| {
+        let mut data: [u8; 4] = [0; 4];
+        data.copy_from_slice(&value[..4]);
+        log::info!("Dynamic power down start characteristic written: {}", f32::from_le_bytes(data));
+    });
+
+    ble_api.start();
 
     // Fake data generation.
     #[allow(clippy::cast_possible_truncation, clippy::cast_precision_loss)]

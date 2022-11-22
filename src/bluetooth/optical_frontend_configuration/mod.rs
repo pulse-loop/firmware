@@ -109,7 +109,7 @@ impl OpticalFrontendConfigurationServiceContainer {
                 .show_name()
                 .permissions(AttributePermissions::new().read().write())
                 .properties(CharacteristicProperties::new().read().write())
-                .max_value_length(2)
+                .max_value_length(4)
                 .build();
 
             service.characteristic(&characteristic);

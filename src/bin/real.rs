@@ -1,4 +1,3 @@
-use std::sync::atomic::AtomicBool;
 use std::{thread, time::Duration};
 
 use embedded_hal::delay::blocking::DelayUs;
@@ -12,17 +11,12 @@ use afe4404::{
     afe4404::ThreeLedsMode,
     high_level::{
         clock::ClockConfiguration,
-        led_current::{LedCurrentConfiguration, OffsetCurrentConfiguration},
-        tia::{CapacitorConfiguration, ResistorConfiguration},
         timing_window::{
             ActiveTiming, AmbientTiming, LedTiming, MeasurementWindowConfiguration, PowerDownTiming,
         },
     },
     uom::si::{
-        capacitance::picofarad,
-        electric_current::{microampere, milliampere},
-        electrical_resistance::kiloohm,
-        f32::{Capacitance, ElectricCurrent, ElectricalResistance, Frequency, Time},
+        f32::{Frequency, Time},
         frequency::megahertz,
         time::microsecond,
     },
@@ -34,8 +28,13 @@ use esp_idf_sys::{self as _, esp_get_free_heap_size, esp_get_free_internal_heap_
 
 #[path = "../bluetooth/mod.rs"]
 mod bluetooth;
+#[path = "../optical/mod.rs"]
+mod optical;
 
-static DATA_READY: AtomicBool = AtomicBool::new(false);
+use optical::{
+    data_reading::{get_sample_blocking, DATA_READY},
+    dc_calibration::calibration_loop,
+};
 
 fn main() {
     // Temporary. Will disappear once ESP-IDF 4.4 is released, but for now it is necessary to call this function once,
@@ -63,37 +62,6 @@ fn main() {
     let ble_api = bluetooth::initialise();
 
     frontend.sw_reset().expect("Cannot reset the afe");
-
-    frontend
-        .set_leds_current(&LedCurrentConfiguration::<ThreeLedsMode>::new(
-            ElectricCurrent::new::<milliampere>(30.0),
-            ElectricCurrent::new::<milliampere>(30.0),
-            ElectricCurrent::new::<milliampere>(30.0),
-        ))
-        .expect("Cannot set leds current");
-
-    frontend
-        .set_offset_current(&OffsetCurrentConfiguration::<ThreeLedsMode>::new(
-            ElectricCurrent::new::<microampere>(-1.5),
-            ElectricCurrent::new::<microampere>(-3.0),
-            ElectricCurrent::new::<microampere>(-3.0),
-            ElectricCurrent::new::<microampere>(0.0),
-        ))
-        .expect("Cannot set offset current");
-
-    frontend
-        .set_tia_resistors(&ResistorConfiguration {
-            resistor1: ElectricalResistance::new::<kiloohm>(50.0),
-            resistor2: ElectricalResistance::new::<kiloohm>(50.0),
-        })
-        .expect("Cannot set tia resistors");
-
-    frontend
-        .set_tia_capacitors(&CapacitorConfiguration {
-            capacitor1: Capacitance::new::<picofarad>(5.0),
-            capacitor2: Capacitance::new::<picofarad>(5.0),
-        })
-        .expect("Cannot set tia capacitors");
 
     frontend
         .set_timing_window(&MeasurementWindowConfiguration::<ThreeLedsMode>::new(
@@ -149,9 +117,6 @@ fn main() {
         .set_clock_source(&ClockConfiguration::Internal)
         .expect("Cannot set clock source");
 
-    let mut delay = esp_idf_hal::delay::Ets;
-    delay.delay_ms(200).unwrap();
-
     unsafe {
         peripherals
             .pins
@@ -165,6 +130,11 @@ fn main() {
             .unwrap();
     }
 
+    let mut delay = esp_idf_hal::delay::Ets;
+    delay.delay_ms(200).unwrap();
+
+    calibration_loop(&mut frontend);
+
     thread::spawn(|| loop {
         thread::sleep(Duration::from_millis(500));
 
@@ -176,33 +146,42 @@ fn main() {
     });
 
     loop {
-        if DATA_READY.load(std::sync::atomic::Ordering::Relaxed) {
-            DATA_READY.store(false, std::sync::atomic::Ordering::Relaxed); // Prevent readings overlapping.
-            let readings = frontend.read();
-            if !DATA_READY.load(std::sync::atomic::Ordering::Relaxed) {
-                match readings {
-                    Ok(readings) => {
-                        // println!("Green: {}", readings.led1().value);
-                        // println!("Red: {}", readings.led2().value);
-                        // println!("Infrared: {}", readings.led3().value);
-                        // println!("Ambient: {}", readings.ambient().value);
-                        // println!(
-                        //     "{} {} {} {}",
-                        //     readings.led1().value,
-                        //     readings.led2().value,
-                        //     readings.led3().value,
-                        //     readings.ambient().value
-                        // );
-
-                        ble_api.raw_sensor_data.ambient_reading_characteristic.write().unwrap().set_value(readings.ambient().value.to_le_bytes());
-                        ble_api.raw_sensor_data.led1_minus_ambient_reading_characteristic.write().unwrap().set_value(readings.led1_minus_ambient().value.to_le_bytes());
-                        ble_api.raw_sensor_data.led1_reading_characteristic.write().unwrap().set_value(readings.led1().value.to_le_bytes());
-                        ble_api.raw_sensor_data.led2_reading_characteristic.write().unwrap().set_value(readings.led2().value.to_le_bytes());
-                        ble_api.raw_sensor_data.led3_reading_characteristic.write().unwrap().set_value(readings.led3().value.to_le_bytes());
-                    }
-                    Err(e) => println!("Error: {:?}", e),
-                }
+        std::thread::sleep(std::time::Duration::from_millis(10));
+        let readings = get_sample_blocking(&mut frontend, 5);
+        match readings {
+            Ok(readings) => {
+                ble_api
+                    .raw_sensor_data
+                    .ambient_reading_characteristic
+                    .write()
+                    .unwrap()
+                    .set_value(readings.ambient().value.to_le_bytes());
+                ble_api
+                    .raw_sensor_data
+                    .led1_minus_ambient_reading_characteristic
+                    .write()
+                    .unwrap()
+                    .set_value(readings.led1_minus_ambient().value.to_le_bytes());
+                ble_api
+                    .raw_sensor_data
+                    .led1_reading_characteristic
+                    .write()
+                    .unwrap()
+                    .set_value(readings.led1().value.to_le_bytes());
+                ble_api
+                    .raw_sensor_data
+                    .led2_reading_characteristic
+                    .write()
+                    .unwrap()
+                    .set_value(readings.led2().value.to_le_bytes());
+                ble_api
+                    .raw_sensor_data
+                    .led3_reading_characteristic
+                    .write()
+                    .unwrap()
+                    .set_value(readings.led3().value.to_le_bytes());
             }
+            Err(e) => println!("Error: {:?}", e),
         }
     }
 }

@@ -59,7 +59,7 @@ fn main() {
     .expect("Failed to initialize I2C bus.");
 
     let mut frontend = AFE4404::with_three_leds(i2c, 0x58u8, Frequency::new::<megahertz>(4.0));
-    let ble_api = bluetooth::initialise();
+    let ble_api = bluetooth::BluetoothAPI::initialise();
 
     frontend.sw_reset().expect("Cannot reset the afe");
 
@@ -144,6 +144,8 @@ fn main() {
             log::info!("Free heap: {} bytes, free internal heap: {} bytes", x, y);
         }
     });
+
+    ble_api.start();
 
     loop {
         std::thread::sleep(std::time::Duration::from_millis(10));

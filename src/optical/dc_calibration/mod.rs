@@ -34,7 +34,7 @@ fn bisection(
 
 pub fn calibration_loop<I2C>(frontend: &mut AFE4404<I2C, ThreeLedsMode>)
 where
-    I2C: embedded_hal::i2c::blocking::I2c,
+    I2C: embedded_hal::i2c::I2c,
 {
     struct Parameters {
         resistors: [ElectricalResistance; 8],
@@ -74,7 +74,7 @@ where
         resistor2: parameters.resistors[0],
     };
     // TODO: Estimate best capacitor starting value.
-    let mut best_capacitors = CapacitorConfiguration {
+    let best_capacitors = CapacitorConfiguration {
         capacitor1: parameters.capacitors[7],
         capacitor2: parameters.capacitors[7],
     };

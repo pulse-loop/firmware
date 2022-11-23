@@ -10,7 +10,7 @@ pub fn get_sample_blocking<I2C>(
     iterations: u8,
 ) -> Result<Readings<ThreeLedsMode>, ()>
 where
-    I2C: embedded_hal::i2c::blocking::I2c,
+    I2C: embedded_hal::i2c::I2c,
 {
     let mut i = 0;
     while i < iterations {

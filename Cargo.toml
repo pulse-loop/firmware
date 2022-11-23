@@ -23,12 +23,16 @@ opt-level = "z"
 esp-idf-sys = { version = "0.31.11", features = ["binstart", "native"] }
 esp-idf-hal = { version = "0.39.2" }
 esp-idf-svc = { version = "0.43.3" }
-embedded-svc = "0.22.3"
+
+embedded-svc = { version = "0.22.3" }
 embedded-hal = { version = "1.0.0-alpha.9" }
-bluedroid = { path = "../bluedroid" }
+
+bluedroid = { version = "0.3.5" }
 afe4404 = { path = "../AFE4404" }
+
 # smart-leds = { version = "0.3.0" }
 # ws2812-esp32-rmt-driver = { git = "https://github.com/cat-in-136/ws2812-esp32-rmt-driver" }
+
 log = { version = "0.4.17" }
 lazy_static = { version = "1.4.0" }
 

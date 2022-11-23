@@ -1,8 +1,9 @@
 use std::{thread, time::Duration};
 
-use embedded_hal::delay::blocking::DelayUs;
+use embedded_hal::delay::DelayUs;
 use esp_idf_hal::{
-    i2c::{config::MasterConfig, Master, MasterPins},
+    gpio::PinDriver,
+    i2c::{config::Config, I2cDriver},
     peripherals::Peripherals,
     prelude::*,
 };
@@ -46,17 +47,17 @@ fn main() {
     log::info!("Logger initialised.");
 
     let peripherals = Peripherals::take().unwrap();
-    let config = MasterConfig::new().baudrate(100.kHz().into());
+    let config = Config::new().baudrate(100.kHz().into());
 
-    let i2c = Master::new(
+    let i2c = I2cDriver::new(
         peripherals.i2c0,
-        MasterPins {
-            sda: peripherals.pins.gpio3,
-            scl: peripherals.pins.gpio2,
-        },
-        config,
+        peripherals.pins.gpio3,
+        peripherals.pins.gpio2,
+        &config,
     )
     .expect("Failed to initialize I2C bus.");
+
+    let mut interrupt_pin = PinDriver::input(peripherals.pins.gpio4).unwrap();
 
     let mut frontend = AFE4404::with_three_leds(i2c, 0x58u8, Frequency::new::<megahertz>(4.0));
     let ble_api = bluetooth::BluetoothAPI::initialise();
@@ -117,16 +118,15 @@ fn main() {
         .set_clock_source(&ClockConfiguration::Internal)
         .expect("Cannot set clock source");
 
+    interrupt_pin
+        .set_interrupt_type(esp_idf_hal::gpio::InterruptType::PosEdge)
+        .unwrap();
+
     unsafe {
-        peripherals
-            .pins
-            .gpio4
-            .into_subscribed(
-                || {
-                    DATA_READY.store(true, std::sync::atomic::Ordering::Relaxed);
-                },
-                esp_idf_hal::gpio::InterruptType::PosEdge,
-            )
+        interrupt_pin
+            .subscribe(|| {
+                DATA_READY.store(true, std::sync::atomic::Ordering::Relaxed);
+            })
             .unwrap();
     }
 

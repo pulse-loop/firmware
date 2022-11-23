@@ -3,7 +3,7 @@ name = "firmware"
 version = "0.1.0"
 description = "Firmware for the pulse.loop wrist pulse oximeter."
 license = "MIT"
-authors = ["Riccardo Persello <riccardo.persello+i@icloud.com>", "Fabio Cragnolini <fbcragnolini@gmail.com>"]
+authors = ["Riccardo Persello <riccardo.persello@icloud.com>", "Fabio Cragnolini <fbcragnolini@gmail.com>"]
 repository = "https://github.com/pulse-loop/firmware"
 readme = "README.md"
 keywords = ["pulse", "loop", "wrist", "oximeter", "firmware", "ble"]
@@ -20,11 +20,11 @@ debug = true
 opt-level = "z"
 
 [dependencies]
-esp-idf-sys = { version = "0.31.10", features = ["binstart", "native"] }
-esp-idf-hal = { version = "0.38.1" }
-esp-idf-svc = { version = "0.42.1" }
+esp-idf-sys = { version = "0.31.11", features = ["binstart", "native"] }
+esp-idf-hal = { version = "0.39.2" }
+esp-idf-svc = { version = "0.43.3" }
 embedded-svc = "0.22.3"
-embedded-hal = { version = "1.0.0-alpha.8" }
+embedded-hal = { version = "1.0.0-alpha.9" }
 bluedroid = { path = "../bluedroid" }
 afe4404 = { path = "../AFE4404" }
 # smart-leds = { version = "0.3.0" }

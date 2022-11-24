@@ -17,7 +17,8 @@ use afe4404::{
         },
     },
     uom::si::{
-        f32::Time,
+        f32::{Frequency, Time},
+        frequency::megahertz,
         time::microsecond,
     },
     AFE4404,
@@ -58,7 +59,7 @@ fn main() {
 
     let mut interrupt_pin = PinDriver::input(peripherals.pins.gpio4).unwrap();
 
-    let mut frontend = AFE4404::with_three_leds(i2c, 0x58u8);
+    let mut frontend = AFE4404::with_three_leds(i2c, 0x58u8, Frequency::new::<megahertz>(4.0));
     let ble_api = bluetooth::BluetoothAPI::initialise();
 
     frontend.sw_reset().expect("Cannot reset the afe");

@@ -1,19 +1,18 @@
+use uom::si::{
+    capacitance::picofarad,
+    electric_current::milliampere,
+    electric_potential::volt,
+    electrical_resistance::kiloohm,
+    f32::{Capacitance, ElectricCurrent, ElectricPotential, ElectricalResistance},
+};
+
 use afe4404::{
-    afe4404::{ThreeLedsMode},
-    high_level::{
-        led_current::{LedCurrentConfiguration},
+    device::AFE4404,
+    modes::ThreeLedsMode,
+    {
+        led_current::LedCurrentConfiguration,
         tia::{CapacitorConfiguration, ResistorConfiguration},
     },
-    uom::si::{
-        capacitance::picofarad,
-        electric_current::milliampere,
-        electric_potential::volt,
-        electrical_resistance::kiloohm,
-        f32::{
-            Capacitance, ElectricCurrent, ElectricPotential, ElectricalResistance,
-        },
-    },
-    AFE4404,
 };
 
 use crate::optical::data_reading::get_sample_blocking;
@@ -69,21 +68,23 @@ where
     };
 
     // Starting values.
-    let mut best_resistors = ResistorConfiguration {
-        resistor1: parameters.resistors[0],
-        resistor2: parameters.resistors[0],
-    };
+    let mut best_resistors = ResistorConfiguration::<ThreeLedsMode>::new(
+        parameters.resistors[0],
+        parameters.resistors[0],
+    );
     // TODO: Estimate best capacitor starting value.
-    let best_capacitors = CapacitorConfiguration {
-        capacitor1: parameters.capacitors[7],
-        capacitor2: parameters.capacitors[7],
-    };
+    let best_capacitors = CapacitorConfiguration::<ThreeLedsMode>::new(
+        parameters.capacitors[7],
+        parameters.capacitors[7],
+    );
     let mut best_currents;
 
     frontend.set_tia_resistors(&best_resistors).unwrap();
     frontend.set_tia_capacitors(&best_capacitors).unwrap();
 
     // Gain calibration loop.
+    // Set the current to the maximum value.
+    // Set resistors to minimum value and increase them until the voltage threshold is reached.
     let voltage_threshold = parameters.voltage_max_value * 0.8;
     best_currents = LedCurrentConfiguration::<ThreeLedsMode>::new(
         parameters.current_max_value,
@@ -99,10 +100,10 @@ where
 
         // Select greater resistors in case of current saturation.
         if sample.led1() < &voltage_threshold {
-            best_resistors.resistor1 = *resistor;
+            *best_resistors.resistor1_mut() = *resistor;
         }
         if sample.led2() < &voltage_threshold || sample.led3() < &voltage_threshold {
-            best_resistors.resistor2 = *resistor;
+            *best_resistors.resistor2_mut() = *resistor;
         }
         if sample.led1() >= &voltage_threshold
             && sample.led2() >= &voltage_threshold
@@ -116,6 +117,7 @@ where
     }
 
     // Current calibration loop.
+    // Using bisection method, find the current that makes the photodiode voltage reach 80% of the maximum value.
     let mut lower_current_bound = [ElectricCurrent::new::<milliampere>(0.0); 3];
     let mut upper_current_bound = [parameters.current_max_value; 3];
     let mut mid_current_bound = [parameters.current_max_value / 2.0; 3];

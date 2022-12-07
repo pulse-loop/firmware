@@ -1,7 +1,7 @@
-use std::sync::{RwLock, Arc};
+use std::sync::{Arc, RwLock};
 
 use bluedroid::gatt_server::{Characteristic, Service};
-use bluedroid::utilities::{BleUuid, AttributePermissions, CharacteristicProperties};
+use bluedroid::utilities::{AttributePermissions, BleUuid, CharacteristicProperties};
 
 pub struct RawSensorDataServiceContainer {
     pub(crate) service: Arc<RwLock<Service>>,
@@ -24,9 +24,9 @@ impl RawSensorDataServiceContainer {
         .max_value_length(4)
         .build();
 
-        let led1_minus_ambient_reading_characteristic = Characteristic::new(BleUuid::from_uuid128_string(
-            "CF66D344-584D-4E67-AC30-17D28B099A30"
-        ))
+        let led1_minus_ambient_reading_characteristic = Characteristic::new(
+            BleUuid::from_uuid128_string("CF66D344-584D-4E67-AC30-17D28B099A30"),
+        )
         .name("LED1 - ambient reading")
         .show_name()
         .permissions(AttributePermissions::new().read())
@@ -35,7 +35,7 @@ impl RawSensorDataServiceContainer {
         .build();
 
         let led1_reading_characteristic = Characteristic::new(BleUuid::from_uuid128_string(
-            "05500B81-516D-4BD9-95BA-C0B87C911DDB"
+            "05500B81-516D-4BD9-95BA-C0B87C911DDB",
         ))
         .name("LED1 reading")
         .show_name()
@@ -45,7 +45,7 @@ impl RawSensorDataServiceContainer {
         .build();
 
         let led2_reading_characteristic = Characteristic::new(BleUuid::from_uuid128_string(
-            "A93B639D-8A8D-43EA-8A5A-8175D7C09E0B"
+            "A93B639D-8A8D-43EA-8A5A-8175D7C09E0B",
         ))
         .name("LED2 reading")
         .show_name()
@@ -55,7 +55,7 @@ impl RawSensorDataServiceContainer {
         .build();
 
         let led3_reading_characteristic = Characteristic::new(BleUuid::from_uuid128_string(
-            "C0A12246-79E4-4BD7-8A4F-B841D5590F70"
+            "C0A12246-79E4-4BD7-8A4F-B841D5590F70",
         ))
         .name("LED3 reading")
         .show_name()

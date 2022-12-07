@@ -1,7 +1,6 @@
 use std::sync::atomic::AtomicBool;
 
-use afe4404::{AFE4404, afe4404::ThreeLedsMode, high_level::value_reading::Readings};
-
+use afe4404::{device::AFE4404, modes::ThreeLedsMode, value_reading::Readings};
 
 pub static DATA_READY: AtomicBool = AtomicBool::new(false);
 

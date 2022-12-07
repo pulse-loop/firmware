@@ -30,23 +30,22 @@ pub struct BluetoothAPI {
 }
 
 impl BluetoothAPI {
-
     pub fn start(&self) {
         let profile = Profile::new(0x0001)
-        .name("Main profile")
-        .service(&self.pulse_loop.service)
-        .service(&self.raw_sensor_data.service)
-        .service(&self.optical_frontend_configuration.service)
-        .build();
+            .name("Main profile")
+            .service(&self.pulse_loop.service)
+            .service(&self.raw_sensor_data.service)
+            .service(&self.optical_frontend_configuration.service)
+            .build();
 
         GLOBAL_GATT_SERVER
-        .lock()
-        .unwrap()
-        .device_name("pulse.loop")
-        .appearance(bluedroid::utilities::Appearance::WristWornPulseOximeter)
-        .advertise_service(&self.pulse_loop.service)
-        .profile(profile)
-        .start();
+            .lock()
+            .unwrap()
+            .device_name("pulse.loop")
+            .appearance(bluedroid::utilities::Appearance::WristWornPulseOximeter)
+            .advertise_service(&self.pulse_loop.service)
+            .profile(profile)
+            .start();
     }
 
     pub fn initialise() -> Self {

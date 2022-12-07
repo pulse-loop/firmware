@@ -29,6 +29,7 @@ embedded-hal = { version = "1.0.0-alpha.9" }
 
 bluedroid = { version = "0.3.5" }
 afe4404 = { path = "../AFE4404" }
+uom = { version = "0.33.0" }
 
 # smart-leds = { version = "0.3.0" }
 # ws2812-esp32-rmt-driver = { git = "https://github.com/cat-in-136/ws2812-esp32-rmt-driver" }

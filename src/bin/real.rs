@@ -1,6 +1,5 @@
 use std::{thread, time::Duration};
 
-use embedded_hal::delay::DelayUs;
 use esp_idf_hal::{
     gpio::PinDriver,
     i2c::{config::Config, I2cDriver},
@@ -8,20 +7,21 @@ use esp_idf_hal::{
     prelude::*,
 };
 
+use uom::si::{
+    f32::{Frequency, Time},
+    frequency::megahertz,
+    time::microsecond,
+};
+
 use afe4404::{
-    afe4404::ThreeLedsMode,
-    high_level::{
+    device::AFE4404,
+    modes::ThreeLedsMode,
+    {
         clock::ClockConfiguration,
-        timing_window::{
+        measurement_window::{
             ActiveTiming, AmbientTiming, LedTiming, MeasurementWindowConfiguration, PowerDownTiming,
         },
     },
-    uom::si::{
-        f32::{Frequency, Time},
-        frequency::megahertz,
-        time::microsecond,
-    },
-    AFE4404,
 };
 
 // If using the `binstart` feature of `esp-idf-sys`, always keep this module imported.
@@ -32,10 +32,7 @@ mod bluetooth;
 #[path = "../optical/mod.rs"]
 mod optical;
 
-use optical::{
-    data_reading::{get_sample_blocking, DATA_READY},
-    dc_calibration::calibration_loop,
-};
+use optical::data_reading::{get_sample_blocking, DATA_READY};
 
 fn main() {
     // Temporary. Will disappear once ESP-IDF 4.4 is released, but for now it is necessary to call this function once,
@@ -65,16 +62,16 @@ fn main() {
     frontend.sw_reset().expect("Cannot reset the afe");
 
     frontend
-        .set_clock_source(&ClockConfiguration::Internal)
+        .set_clock_source(ClockConfiguration::Internal)
         .expect("Cannot set clock source");
 
     frontend
-        .set_timing_window(&MeasurementWindowConfiguration::<ThreeLedsMode>::new(
+        .set_measurement_window(&MeasurementWindowConfiguration::<ThreeLedsMode>::new(
             Time::new::<microsecond>(10_000.0),
             ActiveTiming::<ThreeLedsMode>::new(
                 LedTiming {
-                    led_st: Time::new::<microsecond>(200.5),
-                    led_end: Time::new::<microsecond>(300.25),
+                    lighting_st: Time::new::<microsecond>(200.5),
+                    lighting_end: Time::new::<microsecond>(300.25),
                     sample_st: Time::new::<microsecond>(225.5),
                     sample_end: Time::new::<microsecond>(300.25),
                     reset_st: Time::new::<microsecond>(634.75),
@@ -83,8 +80,8 @@ fn main() {
                     conv_end: Time::new::<microsecond>(901.5),
                 },
                 LedTiming {
-                    led_st: Time::new::<microsecond>(0.0),
-                    led_end: Time::new::<microsecond>(99.75),
+                    lighting_st: Time::new::<microsecond>(0.0),
+                    lighting_end: Time::new::<microsecond>(99.75),
                     sample_st: Time::new::<microsecond>(25.0),
                     sample_end: Time::new::<microsecond>(99.75),
                     reset_st: Time::new::<microsecond>(100.25),
@@ -93,8 +90,8 @@ fn main() {
                     conv_end: Time::new::<microsecond>(367.0),
                 },
                 LedTiming {
-                    led_st: Time::new::<microsecond>(100.25),
-                    led_end: Time::new::<microsecond>(200.0),
+                    lighting_st: Time::new::<microsecond>(100.25),
+                    lighting_end: Time::new::<microsecond>(200.0),
                     sample_st: Time::new::<microsecond>(125.25),
                     sample_end: Time::new::<microsecond>(200.0),
                     reset_st: Time::new::<microsecond>(367.5),
@@ -129,11 +126,6 @@ fn main() {
             })
             .unwrap();
     }
-
-    let mut delay = esp_idf_hal::delay::Ets;
-    delay.delay_ms(200).unwrap();
-
-    calibration_loop(&mut frontend);
 
     thread::spawn(|| loop {
         thread::sleep(Duration::from_millis(500));

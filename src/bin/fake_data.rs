@@ -32,17 +32,27 @@ fn main() {
     let ble_api = bluetooth::BluetoothAPI::initialise();
 
     // Fake data callbacks.
-    let dynamic_pd_start: std::sync::Arc<std::sync::RwLock<f32>> = std::sync::Arc::new(std::sync::RwLock::new(0.0));
+    let dynamic_pd_start: std::sync::Arc<std::sync::RwLock<f32>> =
+        std::sync::Arc::new(std::sync::RwLock::new(0.0));
     let dypd_clone = dynamic_pd_start.clone();
-    ble_api.optical_frontend_configuration.dynamic_power_down_start_characteristic.write().unwrap().on_read(move |_| {
-        log::info!("Dynamic power down start characteristic read.");
-        dynamic_pd_start.read().unwrap().to_le_bytes().to_vec()
-    }).on_write(move |value,  _| {
-        let mut data: [u8; 4] = [0; 4];
-        data.copy_from_slice(&value[..4]);
-        log::info!("Dynamic power down start characteristic written: {}", f32::from_le_bytes(data));
-        *dypd_clone.write().unwrap() = f32::from_le_bytes(data);
-    });
+    ble_api
+        .optical_frontend_configuration
+        .dynamic_power_down_start_characteristic
+        .write()
+        .unwrap()
+        .on_read(move |_| {
+            log::info!("Dynamic power down start characteristic read.");
+            dynamic_pd_start.read().unwrap().to_le_bytes().to_vec()
+        })
+        .on_write(move |value, _| {
+            let mut data: [u8; 4] = [0; 4];
+            data.copy_from_slice(&value[..4]);
+            log::info!(
+                "Dynamic power down start characteristic written: {}",
+                f32::from_le_bytes(data)
+            );
+            *dypd_clone.write().unwrap() = f32::from_le_bytes(data);
+        });
 
     ble_api.start();
 
@@ -55,7 +65,8 @@ fn main() {
             let milliseconds: f32 = (now
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
-                .as_millis() % 1_000_000_000) as f32;
+                .as_millis()
+                % 1_000_000_000) as f32;
             let seconds = milliseconds / 1000.0;
 
             // Sine wave

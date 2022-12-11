@@ -1,4 +1,8 @@
-use std::{thread, time::Duration};
+use std::{
+    sync::{Arc, Mutex},
+    thread,
+    time::Duration,
+};
 
 use esp_idf_hal::{
     gpio::PinDriver,
@@ -27,11 +31,14 @@ use afe4404::{
 // If using the `binstart` feature of `esp-idf-sys`, always keep this module imported.
 use esp_idf_sys::{self as _, esp_get_free_heap_size, esp_get_free_internal_heap_size};
 
+lazy_static::lazy_static! {
+    static ref FRONTEND: Arc<Mutex<Option<AFE4404<I2cDriver<'static>, ThreeLedsMode>>>> = Arc::new(Mutex::new(None));
+}
+
 #[path = "../bluetooth/mod.rs"]
 mod bluetooth;
 #[path = "../optical/mod.rs"]
 mod optical;
-
 use optical::data_reading::{get_sample_blocking, DATA_READY};
 
 fn main() {
@@ -56,16 +63,33 @@ fn main() {
 
     let mut interrupt_pin = PinDriver::input(peripherals.pins.gpio4).unwrap();
 
-    let mut frontend = AFE4404::with_three_leds(i2c, 0x58u8, Frequency::new::<megahertz>(4.0));
-    let ble_api = bluetooth::BluetoothAPI::initialise();
+    let frontend = AFE4404::with_three_leds(i2c, 0x58u8, Frequency::new::<megahertz>(4.0));
 
-    frontend.sw_reset().expect("Cannot reset the afe");
+    *FRONTEND.lock().unwrap() = Some(frontend);
 
-    frontend
+    let mut ble_api = bluetooth::BluetoothAPI::initialise();
+
+    FRONTEND
+        .lock()
+        .unwrap()
+        .as_mut()
+        .unwrap()
+        .sw_reset()
+        .expect("Cannot reset the afe");
+
+    FRONTEND
+        .lock()
+        .unwrap()
+        .as_mut()
+        .unwrap()
         .set_clock_source(ClockConfiguration::Internal)
         .expect("Cannot set clock source");
 
-    frontend
+    FRONTEND
+        .lock()
+        .unwrap()
+        .as_mut()
+        .unwrap()
         .set_measurement_window(&MeasurementWindowConfiguration::<ThreeLedsMode>::new(
             Time::new::<microsecond>(10_000.0),
             ActiveTiming::<ThreeLedsMode>::new(
@@ -139,9 +163,14 @@ fn main() {
 
     ble_api.start();
 
+    crate::optical::char_control::attach_optical_frontend_chars(
+        &FRONTEND,
+        &mut ble_api,
+    );
+
     loop {
         std::thread::sleep(std::time::Duration::from_millis(10));
-        let readings = get_sample_blocking(&mut frontend, 5);
+        let readings = get_sample_blocking(FRONTEND.lock().unwrap().as_mut().unwrap(), 5);
         match readings {
             Ok(readings) => {
                 ble_api

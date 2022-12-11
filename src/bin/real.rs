@@ -175,7 +175,7 @@ fn main() {
                     .unwrap()
                     .set_value(readings.led3().value.to_le_bytes());
             }
-            Err(e) => println!("Error: {:?}", e),
+            Err(e) => println!("Error: {e:?}"),
         }
     }
 }

@@ -4,8 +4,10 @@ use afe4404::{device::AFE4404, modes::ThreeLedsMode};
 use esp_idf_hal::i2c::I2cDriver;
 use log::info;
 use uom::si::{
+    capacitance::picofarad,
     electric_current::milliampere,
-    f32::{ElectricCurrent, Time},
+    electrical_resistance::ohm,
+    f32::{Capacitance, ElectricCurrent, ElectricalResistance, Time},
     time::microsecond,
 };
 
@@ -154,9 +156,141 @@ pub(crate) fn attach_optical_frontend_chars(
     );
 
     // LED2 chars.
+    attach_char!(
+        (ble_api
+            .optical_frontend_configuration
+            .led2_lighting_start_characteristic),
+        frontend,
+        set_led2_lighting_st,
+        get_led2_lighting_st,
+        Time,
+        microsecond
+    );
+    attach_char!(
+        (ble_api
+            .optical_frontend_configuration
+            .led2_lighting_end_characteristic),
+        frontend,
+        set_led2_lighting_end,
+        get_led2_lighting_end,
+        Time,
+        microsecond
+    );
+    attach_char!(
+        (ble_api
+            .optical_frontend_configuration
+            .led2_sample_start_characteristic),
+        frontend,
+        set_led2_sample_st,
+        get_led2_sample_st,
+        Time,
+        microsecond
+    );
+    attach_char!(
+        (ble_api
+            .optical_frontend_configuration
+            .led2_sample_end_characteristic),
+        frontend,
+        set_led2_sample_end,
+        get_led2_sample_end,
+        Time,
+        microsecond
+    );
+    attach_char!(
+        (ble_api
+            .optical_frontend_configuration
+            .led2_adc_reset_start_characteristic),
+        frontend,
+        set_led2_reset_st,
+        get_led2_reset_st,
+        Time,
+        microsecond
+    );
+    attach_char!(
+        (ble_api
+            .optical_frontend_configuration
+            .led2_adc_reset_end_characteristic),
+        frontend,
+        set_led2_reset_end,
+        get_led2_reset_end,
+        Time,
+        microsecond
+    );
+    attach_char!(
+        (ble_api
+            .optical_frontend_configuration
+            .led2_adc_conversion_start_characteristic),
+        frontend,
+        set_led2_conv_st,
+        get_led2_conv_st,
+        Time,
+        microsecond
+    );
+    attach_char!(
+        (ble_api
+            .optical_frontend_configuration
+            .led2_adc_conversion_end_characteristic),
+        frontend,
+        set_led2_conv_end,
+        get_led2_conv_end,
+        Time,
+        microsecond
+    );
+    attach_char!(
+        (ble_api
+            .optical_frontend_configuration
+            .led2_current_characteristic),
+        frontend,
+        set_led2_current,
+        get_led2_current,
+        ElectricCurrent,
+        milliampere
+    );
+
     // LED3 chars.
     // Ambient chars.
     // Dynamic power-down chars.
     // Window length char.
+
     // TIA chars.
+    attach_char!(
+        (ble_api
+            .optical_frontend_configuration
+            .tia_resistor_1_characteristic),
+        frontend,
+        set_tia_resistor1,
+        get_tia_resistor1,
+        ElectricalResistance,
+        ohm
+    );
+    attach_char!(
+        (ble_api
+            .optical_frontend_configuration
+            .tia_resistor_2_characteristic),
+        frontend,
+        set_tia_resistor2,
+        get_tia_resistor2,
+        ElectricalResistance,
+        ohm
+    );
+    attach_char!(
+        (ble_api
+            .optical_frontend_configuration
+            .tia_capacitor_1_characteristic),
+        frontend,
+        set_tia_capacitor1,
+        get_tia_capacitor1,
+        Capacitance,
+        picofarad
+    );
+    attach_char!(
+        (ble_api
+            .optical_frontend_configuration
+            .tia_capacitor_2_characteristic),
+        frontend,
+        set_tia_capacitor2,
+        get_tia_capacitor2,
+        Capacitance,
+        picofarad
+    );
 }

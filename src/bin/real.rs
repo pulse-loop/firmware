@@ -163,10 +163,7 @@ fn main() {
 
     ble_api.start();
 
-    crate::optical::char_control::attach_optical_frontend_chars(
-        &FRONTEND,
-        &mut ble_api,
-    );
+    crate::optical::char_control::attach_optical_frontend_chars(&FRONTEND, &mut ble_api);
 
     loop {
         std::thread::sleep(std::time::Duration::from_millis(10));

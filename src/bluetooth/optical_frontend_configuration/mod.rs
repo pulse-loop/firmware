@@ -120,7 +120,6 @@ impl OpticalFrontendConfigurationServiceContainer {
                 .properties(CharacteristicProperties::new().read().write())
                 .on_read(|_| {
                     warn!("Read not implemented.");
-
                     vec![0x00]
                 })
                 .max_value_length(4)

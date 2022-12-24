@@ -166,7 +166,7 @@ fn main() {
     crate::optical::char_control::attach_optical_frontend_chars(&FRONTEND, &mut ble_api);
 
     loop {
-        std::thread::sleep(std::time::Duration::from_millis(10));
+        std::thread::sleep(std::time::Duration::from_millis(100));
         let readings = get_sample_blocking(FRONTEND.lock().unwrap().as_mut().unwrap(), 5);
         match readings {
             Ok(readings) => {
@@ -201,7 +201,7 @@ fn main() {
                     .unwrap()
                     .set_value(readings.led3().value.to_le_bytes());
             }
-            Err(e) => println!("Error: {e:?}"),
+            Err(e) => log::info!("Error: {e:?}"),
         }
     }
 }

@@ -11,8 +11,11 @@ use uom::si::{
     time::microsecond,
 };
 
-macro_rules! attach_char {
+macro_rules! attach_char {    
     ($ble_characteristic:expr, $frontend:ident, $setter:ident, $getter:ident, $quantity:ident, $unit:ident) => {
+
+        info!("Attaching {}.", stringify!($ble_characteristic));
+
         $ble_characteristic
             .write()
             .unwrap()
@@ -476,7 +479,7 @@ pub(crate) fn attach_optical_frontend_chars(
     attach_char!(
         (ble_api
             .optical_frontend_configuration
-            .tia_capacitor_1_characteristic),
+            .tia_resistor_1_characteristic),
         frontend,
         set_tia_resistor1,
         get_tia_resistor1,
@@ -486,7 +489,7 @@ pub(crate) fn attach_optical_frontend_chars(
     attach_char!(
         (ble_api
             .optical_frontend_configuration
-            .tia_capacitor_2_characteristic),
+            .tia_resistor_2_characteristic),
         frontend,
         set_tia_resistor2,
         get_tia_resistor2,

@@ -27,7 +27,7 @@ esp-idf-svc = { version = "0.43.3" }
 embedded-svc = { version = "0.22.3" }
 embedded-hal = { version = "1.0.0-alpha.9" }
 
-bluedroid = { version = "0.3.6" }
+bluedroid = { path = "../bluedroid" }
 afe4404 = { path = "../AFE4404" }
 uom = { version = "0.33.0" }
 

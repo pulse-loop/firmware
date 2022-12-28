@@ -201,7 +201,7 @@ fn main() {
                     .unwrap()
                     .set_value(readings.led3().value.to_le_bytes());
             }
-            Err(e) => log::info!("Error: {e:?}"),
+            Err(e) => log::error!("Error: {e:?}"),
         }
     }
 }

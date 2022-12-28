@@ -83,7 +83,7 @@ Analog frontend parameter configuration for testing and algorithm development.
 
 | Characteristic               | Access     | Type  | UUID                                   | Description                                      | FW  | SW |
 |------------------------------|------------|-------|----------------------------------------|--------------------------------------------------|-----|----|
-| ADC averages                 | Read/Write | `u8`  | `7ADE19EA-2202-48E1-AFFB-4D8504024C37` | The number of averages performed by the ADC [-]. | No  | No |
+| ADC averages                 | Read/Write | `u8`  | `7ADE19EA-2202-48E1-AFFB-4D8504024C37` | The number of averages performed by the ADC [-]. | Yes | No |
 | Ambient ADC conversion end   | Read/Write | `f32` | `9B6AF28C-9558-49ED-844B-06E7B8B0E6C3` | The end time of ambient ADC conversion [µs].     | Yes | No |
 | Ambient ADC conversion start | Read/Write | `f32` | `66DC5EDA-B89E-43D5-B940-13E29A468C77` | The start time of ambient ADC conversion [µs].   | Yes | No |
 | Ambient ADC reset end        | Read/Write | `f32` | `E9AB33D4-DA9C-4424-851A-16CF66AA08C0` | The end time of ambient ADC reset [µs].          | Yes | No |
@@ -91,7 +91,7 @@ Analog frontend parameter configuration for testing and algorithm development.
 | Ambient offset current       | Read/Write | `f32` | `4ED69FED-8261-4931-A8A4-CA67B406A73A` | The offset current of ambient [µA].              | Yes | No |
 | Ambient sample end           | Read/Write | `f32` | `83C29A09-B658-4316-A1FD-D8AD97C02F80` | The end time of ambient sample [µs].             | Yes | No |
 | Ambient sample start         | Read/Write | `f32` | `C35EBCC5-BCA4-4716-90E3-37B94D9AD6FF` | The start time of ambient sample [µs].           | Yes | No |
-| Decimation factor            | Read/Write | `u8`  | `4D5A0E9C-0164-4D65-8F2D-86741B820EEF` | The number of data samples to be averaged [-].   | No  | No |
+| Decimation factor            | Read/Write | `u8`  | `4D5A0E9C-0164-4D65-8F2D-86741B820EEF` | The number of data samples to be averaged [-].   | Yes | No |
 | Dynamic power-down end       | Read/Write | `f32` | `BC276997-792F-4391-9371-78F1C1038DB7` | The end time of dynamic power-down [µs].         | Yes | No |
 | Dynamic power-down start     | Read/Write | `f32` | `0B68331C-B628-4D81-BBDB-47B79EA2430E` | The start time of dynamic power-down [µs].       | Yes | No |
 | LED1 ADC conversion end      | Read/Write | `f32` | `C455472B-4231-4EF7-A3BD-A1AE2676F9D2` | The end time of LED1 ADC conversion [µs].        | Yes | No |

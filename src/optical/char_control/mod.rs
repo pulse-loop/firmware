@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use afe4404::{device::AFE4404, modes::ThreeLedsMode};
 use esp_idf_hal::i2c::I2cDriver;
-use log::{info, error};
+use log::{error, info};
 use uom::si::{
     capacitance::picofarad,
     electric_current::{microampere, milliampere},
@@ -11,7 +11,7 @@ use uom::si::{
     time::microsecond,
 };
 
-macro_rules! attach_char {    
+macro_rules! attach_char {
     ($ble_characteristic:expr, $frontend:ident, $setter:ident, $getter:ident, $quantity:ident, $unit:ident) => {
         info!("Attaching {}.", stringify!($ble_characteristic));
 
@@ -103,12 +103,13 @@ pub(crate) fn attach_optical_frontend_chars(
     ble_api: &mut crate::bluetooth::BluetoothAPI,
 ) {
     attach_char!(
-        (ble_api.optical_frontend_configuration.adc_averages_characteristic),
+        (ble_api
+            .optical_frontend_configuration
+            .adc_averages_characteristic),
         frontend,
         set_averaging,
         get_averaging
     );
-
     attach_char!(
         (ble_api
             .optical_frontend_configuration
@@ -178,6 +179,14 @@ pub(crate) fn attach_optical_frontend_chars(
         get_offset_amb_current,
         ElectricCurrent,
         microampere
+    );
+    attach_char!(
+        (ble_api
+            .optical_frontend_configuration
+            .decimation_factor_characteristic),
+        frontend,
+        set_decimation,
+        get_decimation
     );
     attach_char!(
         (ble_api

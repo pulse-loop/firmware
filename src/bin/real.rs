@@ -12,13 +12,16 @@ use esp_idf_hal::{
 };
 
 use uom::si::{
-    f32::{Frequency, Time},
+    electric_current::milliampere,
+    electric_potential::volt,
+    f32::{ElectricCurrent, ElectricPotential, Frequency, Time},
     frequency::megahertz,
     time::microsecond,
 };
 
 use afe4404::{
     device::AFE4404,
+    led_current::LedCurrentConfiguration,
     modes::ThreeLedsMode,
     {
         clock::ClockConfiguration,
@@ -139,6 +142,18 @@ fn main() {
         ))
         .expect("Cannot set timing window");
 
+    FRONTEND
+        .lock()
+        .unwrap()
+        .as_mut()
+        .unwrap()
+        .set_leds_current(&LedCurrentConfiguration::<ThreeLedsMode>::new(
+            ElectricCurrent::new::<milliampere>(10.0),
+            ElectricCurrent::new::<milliampere>(10.0),
+            ElectricCurrent::new::<milliampere>(10.0),
+        ))
+        .expect("Cannot set LEDs current");
+
     interrupt_pin
         .set_interrupt_type(esp_idf_hal::gpio::InterruptType::PosEdge)
         .unwrap();
@@ -165,43 +180,63 @@ fn main() {
 
     crate::optical::char_control::attach_optical_frontend_chars(&FRONTEND, &mut ble_api);
 
+    let mut time = std::time::Instant::now();
+    let mut averaged_readings: [ElectricPotential; 5] = [ElectricPotential::new::<volt>(0.0); 5];
+    let mut n = 0;
+
     loop {
-        std::thread::sleep(std::time::Duration::from_millis(100));
         let readings = get_sample_blocking(FRONTEND.lock().unwrap().as_mut().unwrap(), 5);
         match readings {
             Ok(readings) => {
-                ble_api
-                    .raw_sensor_data
-                    .ambient_reading_characteristic
-                    .write()
-                    .unwrap()
-                    .set_value(readings.ambient().value.to_le_bytes());
-                ble_api
-                    .raw_sensor_data
-                    .led1_minus_ambient_reading_characteristic
-                    .write()
-                    .unwrap()
-                    .set_value(readings.led1_minus_ambient().value.to_le_bytes());
-                ble_api
-                    .raw_sensor_data
-                    .led1_reading_characteristic
-                    .write()
-                    .unwrap()
-                    .set_value(readings.led1().value.to_le_bytes());
-                ble_api
-                    .raw_sensor_data
-                    .led2_reading_characteristic
-                    .write()
-                    .unwrap()
-                    .set_value(readings.led2().value.to_le_bytes());
-                ble_api
-                    .raw_sensor_data
-                    .led3_reading_characteristic
-                    .write()
-                    .unwrap()
-                    .set_value(readings.led3().value.to_le_bytes());
+                n += 1;
+                averaged_readings[0] += *readings.ambient();
+                averaged_readings[1] += *readings.led1_minus_ambient();
+                averaged_readings[2] += *readings.led1();
+                averaged_readings[3] += *readings.led2();
+                averaged_readings[4] += *readings.led3();
             }
-            Err(e) => log::error!("Error: {e:?}"),
+            Err(e) => {
+                log::error!("Error reading from sensor: {:?}", e);
+            }
+        }
+
+        if time.elapsed().as_millis() > 50 {
+            log::info!("Sending {} averaged readings", n);
+
+            ble_api
+                .raw_sensor_data
+                .ambient_reading_characteristic
+                .write()
+                .unwrap()
+                .set_value((averaged_readings[0] / (n as f32)).value.to_le_bytes());
+            ble_api
+                .raw_sensor_data
+                .led1_minus_ambient_reading_characteristic
+                .write()
+                .unwrap()
+                .set_value((averaged_readings[1] / (n as f32)).value.to_le_bytes());
+            ble_api
+                .raw_sensor_data
+                .led1_reading_characteristic
+                .write()
+                .unwrap()
+                .set_value((averaged_readings[2] / (n as f32)).value.to_le_bytes());
+            ble_api
+                .raw_sensor_data
+                .led2_reading_characteristic
+                .write()
+                .unwrap()
+                .set_value((averaged_readings[3] / (n as f32)).value.to_le_bytes());
+            ble_api
+                .raw_sensor_data
+                .led3_reading_characteristic
+                .write()
+                .unwrap()
+                .set_value((averaged_readings[4] / (n as f32)).value.to_le_bytes());
+
+            averaged_readings = [ElectricPotential::new::<volt>(0.0); 5];
+            n = 0;
+            time = std::time::Instant::now();
         }
     }
 }

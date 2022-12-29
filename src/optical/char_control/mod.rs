@@ -4,11 +4,11 @@ use afe4404::{device::AFE4404, modes::ThreeLedsMode};
 use esp_idf_hal::i2c::I2cDriver;
 use log::{error, info};
 use uom::si::{
-    capacitance::picofarad,
-    electric_current::{microampere, milliampere},
+    capacitance::farad,
+    electric_current::ampere,
     electrical_resistance::ohm,
     f32::{Capacitance, ElectricCurrent, ElectricalResistance, Time},
-    time::microsecond,
+    time::second,
 };
 
 macro_rules! attach_char {
@@ -118,7 +118,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_ambient_conv_end,
         get_ambient_conv_end,
         Time,
-        microsecond
+        second
     );
     attach_char!(
         (ble_api
@@ -128,7 +128,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_ambient_conv_st,
         get_ambient_conv_st,
         Time,
-        microsecond
+        second
     );
     attach_char!(
         (ble_api
@@ -138,7 +138,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_ambient_reset_end,
         get_ambient_reset_end,
         Time,
-        microsecond
+        second
     );
     attach_char!(
         (ble_api
@@ -148,7 +148,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_ambient_reset_st,
         get_ambient_reset_st,
         Time,
-        microsecond
+        second
     );
     attach_char!(
         (ble_api
@@ -158,7 +158,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_ambient_sample_end,
         get_ambient_sample_end,
         Time,
-        microsecond
+        second
     );
     attach_char!(
         (ble_api
@@ -168,7 +168,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_ambient_sample_st,
         get_ambient_sample_st,
         Time,
-        microsecond
+        second
     );
     attach_char!(
         (ble_api
@@ -178,7 +178,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_offset_amb_current,
         get_offset_amb_current,
         ElectricCurrent,
-        microampere
+        ampere
     );
     attach_char!(
         (ble_api
@@ -196,7 +196,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_dynamic_power_down_end,
         get_dynamic_power_down_end,
         Time,
-        microsecond
+        second
     );
     attach_char!(
         (ble_api
@@ -206,7 +206,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_dynamic_power_down_st,
         get_dynamic_power_down_st,
         Time,
-        microsecond
+        second
     );
     attach_char!(
         (ble_api
@@ -216,7 +216,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_led1_conv_end,
         get_led1_conv_end,
         Time,
-        microsecond
+        second
     );
     attach_char!(
         (ble_api
@@ -226,7 +226,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_led1_conv_st,
         get_led1_conv_st,
         Time,
-        microsecond
+        second
     );
     attach_char!(
         (ble_api
@@ -236,7 +236,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_led1_reset_end,
         get_led1_reset_end,
         Time,
-        microsecond
+        second
     );
     attach_char!(
         (ble_api
@@ -246,7 +246,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_led1_reset_st,
         get_led1_reset_st,
         Time,
-        microsecond
+        second
     );
     attach_char!(
         (ble_api
@@ -256,7 +256,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_led1_lighting_end,
         get_led1_lighting_end,
         Time,
-        microsecond
+        second
     );
     attach_char!(
         (ble_api
@@ -266,7 +266,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_led1_lighting_st,
         get_led1_lighting_st,
         Time,
-        microsecond
+        second
     );
     attach_char!(
         (ble_api
@@ -276,7 +276,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_led1_current,
         get_led1_current,
         ElectricCurrent,
-        milliampere
+        ampere
     );
     attach_char!(
         (ble_api
@@ -286,7 +286,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_led1_sample_end,
         get_led1_sample_end,
         Time,
-        microsecond
+        second
     );
     attach_char!(
         (ble_api
@@ -296,7 +296,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_led1_sample_st,
         get_led1_sample_st,
         Time,
-        microsecond
+        second
     );
     attach_char!(
         (ble_api
@@ -306,7 +306,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_offset_led1_current,
         get_offset_led1_current,
         ElectricCurrent,
-        microampere
+        ampere
     );
     attach_char!(
         (ble_api
@@ -316,7 +316,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_led2_conv_end,
         get_led2_conv_end,
         Time,
-        microsecond
+        second
     );
     attach_char!(
         (ble_api
@@ -326,7 +326,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_led2_conv_st,
         get_led2_conv_st,
         Time,
-        microsecond
+        second
     );
     attach_char!(
         (ble_api
@@ -336,7 +336,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_led2_reset_end,
         get_led2_reset_end,
         Time,
-        microsecond
+        second
     );
     attach_char!(
         (ble_api
@@ -346,7 +346,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_led2_reset_st,
         get_led2_reset_st,
         Time,
-        microsecond
+        second
     );
     attach_char!(
         (ble_api
@@ -356,7 +356,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_led2_lighting_end,
         get_led2_lighting_end,
         Time,
-        microsecond
+        second
     );
     attach_char!(
         (ble_api
@@ -366,7 +366,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_led2_lighting_st,
         get_led2_lighting_st,
         Time,
-        microsecond
+        second
     );
     attach_char!(
         (ble_api
@@ -376,7 +376,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_led2_current,
         get_led2_current,
         ElectricCurrent,
-        milliampere
+        ampere
     );
     attach_char!(
         (ble_api
@@ -386,7 +386,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_led2_sample_end,
         get_led2_sample_end,
         Time,
-        microsecond
+        second
     );
     attach_char!(
         (ble_api
@@ -396,7 +396,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_led2_sample_st,
         get_led2_sample_st,
         Time,
-        microsecond
+        second
     );
     attach_char!(
         (ble_api
@@ -406,7 +406,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_offset_led2_current,
         get_offset_led2_current,
         ElectricCurrent,
-        microampere
+        ampere
     );
     attach_char!(
         (ble_api
@@ -416,7 +416,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_led3_conv_end,
         get_led3_conv_end,
         Time,
-        microsecond
+        second
     );
     attach_char!(
         (ble_api
@@ -426,7 +426,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_led3_conv_st,
         get_led3_conv_st,
         Time,
-        microsecond
+        second
     );
     attach_char!(
         (ble_api
@@ -436,7 +436,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_led3_reset_end,
         get_led3_reset_end,
         Time,
-        microsecond
+        second
     );
     attach_char!(
         (ble_api
@@ -446,7 +446,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_led3_reset_st,
         get_led3_reset_st,
         Time,
-        microsecond
+        second
     );
     attach_char!(
         (ble_api
@@ -456,7 +456,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_led3_lighting_end,
         get_led3_lighting_end,
         Time,
-        microsecond
+        second
     );
     attach_char!(
         (ble_api
@@ -466,7 +466,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_led3_lighting_st,
         get_led3_lighting_st,
         Time,
-        microsecond
+        second
     );
     attach_char!(
         (ble_api
@@ -476,7 +476,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_led3_current,
         get_led3_current,
         ElectricCurrent,
-        milliampere
+        ampere
     );
     attach_char!(
         (ble_api
@@ -486,7 +486,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_led3_sample_end,
         get_led3_sample_end,
         Time,
-        microsecond
+        second
     );
     attach_char!(
         (ble_api
@@ -496,7 +496,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_led3_sample_st,
         get_led3_sample_st,
         Time,
-        microsecond
+        second
     );
     attach_char!(
         (ble_api
@@ -506,7 +506,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_offset_led3_current,
         get_offset_led3_current,
         ElectricCurrent,
-        microampere
+        ampere
     );
     attach_char!(
         (ble_api
@@ -516,7 +516,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_tia_capacitor1,
         get_tia_capacitor1,
         Capacitance,
-        picofarad
+        farad
     );
     attach_char!(
         (ble_api
@@ -526,7 +526,7 @@ pub(crate) fn attach_optical_frontend_chars(
         set_tia_capacitor2,
         get_tia_capacitor2,
         Capacitance,
-        picofarad
+        farad
     );
     attach_char!(
         (ble_api
@@ -556,6 +556,6 @@ pub(crate) fn attach_optical_frontend_chars(
         set_window_period,
         get_window_period,
         Time,
-        microsecond
+        second
     );
 }

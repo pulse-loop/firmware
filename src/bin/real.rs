@@ -12,16 +12,14 @@ use esp_idf_hal::{
 };
 
 use uom::si::{
-    electric_current::milliampere,
     electric_potential::volt,
-    f32::{ElectricCurrent, ElectricPotential, Frequency, Time},
+    f32::{ElectricPotential, Frequency, Time},
     frequency::megahertz,
     time::microsecond,
 };
 
 use afe4404::{
     device::AFE4404,
-    led_current::LedCurrentConfiguration,
     modes::ThreeLedsMode,
     {
         clock::ClockConfiguration,
@@ -142,18 +140,6 @@ fn main() {
         ))
         .expect("Cannot set timing window");
 
-    FRONTEND
-        .lock()
-        .unwrap()
-        .as_mut()
-        .unwrap()
-        .set_leds_current(&LedCurrentConfiguration::<ThreeLedsMode>::new(
-            ElectricCurrent::new::<milliampere>(10.0),
-            ElectricCurrent::new::<milliampere>(10.0),
-            ElectricCurrent::new::<milliampere>(10.0),
-        ))
-        .expect("Cannot set LEDs current");
-
     interrupt_pin
         .set_interrupt_type(esp_idf_hal::gpio::InterruptType::PosEdge)
         .unwrap();
@@ -167,7 +153,7 @@ fn main() {
     }
 
     thread::spawn(|| loop {
-        thread::sleep(Duration::from_millis(500));
+        thread::sleep(Duration::from_millis(1000));
 
         unsafe {
             let x = esp_get_free_heap_size();
@@ -201,8 +187,6 @@ fn main() {
         }
 
         if time.elapsed().as_millis() > 50 {
-            log::info!("Sending {} averaged readings", n);
-
             ble_api
                 .raw_sensor_data
                 .ambient_reading_characteristic

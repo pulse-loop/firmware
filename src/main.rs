@@ -38,7 +38,6 @@ lazy_static::lazy_static! {
 
 mod bluetooth;
 mod optical;
-use optical::data_reading::{get_sample, DATA_READY};
 
 fn main() {
     // Temporary. Will disappear once ESP-IDF 4.4 is released, but for now it is necessary to call this function once,
@@ -145,7 +144,7 @@ fn main() {
     unsafe {
         interrupt_pin
             .subscribe(|| {
-                DATA_READY.store(true, std::sync::atomic::Ordering::Relaxed);
+                optical::data_reading::DATA_READY.store(true, std::sync::atomic::Ordering::Relaxed);
             })
             .unwrap();
     }
@@ -170,7 +169,6 @@ fn main() {
     let averaged_readings: Arc<Mutex<[ElectricPotential; 5]>> =
         Arc::new(Mutex::new([ElectricPotential::new::<volt>(0.0); 5]));
     let n = Arc::new(Mutex::new(0));
-
 
     let ble_api_for_notify = ble_api;
     let averaged_readings_for_notify = averaged_readings.clone();
@@ -231,10 +229,11 @@ fn main() {
         let averaged_readings_for_read = averaged_readings.clone();
         let n_for_read = n.clone();
 
-        get_sample(
+        optical::data_reading::get_sample(
             FRONTEND.lock().unwrap().as_mut().unwrap(),
             move |readings| {
-                if let (Ok(mut n), Ok(mut averaged_readings)) = (n_for_read.lock(), averaged_readings_for_read.lock())
+                if let (Ok(mut n), Ok(mut averaged_readings)) =
+                    (n_for_read.lock(), averaged_readings_for_read.lock())
                 {
                     *n += 1;
                     averaged_readings[0] += *readings.ambient();

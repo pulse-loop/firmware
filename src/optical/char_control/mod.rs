@@ -2,7 +2,6 @@ use std::sync::{Arc, Mutex};
 
 use afe4404::{device::AFE4404, modes::ThreeLedsMode};
 use esp_idf_hal::i2c::I2cDriver;
-use log::{error, info};
 use uom::si::{
     capacitance::farad,
     electric_current::ampere,
@@ -13,7 +12,7 @@ use uom::si::{
 
 macro_rules! attach_char {
     ($ble_characteristic:expr, $frontend:ident, $setter:ident, $getter:ident, $quantity:ident, $unit:ident) => {
-        info!("Attaching {}.", stringify!($ble_characteristic));
+        log::info!("Attaching {}.", stringify!($ble_characteristic));
 
         $ble_characteristic
             .write()
@@ -23,7 +22,7 @@ macro_rules! attach_char {
                 slice.copy_from_slice(&value[..4]);
                 let value = f32::from_le_bytes(slice);
 
-                info!("Setting {} to {}", stringify!($ble_characteristic), value);
+                log::info!("Setting {} to {}", stringify!($ble_characteristic), value);
 
                 let result = $frontend
                     .lock()
@@ -34,10 +33,10 @@ macro_rules! attach_char {
 
                 match result {
                     Ok(result) => {
-                        info!("{} set to {:?}", stringify!($ble_characteristic), result);
+                        log::info!("{} set to {:?}", stringify!($ble_characteristic), result);
                     }
                     Err(e) => {
-                        error!("Error setting {}: {:?}", stringify!($ble_characteristic), e);
+                        log::error!("Error setting {}: {:?}", stringify!($ble_characteristic), e);
                     }
                 }
             });
@@ -47,11 +46,11 @@ macro_rules! attach_char {
 
             match result {
                 Ok(result) => {
-                    info!("{} is {:?}", stringify!($ble_characteristic), result);
+                    log::info!("{} is {:?}", stringify!($ble_characteristic), result);
                     result.value.to_le_bytes().to_vec()
                 }
                 Err(e) => {
-                    error!("Error getting {}: {:?}", stringify!($ble_characteristic), e);
+                    log::error!("Error getting {}: {:?}", stringify!($ble_characteristic), e);
                     vec![]
                 }
             }
@@ -59,7 +58,7 @@ macro_rules! attach_char {
     };
 
     ($ble_characteristic:expr, $frontend:ident, $setter:ident, $getter:ident) => {
-        info!("Attaching {}.", stringify!($ble_characteristic));
+        log::info!("Attaching {}.", stringify!($ble_characteristic));
 
         $ble_characteristic
             .write()
@@ -67,16 +66,16 @@ macro_rules! attach_char {
             .on_write(move |value, _| {
                 let value = value[0];
 
-                info!("Setting {} to {}", stringify!($ble_characteristic), value);
+                log::info!("Setting {} to {}", stringify!($ble_characteristic), value);
 
                 let result = $frontend.lock().unwrap().as_mut().unwrap().$setter(value);
 
                 match result {
                     Ok(result) => {
-                        info!("{} set to {:?}", stringify!($ble_characteristic), result);
+                        log::info!("{} set to {:?}", stringify!($ble_characteristic), result);
                     }
                     Err(e) => {
-                        error!("Error setting {}: {:?}", stringify!($ble_characteristic), e);
+                        log::error!("Error setting {}: {:?}", stringify!($ble_characteristic), e);
                     }
                 }
             });
@@ -86,11 +85,11 @@ macro_rules! attach_char {
 
             match result {
                 Ok(result) => {
-                    info!("{} is {:?}", stringify!($ble_characteristic), result);
+                    log::info!("{} is {:?}", stringify!($ble_characteristic), result);
                     vec![result]
                 }
                 Err(e) => {
-                    error!("Error getting {}: {:?}", stringify!($ble_characteristic), e);
+                    log::error!("Error getting {}: {:?}", stringify!($ble_characteristic), e);
                     vec![]
                 }
             }

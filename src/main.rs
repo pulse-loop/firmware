@@ -164,76 +164,14 @@ fn main() {
     let averaged_readings_for_notify = averaged_readings.clone();
     let n_for_notify = n.clone();
     thread::spawn(move || {
-        let mut time = std::time::Instant::now();
-        loop {
-            thread::sleep(Duration::from_millis(10));
-
-            if time.elapsed().as_millis() > 50 && *n_for_notify.lock().unwrap() > 0 {
-                if let (Ok(ble_api), Ok(mut n), Ok(mut averaged_readings)) = (
-                    ble_api_for_notify.write(),
-                    n_for_notify.lock(),
-                    averaged_readings_for_notify.lock(),
-                ) {
-                    ble_api
-                        .raw_sensor_data
-                        .ambient_reading_characteristic
-                        .write()
-                        .unwrap()
-                        .set_value((averaged_readings[0] / (*n as f32)).value.to_le_bytes());
-                    ble_api
-                        .raw_sensor_data
-                        .led1_minus_ambient_reading_characteristic
-                        .write()
-                        .unwrap()
-                        .set_value((averaged_readings[1] / (*n as f32)).value.to_le_bytes());
-                    ble_api
-                        .raw_sensor_data
-                        .led1_reading_characteristic
-                        .write()
-                        .unwrap()
-                        .set_value((averaged_readings[2] / (*n as f32)).value.to_le_bytes());
-                    ble_api
-                        .raw_sensor_data
-                        .led2_reading_characteristic
-                        .write()
-                        .unwrap()
-                        .set_value((averaged_readings[3] / (*n as f32)).value.to_le_bytes());
-                    ble_api
-                        .raw_sensor_data
-                        .led3_reading_characteristic
-                        .write()
-                        .unwrap()
-                        .set_value((averaged_readings[4] / (*n as f32)).value.to_le_bytes());
-
-                    *averaged_readings = [ElectricPotential::new::<volt>(0.0); 5];
-                    *n = 0;
-                    time = std::time::Instant::now();
-                }
-            }
-        }
+        optical::data_sending::notify_with_averaged_readings_loop(
+            ble_api_for_notify,
+            averaged_readings_for_notify,
+            n_for_notify,
+        )
     });
 
-    thread::spawn(move || loop {
-        thread::sleep(Duration::from_millis(1));
-
-        let averaged_readings_for_read = averaged_readings.clone();
-        let n_for_read = n.clone();
-        optical::data_reading::get_sample(
-            FRONTEND.lock().unwrap().as_mut().unwrap(),
-            move |readings| {
-                if let (Ok(mut n), Ok(mut averaged_readings)) =
-                    (n_for_read.lock(), averaged_readings_for_read.lock())
-                {
-                    *n += 1;
-                    averaged_readings[0] += *readings.ambient();
-                    averaged_readings[1] += *readings.led1_minus_ambient();
-                    averaged_readings[2] += *readings.led1();
-                    averaged_readings[3] += *readings.led2();
-                    averaged_readings[4] += *readings.led3();
-                }
-            },
-        );
-    });
+    thread::spawn(move || optical::data_reading::get_averaged_readings_loop(averaged_readings, n));
 
     loop {
         thread::sleep(Duration::from_millis(1000));

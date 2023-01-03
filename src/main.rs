@@ -149,16 +149,6 @@ fn main() {
             .unwrap();
     }
 
-    thread::spawn(|| loop {
-        thread::sleep(Duration::from_millis(1000));
-
-        unsafe {
-            let x = esp_get_free_heap_size();
-            let y = esp_get_free_internal_heap_size();
-            log::info!("Free heap: {} bytes, free internal heap: {} bytes", x, y);
-        }
-    });
-
     ble_api.read().unwrap().start();
 
     crate::optical::char_control::attach_optical_frontend_chars(
@@ -244,4 +234,14 @@ fn main() {
             },
         );
     });
+
+    loop {
+        thread::sleep(Duration::from_millis(1000));
+
+        unsafe {
+            let x = esp_get_free_heap_size();
+            let y = esp_get_free_internal_heap_size();
+            log::info!("Free heap: {} bytes, free internal heap: {} bytes", x, y);
+        }
+    }
 }

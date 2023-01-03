@@ -36,9 +36,7 @@ lazy_static::lazy_static! {
     static ref FRONTEND: Arc<Mutex<Option<AFE4404<I2cDriver<'static>, ThreeLedsMode>>>> = Arc::new(Mutex::new(None));
 }
 
-#[path = "../bluetooth/mod.rs"]
 mod bluetooth;
-#[path = "../optical/mod.rs"]
 mod optical;
 use optical::data_reading::{get_sample, DATA_READY};
 

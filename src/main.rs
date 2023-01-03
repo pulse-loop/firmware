@@ -57,7 +57,7 @@ fn main() {
         peripherals.pins.gpio2,
         &config,
     )
-    .expect("Failed to initialize I2C bus.");
+    .expect("Failed to initialise I2C bus.");
 
     let mut interrupt_pin = PinDriver::input(peripherals.pins.gpio4).unwrap();
 
@@ -73,7 +73,7 @@ fn main() {
         .as_mut()
         .unwrap()
         .sw_reset()
-        .expect("Cannot reset the afe");
+        .expect("Cannot reset the afe.");
 
     FRONTEND
         .lock()
@@ -81,7 +81,7 @@ fn main() {
         .as_mut()
         .unwrap()
         .set_clock_source(ClockConfiguration::Internal)
-        .expect("Cannot set clock source");
+        .expect("Cannot set clock source.");
 
     FRONTEND
         .lock()
@@ -135,7 +135,7 @@ fn main() {
                 power_down_end: Time::new::<microsecond>(9799.75),
             },
         ))
-        .expect("Cannot set timing window");
+        .expect("Cannot set timing window.");
 
     interrupt_pin
         .set_interrupt_type(esp_idf_hal::gpio::InterruptType::PosEdge)
@@ -223,12 +223,11 @@ fn main() {
         }
     });
 
-    loop {
+    thread::spawn(move || loop {
         thread::sleep(Duration::from_millis(1));
 
         let averaged_readings_for_read = averaged_readings.clone();
         let n_for_read = n.clone();
-
         optical::data_reading::get_sample(
             FRONTEND.lock().unwrap().as_mut().unwrap(),
             move |readings| {
@@ -244,5 +243,5 @@ fn main() {
                 }
             },
         );
-    }
+    });
 }

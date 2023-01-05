@@ -45,22 +45,17 @@ fn main() {
 
     optical::initialise(i2c, &mut interrupt_pin, ble_api.clone());
 
-    let averaged_readings: Arc<Mutex<[ElectricPotential; 5]>> =
+    let latest_readings: Arc<Mutex<[ElectricPotential; 5]>> =
         Arc::new(Mutex::new([ElectricPotential::new::<volt>(0.0); 5]));
-    let n = Arc::new(Mutex::new(0));
 
     let ble_api_for_notify = ble_api;
-    let averaged_readings_for_notify = averaged_readings.clone();
-    let n_for_notify = n.clone();
+    let latest_readings_for_notify = latest_readings.clone();
+
     thread::spawn(move || {
-        optical::data_sending::notify_with_averaged_readings_loop(
-            ble_api_for_notify,
-            averaged_readings_for_notify,
-            n_for_notify,
-        )
+        optical::data_sending::notify_task(ble_api_for_notify, latest_readings_for_notify)
     });
 
-    thread::spawn(move || optical::data_reading::get_averaged_readings_loop(averaged_readings, n));
+    thread::spawn(move || optical::data_reading::reading_task(latest_readings));
 
     loop {
         thread::sleep(Duration::from_millis(1000));

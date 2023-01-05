@@ -45,7 +45,7 @@ pub fn get_averaged_readings_loop(
         let averaged_readings_for_read = averaged_readings.clone();
         let n_for_read = n.clone();
         get_readings(
-            crate::FRONTEND.lock().unwrap().as_mut().unwrap(),
+            super::FRONTEND.lock().unwrap().as_mut().unwrap(),
             move |readings| {
                 if let (Ok(mut n), Ok(mut averaged_readings)) =
                     (n_for_read.lock(), averaged_readings_for_read.lock())

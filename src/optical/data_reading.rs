@@ -44,8 +44,7 @@ pub fn reading_task(readings: Arc<Mutex<[ElectricPotential; 5]>>) {
         request_readings(
             super::FRONTEND.lock().unwrap().as_mut().unwrap(),
             move |readings_frontend| {
-                if let Ok(mut readings) = readings.lock()
-                {
+                if let Ok(mut readings) = readings.lock() {
                     readings[0] = *readings_frontend.ambient();
                     readings[1] = *readings_frontend.led1_minus_ambient();
                     readings[2] = *readings_frontend.led1();

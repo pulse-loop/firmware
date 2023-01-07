@@ -16,9 +16,7 @@ pub fn notify_task(
         thread::sleep(Duration::from_millis(10));
 
         if time.elapsed().as_millis() > 50 {
-            if let (Ok(ble_api), Ok(mut readings)) =
-                (ble_api.write(), readings.lock())
-            {
+            if let (Ok(ble_api), Ok(mut readings)) = (ble_api.write(), readings.lock()) {
                 ble_api
                     .raw_sensor_data
                     .ambient_reading_characteristic

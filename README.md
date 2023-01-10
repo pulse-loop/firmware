@@ -68,14 +68,15 @@ The firmware upgrade service is used to upgrade the firmware of the pulse.loop. 
 
 Data from the optical frontend and other sensors.
 
-| Characteristic        | Access | Type  | UUID                                   | Description                                                             | FW  | SW  |
-|-----------------------|--------|-------|----------------------------------------|-------------------------------------------------------------------------|-----|-----|
-| Ambient phase reading | Read   | `f32` | `33EAF25F-7A5C-4327-A95B-B602DA54C443` | The latest reading during the ambient phase [V].                        | Yes | Yes |
-| AVG LED1 - Ambient    | Read   | `f32` | `0237DF64-3110-48CA-B3C8-82DF0F7A6A91` | The averaged reading during the LED1 phase minus the ambient phase [V]. | No  | No  |
-| LED1 - Ambient        | Read   | `f32` | `CF66D344-584D-4E67-AC30-17D28B099A30` | The latest reading during the LED1 phase minus the ambient phase [V].   | Yes | Yes |
-| LED1 ADC reading      | Read   | `f32` | `05500B81-516D-4BD9-95BA-C0B87C911DDB` | The latest reading during the LED1 phase [V].                           | Yes | Yes |
-| LED2 ADC reading      | Read   | `f32` | `A93B639D-8A8D-43EA-8A5A-8175D7C09E0B` | The latest reading during the LED2 phase [V].                           | Yes | Yes |
-| LED3 ADC reading      | Read   | `f32` | `C0A12246-79E4-4BD7-8A4F-B841D5590F70` | The latest reading during the LED3 phase [V].                           | Yes | Yes |
+| Characteristic            | Access | Type                           | UUID                                   | Description                                                             | FW         | SW  |
+|---------------------------|--------|--------------------------------|----------------------------------------|-------------------------------------------------------------------------|------------|-----|
+| ~~Ambient phase reading~~ | Read   | `f32`                          | `33EAF25F-7A5C-4327-A95B-B602DA54C443` | The latest reading during the ambient phase [V].                        | Deprecated | Yes |
+| ~~AVG LED1 - Ambient~~    | Read   | `f32`                          | `0237DF64-3110-48CA-B3C8-82DF0F7A6A91` | The averaged reading during the LED1 phase minus the ambient phase [V]. | Deprecated | No  |
+| ~~LED1 - Ambient~~        | Read   | `f32`                          | `CF66D344-584D-4E67-AC30-17D28B099A30` | The latest reading during the LED1 phase minus the ambient phase [V].   | Deprecated | Yes |
+| ~~LED1 ADC reading~~      | Read   | `f32`                          | `05500B81-516D-4BD9-95BA-C0B87C911DDB` | The latest reading during the LED1 phase [V].                           | Deprecated | Yes |
+| ~~LED2 ADC reading~~      | Read   | `f32`                          | `A93B639D-8A8D-43EA-8A5A-8175D7C09E0B` | The latest reading during the LED2 phase [V].                           | Deprecated | Yes |
+| ~~LED3 ADC reading~~      | Read   | `f32`                          | `C0A12246-79E4-4BD7-8A4F-B841D5590F70` | The latest reading during the LED3 phase [V].                           | Deprecated | Yes |
+| Aggregated data           | Read   | [custom](docs/CUSTOM_TYPES.md) | `26CB3CCA-F22E-4179-8125-55874E9153AD` |                                                                         | Yes        | No  |
 
 #### Optical frontend configuration
 

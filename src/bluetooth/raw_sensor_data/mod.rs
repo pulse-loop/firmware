@@ -10,6 +10,7 @@ pub struct RawSensorDataServiceContainer {
     pub(crate) led1_reading_characteristic: Arc<RwLock<Characteristic>>,
     pub(crate) led2_reading_characteristic: Arc<RwLock<Characteristic>>,
     pub(crate) led3_reading_characteristic: Arc<RwLock<Characteristic>>,
+    pub(crate) aggregated_data_characteristic: Arc<RwLock<Characteristic>>,
 }
 
 impl RawSensorDataServiceContainer {
@@ -64,6 +65,16 @@ impl RawSensorDataServiceContainer {
         .max_value_length(4)
         .build();
 
+        let aggregated_data_characteristic = Characteristic::new(BleUuid::from_uuid128_string(
+            "26CB3CCA-F22E-4179-8125-55874E9153AD",
+        ))
+        .name("Aggregated data")
+        .show_name()
+        .permissions(AttributePermissions::new().read())
+        .properties(CharacteristicProperties::new().read().notify())
+        .max_value_length(100)
+        .build();
+
         let service = Service::new(BleUuid::from_uuid128_string(
             "272DF1F7-9D28-4B8C-86F6-30DB30ACE42C",
         ))
@@ -74,6 +85,7 @@ impl RawSensorDataServiceContainer {
         .characteristic(&led1_minus_ambient_reading_characteristic)
         .characteristic(&led2_reading_characteristic)
         .characteristic(&led3_reading_characteristic)
+        .characteristic(&aggregated_data_characteristic)
         .build();
 
         Self {
@@ -83,6 +95,7 @@ impl RawSensorDataServiceContainer {
             led1_reading_characteristic,
             led2_reading_characteristic,
             led3_reading_characteristic,
+            aggregated_data_characteristic,
         }
     }
 }

@@ -72,7 +72,7 @@ impl RawSensorDataServiceContainer {
         .show_name()
         .permissions(AttributePermissions::new().read())
         .properties(CharacteristicProperties::new().read().notify())
-        .max_value_length(100)
+        .max_value_length(49)
         .build();
 
         let service = Service::new(BleUuid::from_uuid128_string(

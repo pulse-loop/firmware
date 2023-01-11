@@ -72,7 +72,7 @@ Data from the optical frontend and other sensors.
 | ~~LED1 ADC reading~~      | Read   | `f32`                                                        | `05500B81-516D-4BD9-95BA-C0B87C911DDB` | The latest reading during the LED1 phase [V].                           | **Deprecated** | Yes |
 | ~~LED2 ADC reading~~      | Read   | `f32`                                                        | `A93B639D-8A8D-43EA-8A5A-8175D7C09E0B` | The latest reading during the LED2 phase [V].                           | **Deprecated** | Yes |
 | ~~LED3 ADC reading~~      | Read   | `f32`                                                        | `C0A12246-79E4-4BD7-8A4F-B841D5590F70` | The latest reading during the LED3 phase [V].                           | **Deprecated** | Yes |
-| Aggregated data           | Read   | [Aggregated](docs/bluetooth/custom_types.md#aggregated-data) | `26CB3CCA-F22E-4179-8125-55874E9153AD` |                                                                         | Yes            | No  |
+| Aggregated data           | Read   | [Aggregated](custom_types.md#aggregated-data) | `26CB3CCA-F22E-4179-8125-55874E9153AD` |                                                                         | Yes            | No  |
 
 ### Optical frontend configuration
 

@@ -11,8 +11,6 @@ use esp_idf_hal::{
     prelude::*,
 };
 
-use uom::si::{electric_potential::volt, f32::ElectricPotential};
-
 // If using the `binstart` feature of `esp-idf-sys`, always keep this module imported.
 use esp_idf_sys::{self as _, esp_get_free_heap_size, esp_get_free_internal_heap_size};
 
@@ -45,17 +43,16 @@ fn main() {
 
     optical::initialise(i2c, &mut interrupt_pin, ble_api.clone());
 
-    let latest_readings: Arc<Mutex<[ElectricPotential; 5]>> =
-        Arc::new(Mutex::new([ElectricPotential::new::<volt>(0.0); 5]));
+    let latest_data: Arc<Mutex<optical::data_sending::AggregatedData>> = Arc::new(Mutex::new(optical::data_sending::AggregatedData::new()));
 
     let ble_api_for_notify = ble_api;
-    let latest_readings_for_notify = latest_readings.clone();
+    let latest_data_for_notify = latest_data.clone();
 
     thread::spawn(move || {
-        optical::data_sending::notify_task(ble_api_for_notify, latest_readings_for_notify)
+        optical::data_sending::notify_task(ble_api_for_notify, latest_data_for_notify)
     });
 
-    thread::spawn(move || optical::data_reading::reading_task(latest_readings));
+    thread::spawn(move || optical::data_reading::reading_task(latest_data));
 
     loop {
         thread::sleep(Duration::from_millis(1000));

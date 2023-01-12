@@ -4,7 +4,7 @@ use std::{
     time::Duration,
 };
 
-use uom::si::{f32::ElectricPotential, electric_potential::volt};
+use uom::si::{electric_potential::volt, f32::ElectricPotential};
 
 /// This struct contains all the data that is sent via notifications.
 pub struct AggregatedData {
@@ -61,7 +61,9 @@ impl AggregatedData {
         data[36..40].copy_from_slice(&self.led2_upper_threshold.value.to_le_bytes());
         data[40..44].copy_from_slice(&self.led3_lower_threshold.value.to_le_bytes());
         data[44..48].copy_from_slice(&self.led3_upper_threshold.value.to_le_bytes());
-        data[48] = 0b00000000; // TODO: Add critical value conversion.
+        data[48] = (self.led1_critical_value.into_bits() << 4)
+            | (self.led2_critical_value.into_bits() << 2)
+            | (self.led3_critical_value.into_bits());
 
         data
     }

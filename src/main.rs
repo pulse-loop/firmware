@@ -11,8 +11,6 @@ use esp_idf_hal::{
     prelude::*,
 };
 
-use uom::si::{electric_potential::volt, f32::ElectricPotential};
-
 // If using the `binstart` feature of `esp-idf-sys`, always keep this module imported.
 use esp_idf_sys::{self as _, esp_get_free_heap_size, esp_get_free_internal_heap_size};
 

@@ -29,4 +29,14 @@ A custom type that contains the LEDs and ambient phase readings, the calibration
 
 ## Critical point
 
-A custom type which could assume three possible values: Maximum, Minimum, None.
+A custom type which could assume three possible values: Maximum, Minimum and None.
+Each value is coded with two bits.
+
+### Format
+
+| Coding | Value      |
+|--------|------------|
+| 00     | None       |
+| 01     | Minimum    |
+| 10     | Maximum    |
+| 11     | Do not use |

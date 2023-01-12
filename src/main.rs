@@ -43,7 +43,8 @@ fn main() {
 
     optical::initialise(i2c, &mut interrupt_pin, ble_api.clone());
 
-    let latest_data: Arc<Mutex<optical::data_sending::AggregatedData>> = Arc::new(Mutex::new(optical::data_sending::AggregatedData::new()));
+    let latest_data: Arc<Mutex<optical::data_sending::AggregatedData>> =
+        Arc::new(Mutex::new(optical::data_sending::AggregatedData::new()));
 
     let ble_api_for_notify = ble_api;
     let latest_data_for_notify = latest_data.clone();

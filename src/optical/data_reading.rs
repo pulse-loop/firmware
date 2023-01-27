@@ -6,6 +6,7 @@ use std::{
 };
 
 use afe4404::{device::AFE4404, modes::ThreeLedsMode, value_reading::Readings};
+use uom::si::electric_potential::microvolt;
 
 /// This is a flag that is set to true when the AFE4404 has new readings.
 pub static DATA_READY: AtomicBool = AtomicBool::new(false);
@@ -44,10 +45,10 @@ pub fn reading_task(readings: Arc<Mutex<super::data_sending::AggregatedData>>) {
             super::FRONTEND.lock().unwrap().as_mut().unwrap(),
             move |readings_frontend| {
                 if let Ok(mut readings) = readings.lock() {
-                    readings.ambient_reading = *readings_frontend.ambient();
-                    readings.led1_reading = *readings_frontend.led1();
-                    readings.led2_reading = *readings_frontend.led2();
-                    readings.led3_reading = *readings_frontend.led3();
+                    readings.ambient_reading = readings_frontend.ambient().get::<microvolt>().round() as i32;
+                    readings.led1_reading = readings_frontend.led1().get::<microvolt>().round() as i32;
+                    readings.led2_reading = readings_frontend.led2().get::<microvolt>().round() as i32;
+                    readings.led3_reading = readings_frontend.led3().get::<microvolt>().round() as i32;
                 }
             },
         );

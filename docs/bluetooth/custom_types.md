@@ -10,18 +10,18 @@ A custom type that contains the LEDs and ambient phase readings, the calibration
 
 | Field                   | Type                              | Length  |
 |-------------------------|-----------------------------------|---------|
-| Ambient phase reading   | `f32`                             | 4 bytes |
-| LED1 ADC reading        | `f32`                             | 4 bytes |
-| LED2 ADC reading        | `f32`                             | 4 bytes |
-| LED3 ADC reading        | `f32`                             | 4 bytes |
-| Ambient lower threshold | `f32`                             | 4 bytes |
-| Ambient upper threshold | `f32`                             | 4 bytes |
-| LED1 lower threshold    | `f32`                             | 4 bytes |
-| LED1 upper threshold    | `f32`                             | 4 bytes |
-| LED2 lower threshold    | `f32`                             | 4 bytes |
-| LED2 upper threshold    | `f32`                             | 4 bytes |
-| LED3 lower threshold    | `f32`                             | 4 bytes |
-| LED3 upper threshold    | `f32`                             | 4 bytes |
+| Ambient phase reading   | `i32`                             | 4 bytes |
+| LED1 ADC reading        | `i32`                             | 4 bytes |
+| LED2 ADC reading        | `i32`                             | 4 bytes |
+| LED3 ADC reading        | `i32`                             | 4 bytes |
+| Ambient lower threshold | `i32`                             | 4 bytes |
+| Ambient upper threshold | `i32`                             | 4 bytes |
+| LED1 lower threshold    | `i32`                             | 4 bytes |
+| LED1 upper threshold    | `i32`                             | 4 bytes |
+| LED2 lower threshold    | `i32`                             | 4 bytes |
+| LED2 upper threshold    | `i32`                             | 4 bytes |
+| LED3 lower threshold    | `i32`                             | 4 bytes |
+| LED3 upper threshold    | `i32`                             | 4 bytes |
 | Padding                 | -                                 | 2 bits  |
 | LED1 critical point     | [Critical point](#critical-point) | 2 bits  |
 | LED2 critical point     | [Critical point](#critical-point) | 2 bits  |

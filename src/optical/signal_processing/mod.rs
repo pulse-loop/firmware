@@ -1,6 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use queues::{CircularBuffer, IsQueue};
+use uom::si::{electric_potential::volt, f32::ElectricPotential};
 
 mod histogram;
 
@@ -33,7 +34,7 @@ pub(crate) struct ProcessingHistory {
 }
 
 impl ProcessingHistory {
-    pub(crate) fn new(window_size: usize) -> ProcessingHistory {
+    fn new(window_size: usize) -> ProcessingHistory {
         ProcessingHistory {
             window: CircularBuffer::new(window_size),
             window_size,

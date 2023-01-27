@@ -1,7 +1,6 @@
 use std::sync::{Arc, Mutex};
 
 use queues::{CircularBuffer, IsQueue};
-use uom::si::{electric_potential::volt, f32::ElectricPotential};
 
 mod histogram;
 

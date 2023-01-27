@@ -14,6 +14,7 @@ pub(crate) struct Histogram {
 }
 
 impl Histogram {
+    /// Creates a new histogram with the given number of bins and the given range.
     pub(crate) fn new(bins: usize, min: f32, max: f32) -> Histogram {
         Histogram {
             count: 0,
@@ -25,22 +26,26 @@ impl Histogram {
         }
     }
 
+    /// Adds an element to the histogram.
     pub(crate) fn increment(&mut self, value: f32) {
         let bin = ((value - self.min) / self.bin_width) as usize;
         self.bin_counts[bin] += 1;
         self.count += 1;
     }
 
+    /// Removes an element from the histogram.
     pub(crate) fn decrement(&mut self, value: f32) {
         let bin = ((value - self.min) / self.bin_width) as usize;
         self.bin_counts[bin] -= 1;
         self.count -= 1;
     }
 
+    /// Returns the number of elements in the histogram.
     pub(crate) fn count(&self) -> usize {
         self.count
     }
 
+    /// Returns the given percentile expressed in the range [0, 1].
     pub(crate) fn percentile(&self, percentile: f32) -> f32 {
         let mut count = 0;
         let mut bin = 0;

@@ -5,11 +5,11 @@ use bluedroid::utilities::{AttributePermissions, BleUuid, CharacteristicProperti
 
 pub struct RawSensorDataServiceContainer {
     pub(crate) service: Arc<RwLock<Service>>,
-    pub(crate) ambient_reading_characteristic: Arc<RwLock<Characteristic>>,
-    pub(crate) led1_minus_ambient_reading_characteristic: Arc<RwLock<Characteristic>>,
-    pub(crate) led1_reading_characteristic: Arc<RwLock<Characteristic>>,
-    pub(crate) led2_reading_characteristic: Arc<RwLock<Characteristic>>,
-    pub(crate) led3_reading_characteristic: Arc<RwLock<Characteristic>>,
+    // pub(crate) ambient_reading_characteristic: Arc<RwLock<Characteristic>>,
+    // pub(crate) led1_minus_ambient_reading_characteristic: Arc<RwLock<Characteristic>>,
+    // pub(crate) led1_reading_characteristic: Arc<RwLock<Characteristic>>,
+    // pub(crate) led2_reading_characteristic: Arc<RwLock<Characteristic>>,
+    // pub(crate) led3_reading_characteristic: Arc<RwLock<Characteristic>>,
     pub(crate) aggregated_data_characteristic: Arc<RwLock<Characteristic>>,
 }
 
@@ -80,21 +80,21 @@ impl RawSensorDataServiceContainer {
         ))
         .name("Raw sensor data")
         .primary()
-        .characteristic(&led1_reading_characteristic)
-        .characteristic(&ambient_reading_characteristic)
-        .characteristic(&led1_minus_ambient_reading_characteristic)
-        .characteristic(&led2_reading_characteristic)
-        .characteristic(&led3_reading_characteristic)
+        // .characteristic(&led1_reading_characteristic)
+        // .characteristic(&ambient_reading_characteristic)
+        // .characteristic(&led1_minus_ambient_reading_characteristic)
+        // .characteristic(&led2_reading_characteristic)
+        // .characteristic(&led3_reading_characteristic)
         .characteristic(&aggregated_data_characteristic)
         .build();
 
         Self {
             service,
-            ambient_reading_characteristic,
-            led1_minus_ambient_reading_characteristic,
-            led1_reading_characteristic,
-            led2_reading_characteristic,
-            led3_reading_characteristic,
+            // ambient_reading_characteristic,
+            // led1_minus_ambient_reading_characteristic,
+            // led1_reading_characteristic,
+            // led2_reading_characteristic,
+            // led3_reading_characteristic,
             aggregated_data_characteristic,
         }
     }

@@ -33,7 +33,7 @@ pub(crate) struct ProcessingHistory {
 }
 
 impl ProcessingHistory {
-    fn new(window_size: usize) -> ProcessingHistory {
+    pub(crate) fn new(window_size: usize) -> ProcessingHistory {
         ProcessingHistory {
             window: CircularBuffer::new(window_size),
             window_size,

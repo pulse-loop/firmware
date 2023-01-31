@@ -34,21 +34,82 @@ where
     }
 }
 
-/// This function should be called in a separate thread to get readings from the AFE4404 and add them to the averaged readings array.
-/// To calculate the average, divide each element of the array by the number of readings
-pub fn reading_task(readings: Arc<Mutex<super::data_sending::AggregatedData>>) {
+/// This function should be called in a separate thread to get readings from the AFE4404.
+pub fn reading_task(data: Arc<Mutex<super::data_sending::AggregatedData>>) {
+    let queue_size = 512;
+    let critical_thresholds = (20, 80); // The lower and upper thresholds in percentage for filtering out critical values.
+
+    let history = Arc::new(Mutex::new([
+        super::signal_processing::ProcessingHistory::new(queue_size),
+        super::signal_processing::ProcessingHistory::new(queue_size),
+        super::signal_processing::ProcessingHistory::new(queue_size),
+        super::signal_processing::ProcessingHistory::new(queue_size),
+    ]));
+
     loop {
         thread::sleep(Duration::from_millis(1));
 
-        let readings = readings.clone();
+        let data = data.clone();
+        let history = history.clone();
         request_readings(
             super::FRONTEND.lock().unwrap().as_mut().unwrap(),
             move |readings_frontend| {
-                if let Ok(mut readings) = readings.lock() {
-                    readings.ambient_reading = readings_frontend.ambient().get::<microvolt>().round() as i32;
-                    readings.led1_reading = readings_frontend.led1().get::<microvolt>().round() as i32;
-                    readings.led2_reading = readings_frontend.led2().get::<microvolt>().round() as i32;
-                    readings.led3_reading = readings_frontend.led3().get::<microvolt>().round() as i32;
+                if let (Ok(mut data), Ok(mut history)) = (data.lock(), history.lock()) {
+                    let ambient_converted_reading =
+                        readings_frontend.ambient().get::<microvolt>().round() as i32;
+                    let led1_converted_reading =
+                        readings_frontend.led1().get::<microvolt>().round() as i32;
+                    let led2_converted_reading =
+                        readings_frontend.led2().get::<microvolt>().round() as i32;
+                    let led3_converted_reading =
+                        readings_frontend.led3().get::<microvolt>().round() as i32;
+
+                    data.ambient_reading = history[0]
+                        .previous_element
+                        .unwrap_or(ambient_converted_reading); // The critical value refers to the previous element.
+                    data.led1_reading = history[1]
+                        .previous_element
+                        .unwrap_or(led1_converted_reading);
+                    data.led2_reading = history[2]
+                        .previous_element
+                        .unwrap_or(led2_converted_reading);
+                    data.led3_reading = history[3]
+                        .previous_element
+                        .unwrap_or(led3_converted_reading);
+
+                    super::signal_processing::find_critical_value(
+                        ambient_converted_reading,
+                        &mut history[0],
+                    );
+                    data.led1_critical_value = super::signal_processing::find_critical_value(
+                        led1_converted_reading,
+                        &mut history[1],
+                    );
+                    data.led2_critical_value = super::signal_processing::find_critical_value(
+                        led2_converted_reading,
+                        &mut history[2],
+                    );
+                    data.led3_critical_value = super::signal_processing::find_critical_value(
+                        led3_converted_reading,
+                        &mut history[3],
+                    );
+
+                    data.ambient_lower_threshold =
+                        history[0].distribution.percentile(critical_thresholds.0);
+                    data.ambient_upper_threshold = 
+                        history[0].distribution.percentile(critical_thresholds.1);
+                    data.led1_lower_threshold =
+                        history[1].distribution.percentile(critical_thresholds.0);
+                    data.led1_upper_threshold =
+                        history[1].distribution.percentile(critical_thresholds.1);
+                    data.led2_lower_threshold =
+                        history[2].distribution.percentile(critical_thresholds.0);
+                    data.led2_upper_threshold =
+                        history[2].distribution.percentile(critical_thresholds.1);
+                    data.led3_lower_threshold =
+                        history[3].distribution.percentile(critical_thresholds.0);
+                    data.led3_upper_threshold =
+                        history[3].distribution.percentile(critical_thresholds.1);
                 }
             },
         );

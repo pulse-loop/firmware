@@ -22,18 +22,18 @@ impl CriticalValue {
 
 pub(crate) struct ProcessingHistory {
     /// A sized queue of the last `window_size` elements.
-    window: CircularBuffer<i32>,
-    window_size: usize,
+    pub(crate) window: CircularBuffer<i32>,
+    pub(crate) window_size: usize,
     /// A histogram of the last `window_size` elements.
-    distribution: histogram::Histogram,
+    pub(crate) distribution: histogram::Histogram,
     /// The last element added to the window.
-    previous_element: Option<i32>,
+    pub(crate) previous_element: Option<i32>,
     /// The second last element added to the window.
-    previous_previous_element: Option<i32>,
+    pub(crate) previous_previous_element: Option<i32>,
 }
 
 impl ProcessingHistory {
-    fn new(window_size: usize) -> ProcessingHistory {
+    pub(crate) fn new(window_size: usize) -> ProcessingHistory {
         ProcessingHistory {
             window: CircularBuffer::new(window_size),
             window_size,
@@ -44,7 +44,7 @@ impl ProcessingHistory {
     }
 
     /// Update the window, the distribution and the previous elements of the processing history.
-    fn update(&mut self, el: i32) {
+    pub(crate) fn update(&mut self, el: i32) {
         let old_el = self.window.add(el).unwrap(); // Add never fails on CircularBuffer.
 
         self.distribution.increment(el);
@@ -82,33 +82,4 @@ pub(crate) fn find_critical_value(el: i32, history: &mut ProcessingHistory) -> C
     history.update(el);
 
     value
-}
-
-pub fn processing_task(data: Arc<Mutex<super::data_sending::AggregatedData>>) {
-    let queue_size = 512;
-
-    let critical_thresholds = (20, 80); // The lower and upper thresholds in percentage for filtering out critical values.
-
-    let mut history = [
-        ProcessingHistory::new(queue_size),
-        ProcessingHistory::new(queue_size),
-        ProcessingHistory::new(queue_size),
-    ];
-
-    loop {
-        // TODO: Update the led1, led2, led3 values to the previous one.
-        // TODO: Different structs aggregated data and readings with indexes.
-        if let Ok(mut data) = data.lock() {
-            data.led1_critical_value = find_critical_value(data.led1_reading, &mut history[0]);
-            data.led2_critical_value = find_critical_value(data.led2_reading, &mut history[1]);
-            data.led3_critical_value = find_critical_value(data.led3_reading, &mut history[2]);
-
-            data.led1_lower_threshold = history[0].distribution.percentile(critical_thresholds.0);
-            data.led1_upper_threshold = history[0].distribution.percentile(critical_thresholds.1);
-            data.led2_lower_threshold = history[1].distribution.percentile(critical_thresholds.0);
-            data.led2_upper_threshold = history[1].distribution.percentile(critical_thresholds.1);
-            data.led3_lower_threshold = history[2].distribution.percentile(critical_thresholds.0);
-            data.led3_upper_threshold = history[2].distribution.percentile(critical_thresholds.1);
-        }
-    }
 }

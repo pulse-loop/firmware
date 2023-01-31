@@ -62,7 +62,7 @@ impl ProcessingHistory {
     }
 }
 
-/// Returns a tuple containing the critical value of the element preceding the last one added to the window and the relative element.
+/// Returns the critical value of the element preceding the last one added to the window.
 pub(crate) fn find_critical_value(el: i32, history: &mut ProcessingHistory) -> CriticalValue {
     let value: CriticalValue = if let (Some(previous_el), Some(previous_previous_el)) =
         (history.previous_element, history.previous_previous_element)

@@ -36,7 +36,7 @@ where
 
 /// This function should be called in a separate thread to get readings from the AFE4404.
 pub fn reading_task(data: Arc<Mutex<super::data_sending::AggregatedData>>) {
-    let queue_size = 512;
+    let queue_size = 128;
     let critical_thresholds = (20, 80); // The lower and upper thresholds in percentage for filtering out critical values.
 
     let history = Arc::new(Mutex::new([
@@ -81,22 +81,38 @@ pub fn reading_task(data: Arc<Mutex<super::data_sending::AggregatedData>>) {
                         ambient_converted_reading,
                         &mut history[0],
                     );
-                    data.led1_critical_value = super::signal_processing::find_critical_value(
-                        led1_converted_reading,
-                        &mut history[1],
-                    );
-                    data.led2_critical_value = super::signal_processing::find_critical_value(
-                        led2_converted_reading,
-                        &mut history[2],
-                    );
-                    data.led3_critical_value = super::signal_processing::find_critical_value(
-                        led3_converted_reading,
-                        &mut history[3],
-                    );
+                    // Don't overwrite the critical value if it has not been sent yet.
+                    if matches!(
+                        data.led1_critical_value,
+                        super::signal_processing::CriticalValue::None
+                    ) {
+                        data.led1_critical_value = super::signal_processing::find_critical_value(
+                            led1_converted_reading,
+                            &mut history[1],
+                        );
+                    }
+                    if matches!(
+                        data.led2_critical_value,
+                        super::signal_processing::CriticalValue::None
+                    ) {
+                        data.led2_critical_value = super::signal_processing::find_critical_value(
+                            led2_converted_reading,
+                            &mut history[2],
+                        );
+                    }
+                    if matches!(
+                        data.led3_critical_value,
+                        super::signal_processing::CriticalValue::None
+                    ) {
+                        data.led3_critical_value = super::signal_processing::find_critical_value(
+                            led3_converted_reading,
+                            &mut history[3],
+                        );
+                    }
 
                     data.ambient_lower_threshold =
                         history[0].distribution.percentile(critical_thresholds.0);
-                    data.ambient_upper_threshold = 
+                    data.ambient_upper_threshold =
                         history[0].distribution.percentile(critical_thresholds.1);
                     data.led1_lower_threshold =
                         history[1].distribution.percentile(critical_thresholds.0);

@@ -6,6 +6,7 @@ use std::{
 
 /// This struct contains all the data that is sent via notifications.
 /// All the voltages are expressed in microvolts.
+#[derive(Debug)]
 pub struct AggregatedData {
     pub(crate) ambient_reading: i32,
     pub(crate) led1_reading: i32,
@@ -78,7 +79,7 @@ pub fn notify_task(
         thread::sleep(Duration::from_millis(10));
 
         if time.elapsed().as_millis() > 50 {
-            if let (Ok(ble_api), Ok(readings)) = (ble_api.write(), readings.lock()) {
+            if let (Ok(ble_api), Ok(mut readings)) = (ble_api.write(), readings.lock()) {
                 // ble_api
                 //     .raw_sensor_data
                 //     .ambient_reading_characteristic
@@ -117,6 +118,13 @@ pub fn notify_task(
                     .unwrap()
                     .set_value(readings.serialise());
 
+                log::info!("{:?}", readings);
+
+                // Reset the critical values;
+                readings.led1_critical_value = super::signal_processing::CriticalValue::None;
+                readings.led2_critical_value = super::signal_processing::CriticalValue::None;
+                readings.led3_critical_value = super::signal_processing::CriticalValue::None;
+                
                 time = std::time::Instant::now();
             }
         }

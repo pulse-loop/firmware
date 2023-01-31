@@ -1,9 +1,8 @@
-use std::sync::{Arc, Mutex};
-
 use queues::{CircularBuffer, IsQueue};
 
 mod histogram;
 
+#[derive(Debug)]
 pub(crate) enum CriticalValue {
     None,
     Minimum,
@@ -64,12 +63,13 @@ impl ProcessingHistory {
 
 /// Returns the critical value of the element preceding the last one added to the window.
 pub(crate) fn find_critical_value(el: i32, history: &mut ProcessingHistory) -> CriticalValue {
+    let hysteresis = 100;
     let value: CriticalValue = if let (Some(previous_el), Some(previous_previous_el)) =
         (history.previous_element, history.previous_previous_element)
     {
-        if previous_el < previous_previous_el && previous_el < el {
+        if previous_el < previous_previous_el - hysteresis && previous_el < el - hysteresis {
             CriticalValue::Minimum
-        } else if previous_el > previous_previous_el && previous_el > el {
+        } else if previous_el > previous_previous_el + hysteresis && previous_el > el + hysteresis {
             CriticalValue::Maximum
         } else {
             CriticalValue::None

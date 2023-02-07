@@ -32,17 +32,17 @@ pub(crate) struct ProcessingHistory {
 }
 
 impl ProcessingHistory {
-    pub(crate) fn new(window_size: usize) -> ProcessingHistory {
+    pub(crate) fn new(window_size: usize, distribution_bins: usize) -> ProcessingHistory {
         ProcessingHistory {
             window: CircularBuffer::new(window_size),
             window_size,
-            distribution: histogram::Histogram::new(64, -1_200_000, 1_200_000),
+            distribution: histogram::Histogram::new(distribution_bins, -1_200_000, 1_200_000),
             previous_element: None,
             previous_previous_element: None,
         }
     }
 
-    /// Update the window, the distribution and the previous elements of the processing history.
+    /// Update the window and the distribution of the processing history.
     pub(crate) fn update(&mut self, el: i32) {
         let old_el = self.window.add(el).unwrap(); // Add never fails on CircularBuffer.
 
@@ -51,13 +51,6 @@ impl ProcessingHistory {
         if let Some(old_el) = old_el {
             self.distribution.decrement(old_el);
         }
-
-        if self.previous_element.is_some() && self.previous_element.unwrap() == el {
-            // The element is the same as the previous one, don't update the previous elements or information will be lost.
-            return;
-        }
-        self.previous_previous_element = self.previous_element;
-        self.previous_element = Some(el);
     }
 }
 
@@ -79,7 +72,13 @@ pub(crate) fn find_critical_value(el: i32, history: &mut ProcessingHistory) -> C
         CriticalValue::None
     };
 
-    history.update(el);
+    // Update the previous elements.
+    if history.previous_element.is_some() && history.previous_element.unwrap() == el {
+        // The element is the same as the previous one, don't update the previous elements or information will be lost.
+        return value;
+    }
+    history.previous_previous_element = history.previous_element;
+    history.previous_element = Some(el);
 
     value
 }

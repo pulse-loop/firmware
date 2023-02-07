@@ -37,13 +37,14 @@ where
 /// This function should be called in a separate thread to get readings from the AFE4404.
 pub fn reading_task(data: Arc<Mutex<super::data_sending::AggregatedData>>) {
     let queue_size = 128;
+    let distribution_bins = 4096;
     let critical_thresholds = (20, 80); // The lower and upper thresholds in percentage for filtering out critical values.
 
     let history = Arc::new(Mutex::new([
-        super::signal_processing::ProcessingHistory::new(queue_size),
-        super::signal_processing::ProcessingHistory::new(queue_size),
-        super::signal_processing::ProcessingHistory::new(queue_size),
-        super::signal_processing::ProcessingHistory::new(queue_size),
+        super::signal_processing::ProcessingHistory::new(queue_size, distribution_bins),
+        super::signal_processing::ProcessingHistory::new(queue_size, distribution_bins),
+        super::signal_processing::ProcessingHistory::new(queue_size, distribution_bins),
+        super::signal_processing::ProcessingHistory::new(queue_size, distribution_bins),
     ]));
 
     loop {
@@ -55,6 +56,7 @@ pub fn reading_task(data: Arc<Mutex<super::data_sending::AggregatedData>>) {
             super::FRONTEND.lock().unwrap().as_mut().unwrap(),
             move |readings_frontend| {
                 if let (Ok(mut data), Ok(mut history)) = (data.lock(), history.lock()) {
+                    // Convert the readings to microvolts as integers.
                     let ambient_converted_reading =
                         readings_frontend.ambient().get::<microvolt>().round() as i32;
                     let led1_converted_reading =
@@ -64,9 +66,10 @@ pub fn reading_task(data: Arc<Mutex<super::data_sending::AggregatedData>>) {
                     let led3_converted_reading =
                         readings_frontend.led3().get::<microvolt>().round() as i32;
 
+                    // Send the previous element because the critical value refers to the previous reading.
                     data.ambient_reading = history[0]
                         .previous_element
-                        .unwrap_or(ambient_converted_reading); // The critical value refers to the previous element.
+                        .unwrap_or(ambient_converted_reading);
                     data.led1_reading = history[1]
                         .previous_element
                         .unwrap_or(led1_converted_reading);
@@ -77,10 +80,7 @@ pub fn reading_task(data: Arc<Mutex<super::data_sending::AggregatedData>>) {
                         .previous_element
                         .unwrap_or(led3_converted_reading);
 
-                    super::signal_processing::find_critical_value(
-                        ambient_converted_reading,
-                        &mut history[0],
-                    );
+                    // Calculate the critical for the LEDs readings.
                     // Don't overwrite the critical value if it has not been sent yet.
                     if matches!(
                         data.led1_critical_value,
@@ -109,6 +109,11 @@ pub fn reading_task(data: Arc<Mutex<super::data_sending::AggregatedData>>) {
                             &mut history[3],
                         );
                     }
+
+                    history[0].update(ambient_converted_reading);
+                    history[1].update(led1_converted_reading);
+                    history[2].update(led2_converted_reading);
+                    history[3].update(led3_converted_reading);
 
                     data.ambient_lower_threshold =
                         history[0].distribution.percentile(critical_thresholds.0);

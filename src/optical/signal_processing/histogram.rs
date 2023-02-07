@@ -21,7 +21,7 @@ impl Histogram {
             bins,
             min,
             max,
-            bin_width: (max - min) / bins as i32,
+            bin_width: (max - min) / (bins - 1) as i32,
             bin_counts: vec![0; bins],
         }
     }

@@ -80,45 +80,12 @@ pub fn notify_task(
 
         if time.elapsed().as_millis() > 50 {
             if let (Ok(ble_api), Ok(mut readings)) = (ble_api.write(), readings.lock()) {
-                // ble_api
-                //     .raw_sensor_data
-                //     .ambient_reading_characteristic
-                //     .write()
-                //     .unwrap()
-                //     .set_value(readings[0].value.to_le_bytes());
-                // ble_api
-                //     .raw_sensor_data
-                //     .led1_minus_ambient_reading_characteristic
-                //     .write()
-                //     .unwrap()
-                //     .set_value(readings[1].value.to_le_bytes());
-                // ble_api
-                //     .raw_sensor_data
-                //     .led1_reading_characteristic
-                //     .write()
-                //     .unwrap()
-                //     .set_value(readings[2].value.to_le_bytes());
-                // ble_api
-                //     .raw_sensor_data
-                //     .led2_reading_characteristic
-                //     .write()
-                //     .unwrap()
-                //     .set_value(readings[3].value.to_le_bytes());
-                // ble_api
-                //     .raw_sensor_data
-                //     .led3_reading_characteristic
-                //     .write()
-                //     .unwrap()
-                //     .set_value(readings[4].value.to_le_bytes());
-
                 ble_api
                     .raw_sensor_data
                     .aggregated_data_characteristic
                     .write()
                     .unwrap()
                     .set_value(readings.serialise());
-
-                log::info!("{:?}", readings);
 
                 // Reset the critical values;
                 readings.led1_critical_value = super::signal_processing::CriticalValue::None;

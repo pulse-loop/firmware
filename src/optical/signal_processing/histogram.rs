@@ -49,11 +49,28 @@ impl Histogram {
     pub(crate) fn percentile(&self, percentile: usize) -> i32 {
         let mut count = 0;
         let mut bin = 0;
-        let target = ((percentile as f32 / 100.0) * self.count as f32) as usize;
+        let target = percentile * self.count / 100;
         while count < target {
             count += self.bin_counts[bin];
             bin += 1;
         }
         self.min + (bin as i32 * self.bin_width)
+    }
+
+    /// Returns the given percentile expressed in the range [0, 100] with finer granularity, assuming a constant distribution within each bin.
+    pub(crate) fn percentile_fine(&self, percentile: usize) -> i32 {
+        let mut count = 0;
+        let mut bin = 0;
+        let target = percentile * self.count / 100;
+        while count < target {
+            count += self.bin_counts[bin];
+            bin += 1;
+        }
+        // let bin_start = self.min + (bin as i32 * self.bin_width);
+        // let bin_count = self.bin_counts[bin];
+        // let bin_target = target - (count - bin_count);
+        // let bin_percentile = bin_target * 100 / bin_count;
+        // bin_start + (bin_percentile as i32 * self.bin_width / 100)
+        self.min + (bin as i32 * self.bin_width) - ((count - target) as i32 * self.bin_width / self.bin_counts[bin] as i32)
     }
 }

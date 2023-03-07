@@ -44,16 +44,21 @@ fn main() {
     optical::initialise(i2c, &mut interrupt_pin, ble_api.clone());
 
     let latest_data: Arc<Mutex<optical::data_sending::AggregatedData>> =
-        Arc::new(Mutex::new(optical::data_sending::AggregatedData::new()));
+        Arc::new(Mutex::new(optical::data_sending::AggregatedData::default()));
 
     let ble_api_for_notify = ble_api;
     let latest_data_for_notify = latest_data.clone();
-
     thread::spawn(move || {
         optical::data_sending::notify_task(ble_api_for_notify, latest_data_for_notify)
     });
 
-    thread::spawn(move || optical::data_reading::reading_task(latest_data));
+    thread::spawn(move || {
+        optical::data_reading::reading_task(move |agg| {
+            *latest_data.lock().unwrap() = agg;
+            // dc data (lowpass)
+            // ac data (bandpass)
+        })
+    });
 
     loop {
         thread::sleep(Duration::from_millis(1000));

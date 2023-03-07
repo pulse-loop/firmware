@@ -27,7 +27,7 @@ esp-idf-svc = { version = "0.43.3" }
 embedded-svc = { version = "0.22.3" }
 embedded-hal = { version = "1.0.0-alpha.9" }
 
-bluedroid = { version = "0.3.6" }
+bluedroid = { version = "0.3.7" }
 afe4404 = { version = "0.2.3" }
 uom = { version = "0.33.0" }
 queues = { version = "1.0.2" }

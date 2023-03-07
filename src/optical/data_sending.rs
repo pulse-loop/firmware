@@ -6,8 +6,9 @@ use std::{
 
 /// This struct contains all the data that is sent via notifications.
 /// All the voltages are expressed in microvolts.
-#[derive(Debug)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct AggregatedData {
+    // TODO: Remove unused fields.
     pub(crate) ambient_reading: i32,
     pub(crate) led1_reading: i32,
     pub(crate) led2_reading: i32,
@@ -26,26 +27,6 @@ pub struct AggregatedData {
 }
 
 impl AggregatedData {
-    pub fn new() -> Self {
-        Self {
-            ambient_reading: 0,
-            led1_reading: 0,
-            led2_reading: 0,
-            led3_reading: 0,
-            ambient_lower_threshold: 0,
-            ambient_upper_threshold: 0,
-            led1_lower_threshold: 0,
-            led1_upper_threshold: 0,
-            led2_lower_threshold: 0,
-            led2_upper_threshold: 0,
-            led3_lower_threshold: 0,
-            led3_upper_threshold: 0,
-            led1_critical_value: super::signal_processing::CriticalValue::None,
-            led2_critical_value: super::signal_processing::CriticalValue::None,
-            led3_critical_value: super::signal_processing::CriticalValue::None,
-        }
-    }
-
     pub fn serialise(&self) -> [u8; 49] {
         let mut data = [0; 49];
 
@@ -91,7 +72,7 @@ pub fn notify_task(
                 readings.led1_critical_value = super::signal_processing::CriticalValue::None;
                 readings.led2_critical_value = super::signal_processing::CriticalValue::None;
                 readings.led3_critical_value = super::signal_processing::CriticalValue::None;
-                
+
                 time = std::time::Instant::now();
             }
         }

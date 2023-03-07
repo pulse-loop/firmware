@@ -2,8 +2,9 @@ use queues::{CircularBuffer, IsQueue};
 
 mod histogram;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub(crate) enum CriticalValue {
+    #[default]
     None,
     Minimum,
     Maximum,

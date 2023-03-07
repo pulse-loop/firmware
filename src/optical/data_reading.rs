@@ -8,6 +8,8 @@ use std::{
 use afe4404::{device::AFE4404, modes::ThreeLedsMode, value_reading::Readings};
 use uom::si::electric_potential::microvolt;
 
+use super::data_sending::AggregatedData;
+
 /// This is a flag that is set to true when the AFE4404 has new readings.
 pub static DATA_READY: AtomicBool = AtomicBool::new(false);
 
@@ -35,103 +37,32 @@ where
 }
 
 /// This function should be called in a separate thread to get readings from the AFE4404.
-pub fn reading_task(data: Arc<Mutex<super::data_sending::AggregatedData>>) {
-    let queue_size = 128;
-    let distribution_bins = 4096;
-    let critical_thresholds = (20, 80); // The lower and upper thresholds in percentage for filtering out critical values.
-
-    let history = Arc::new(Mutex::new([
-        super::signal_processing::ProcessingHistory::new(queue_size, distribution_bins),
-        super::signal_processing::ProcessingHistory::new(queue_size, distribution_bins),
-        super::signal_processing::ProcessingHistory::new(queue_size, distribution_bins),
-        super::signal_processing::ProcessingHistory::new(queue_size, distribution_bins),
-    ]));
+pub fn reading_task<CB>(callback: CB)
+where
+    CB: FnMut(AggregatedData) + 'static,
+{
+    let cb = Arc::new(Mutex::new(callback));
 
     loop {
+        let cb = cb.clone();
+
         thread::sleep(Duration::from_millis(1));
 
-        let data = data.clone();
-        let history = history.clone();
+        let mut data: AggregatedData = AggregatedData::default();
+
         request_readings(
             super::FRONTEND.lock().unwrap().as_mut().unwrap(),
             move |readings_frontend| {
-                if let (Ok(mut data), Ok(mut history)) = (data.lock(), history.lock()) {
-                    // Convert the readings to microvolts as integers.
-                    let ambient_converted_reading =
-                        readings_frontend.ambient().get::<microvolt>().round() as i32;
-                    let led1_converted_reading =
-                        readings_frontend.led1().get::<microvolt>().round() as i32;
-                    let led2_converted_reading =
-                        readings_frontend.led2().get::<microvolt>().round() as i32;
-                    let led3_converted_reading =
-                        readings_frontend.led3().get::<microvolt>().round() as i32;
+                // Convert the readings to microvolts as integers.
+                data.ambient_reading =
+                    readings_frontend.ambient().get::<microvolt>().round() as i32;
+                data.led1_reading = readings_frontend.led1().get::<microvolt>().round() as i32;
+                data.led2_reading = readings_frontend.led2().get::<microvolt>().round() as i32;
+                data.led3_reading = readings_frontend.led3().get::<microvolt>().round() as i32;
 
-                    // Send the previous element because the critical value refers to the previous reading.
-                    data.ambient_reading = history[0]
-                        .previous_element
-                        .unwrap_or(ambient_converted_reading);
-                    data.led1_reading = history[1]
-                        .previous_element
-                        .unwrap_or(led1_converted_reading);
-                    data.led2_reading = history[2]
-                        .previous_element
-                        .unwrap_or(led2_converted_reading);
-                    data.led3_reading = history[3]
-                        .previous_element
-                        .unwrap_or(led3_converted_reading);
-
-                    // Calculate the critical for the LEDs readings.
-                    // Don't overwrite the critical value if it has not been sent yet.
-                    if matches!(
-                        data.led1_critical_value,
-                        super::signal_processing::CriticalValue::None
-                    ) {
-                        data.led1_critical_value = super::signal_processing::find_critical_value(
-                            led1_converted_reading,
-                            &mut history[1],
-                        );
-                    }
-                    if matches!(
-                        data.led2_critical_value,
-                        super::signal_processing::CriticalValue::None
-                    ) {
-                        data.led2_critical_value = super::signal_processing::find_critical_value(
-                            led2_converted_reading,
-                            &mut history[2],
-                        );
-                    }
-                    if matches!(
-                        data.led3_critical_value,
-                        super::signal_processing::CriticalValue::None
-                    ) {
-                        data.led3_critical_value = super::signal_processing::find_critical_value(
-                            led3_converted_reading,
-                            &mut history[3],
-                        );
-                    }
-
-                    history[0].update(ambient_converted_reading);
-                    history[1].update(led1_converted_reading);
-                    history[2].update(led2_converted_reading);
-                    history[3].update(led3_converted_reading);
-
-                    data.ambient_lower_threshold =
-                        history[0].distribution.percentile(critical_thresholds.0);
-                    data.ambient_upper_threshold =
-                        history[0].distribution.percentile(critical_thresholds.1);
-                    data.led1_lower_threshold =
-                        history[1].distribution.percentile(critical_thresholds.0);
-                    data.led1_upper_threshold =
-                        history[1].distribution.percentile(critical_thresholds.1);
-                    data.led2_lower_threshold =
-                        history[2].distribution.percentile(critical_thresholds.0);
-                    data.led2_upper_threshold =
-                        history[2].distribution.percentile(critical_thresholds.1);
-                    data.led3_lower_threshold =
-                        history[3].distribution.percentile(critical_thresholds.0);
-                    data.led3_upper_threshold =
-                        history[3].distribution.percentile(critical_thresholds.1);
-                }
+                // Call the callback.
+                let mut cb = cb.lock().unwrap();
+                cb(data);
             },
         );
     }

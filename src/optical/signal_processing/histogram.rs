@@ -71,6 +71,7 @@ impl Histogram {
         // let bin_target = target - (count - bin_count);
         // let bin_percentile = bin_target * 100 / bin_count;
         // bin_start + (bin_percentile as i32 * self.bin_width / 100)
-        self.min + (bin as i32 * self.bin_width) - ((count - target) as i32 * self.bin_width / self.bin_counts[bin] as i32)
+        self.min + (bin as i32 * self.bin_width)
+            - ((count - target) as i32 * self.bin_width / self.bin_counts[bin] as i32)
     }
 }

@@ -6,6 +6,9 @@ use std::{
 };
 
 use afe4404::{device::AFE4404, modes::ThreeLedsMode, value_reading::Readings};
+use uom::si::electric_potential::microvolt;
+
+use super::data_sending::AggregatedData;
 
 /// This is a flag that is set to true when the AFE4404 has new readings.
 pub static DATA_READY: AtomicBool = AtomicBool::new(false);
@@ -33,22 +36,33 @@ where
     }
 }
 
-/// This function should be called in a separate thread to get readings from the AFE4404 and add them to the averaged readings array.
-/// To calculate the average, divide each element of the array by the number of readings
-pub fn reading_task(readings: Arc<Mutex<super::data_sending::AggregatedData>>) {
+/// This function should be called in a separate thread to get readings from the AFE4404.
+pub fn reading_task<CB>(callback: CB)
+where
+    CB: FnMut(AggregatedData) + 'static,
+{
+    let cb = Arc::new(Mutex::new(callback));
+
     loop {
+        let cb = cb.clone();
+
         thread::sleep(Duration::from_millis(1));
 
-        let readings = readings.clone();
+        let mut data: AggregatedData = AggregatedData::default();
+
         request_readings(
             super::FRONTEND.lock().unwrap().as_mut().unwrap(),
             move |readings_frontend| {
-                if let Ok(mut readings) = readings.lock() {
-                    readings.ambient_reading = *readings_frontend.ambient();
-                    readings.led1_reading = *readings_frontend.led1();
-                    readings.led2_reading = *readings_frontend.led2();
-                    readings.led3_reading = *readings_frontend.led3();
-                }
+                // Convert the readings to microvolts as integers.
+                data.ambient_reading =
+                    readings_frontend.ambient().get::<microvolt>().round() as i32;
+                data.led1_reading = readings_frontend.led1().get::<microvolt>().round() as i32;
+                data.led2_reading = readings_frontend.led2().get::<microvolt>().round() as i32;
+                data.led3_reading = readings_frontend.led3().get::<microvolt>().round() as i32;
+
+                // Call the callback.
+                let mut cb = cb.lock().unwrap();
+                cb(data);
             },
         );
     }

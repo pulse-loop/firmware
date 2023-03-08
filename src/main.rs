@@ -13,6 +13,7 @@ use esp_idf_hal::{
 
 // If using the `binstart` feature of `esp-idf-sys`, always keep this module imported.
 use esp_idf_sys::{self as _, esp_get_free_heap_size, esp_get_free_internal_heap_size};
+use static_fir::FirFilter;
 
 mod bluetooth;
 mod optical;
@@ -43,8 +44,9 @@ fn main() {
 
     optical::initialise(i2c, &mut interrupt_pin, ble_api.clone());
 
-    let latest_data: Arc<Mutex<optical::data_sending::AggregatedData>> =
-        Arc::new(Mutex::new(optical::data_sending::AggregatedData::default()));
+    // The latest data that will be sent to the application.
+    let latest_data: Arc<Mutex<optical::data_sending::RawData>> =
+        Arc::new(Mutex::new(optical::data_sending::RawData::default()));
 
     let ble_api_for_notify = ble_api;
     let latest_data_for_notify = latest_data.clone();
@@ -52,10 +54,16 @@ fn main() {
         optical::data_sending::notify_task(ble_api_for_notify, latest_data_for_notify)
     });
 
+    let mut dc_filter = FirFilter::<optical::signal_processing::DcFir>::new();
     thread::spawn(move || {
-        optical::data_reading::reading_task(move |agg| {
-            *latest_data.lock().unwrap() = agg;
+        optical::data_reading::reading_task(move |raw| {
+            // *latest_data.lock().unwrap() = raw;
+            
             // dc data (lowpass)
+            let dc_data = dc_filter.feed(raw.led1_reading as f32) as i32;
+            latest_data.lock().unwrap().led1_reading = raw.led1_reading;
+            latest_data.lock().unwrap().led2_reading = dc_data;
+
             // ac data (bandpass)
         })
     });

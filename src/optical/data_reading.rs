@@ -8,7 +8,7 @@ use std::{
 use afe4404::{device::AFE4404, modes::ThreeLedsMode, value_reading::Readings};
 use uom::si::electric_potential::microvolt;
 
-use super::data_sending::AggregatedData;
+use super::data_sending::RawData;
 
 /// This is a flag that is set to true when the AFE4404 has new readings.
 pub static DATA_READY: AtomicBool = AtomicBool::new(false);
@@ -39,7 +39,7 @@ where
 /// This function should be called in a separate thread to get readings from the AFE4404.
 pub fn reading_task<CB>(callback: CB)
 where
-    CB: FnMut(AggregatedData) + 'static,
+    CB: FnMut(RawData) + 'static,
 {
     let cb = Arc::new(Mutex::new(callback));
 
@@ -48,7 +48,7 @@ where
 
         thread::sleep(Duration::from_millis(1));
 
-        let mut data: AggregatedData = AggregatedData::default();
+        let mut data: RawData = RawData::default();
 
         request_readings(
             super::FRONTEND.lock().unwrap().as_mut().unwrap(),

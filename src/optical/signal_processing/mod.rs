@@ -1,4 +1,5 @@
 use queues::{CircularBuffer, IsQueue};
+use static_fir::impl_fir;
 
 mod histogram;
 
@@ -83,3 +84,23 @@ pub(crate) fn find_critical_value(el: i32, history: &mut ProcessingHistory) -> C
 
     value
 }
+
+// Implement a low-pass filter for the DC component.
+impl_fir!(
+    DcFir,
+    f32,
+    15,
+    [
+        0.010414, 0.0163727, 0.0330664, 0.0572236, 0.0840708, 0.108284, 0.125051, 0.131037,
+        0.125051, 0.108284, 0.0840708, 0.0572236, 0.0330664, 0.0163727, 0.010414
+    ]
+);
+
+// Implement a band-pass filter for the AC component.
+// impl_fir!(
+//     AcFir,
+//     f32,
+//     15,
+//     [
+//     ]
+// );

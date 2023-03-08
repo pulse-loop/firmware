@@ -31,6 +31,7 @@ bluedroid = { version = "0.3.7" }
 afe4404 = { version = "0.2.3" }
 uom = { version = "0.33.0" }
 queues = { version = "1.0.2" }
+static_fir = { version = "0.2.0" }
 
 # smart-leds = { version = "0.3.0" }
 # ws2812-esp32-rmt-driver = { git = "https://github.com/cat-in-136/ws2812-esp32-rmt-driver" }

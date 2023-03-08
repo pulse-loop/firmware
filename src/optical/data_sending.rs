@@ -7,26 +7,26 @@ use std::{
 /// This struct contains all the data that is sent via notifications.
 /// All the voltages are expressed in microvolts.
 #[derive(Debug, Default, Clone, Copy)]
-pub struct AggregatedData {
+pub struct RawData {
     // TODO: Remove unused fields.
     pub(crate) ambient_reading: i32,
     pub(crate) led1_reading: i32,
     pub(crate) led2_reading: i32,
     pub(crate) led3_reading: i32,
-    pub(crate) ambient_lower_threshold: i32,
-    pub(crate) ambient_upper_threshold: i32,
-    pub(crate) led1_lower_threshold: i32,
-    pub(crate) led1_upper_threshold: i32,
-    pub(crate) led2_lower_threshold: i32,
-    pub(crate) led2_upper_threshold: i32,
-    pub(crate) led3_lower_threshold: i32,
-    pub(crate) led3_upper_threshold: i32,
-    pub(crate) led1_critical_value: super::signal_processing::CriticalValue,
-    pub(crate) led2_critical_value: super::signal_processing::CriticalValue,
-    pub(crate) led3_critical_value: super::signal_processing::CriticalValue,
+    pub(crate) ambient_lower_threshold: i32, // Remove.
+    pub(crate) ambient_upper_threshold: i32, // Remove.
+    pub(crate) led1_lower_threshold: i32,    // Remove.
+    pub(crate) led1_upper_threshold: i32,    // Remove.
+    pub(crate) led2_lower_threshold: i32,    // Remove.
+    pub(crate) led2_upper_threshold: i32,    // Remove.
+    pub(crate) led3_lower_threshold: i32,    // Remove.
+    pub(crate) led3_upper_threshold: i32,    // Remove.
+    pub(crate) led1_critical_value: super::signal_processing::CriticalValue, // Remove.
+    pub(crate) led2_critical_value: super::signal_processing::CriticalValue, // Remove.
+    pub(crate) led3_critical_value: super::signal_processing::CriticalValue, // Remove.
 }
 
-impl AggregatedData {
+impl RawData {
     pub fn serialise(&self) -> [u8; 49] {
         let mut data = [0; 49];
 
@@ -53,7 +53,7 @@ impl AggregatedData {
 /// This funtion should be called in a separate thread to send the readings from the AFE4404.
 pub fn notify_task(
     ble_api: Arc<RwLock<crate::bluetooth::BluetoothAPI>>,
-    readings: Arc<Mutex<AggregatedData>>,
+    readings: Arc<Mutex<RawData>>,
 ) {
     let mut time = std::time::Instant::now();
     loop {

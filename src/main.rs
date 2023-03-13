@@ -12,8 +12,9 @@ use esp_idf_hal::{
 };
 
 // If using the `binstart` feature of `esp-idf-sys`, always keep this module imported.
-use esp_idf_sys::{self as _, esp_get_free_heap_size, esp_get_free_internal_heap_size, adc_channel_t_ADC_CHANNEL_5};
-use median::Filter;
+use esp_idf_sys::{
+    self as _, adc_channel_t_ADC_CHANNEL_5, esp_get_free_heap_size, esp_get_free_internal_heap_size,
+};
 use static_fir::FirFilter;
 
 mod bluetooth;
@@ -55,33 +56,31 @@ fn main() {
         optical::data_sending::notify_task(ble_api_for_notify, latest_data_for_notify)
     });
 
-    // let mut dc_filter = FirFilter::<optical::signal_processing::DcFir>::new();
-    let mut dc_filter = Filter::new(10);
+    let mut dc_filter = FirFilter::<optical::signal_processing::DcFir>::new();
     let mut ac_filter = FirFilter::<optical::signal_processing::AcFir>::new();
-    let mut average = (0,0);
+    let mut average = (0, 0);
     thread::spawn(move || {
         optical::data_reading::reading_task(move |raw| {
             if average.0 < 10 {
                 average.0 += 1;
                 average.1 += raw.led1_reading;
-            }
-            else {
-            average.1 /= average.0;
+            } else {
+                average.1 /= average.0;
 
-            // Filter dc data (lowpass).
-            // let dc_data = dc_filter.feed(raw.led1_reading as f32) as i32;
-            let dc_data = dc_filter.consume(average.1);
-            
-            // Filter ac data (bandpass)
-            let ac_data = ac_filter.feed(average.1 as f32) as i32;
+                // Filter dc data (lowpass).
+                let dc_data = dc_filter.feed(raw.led1_reading as f32) as i32;
+                // let dc_data = dc_filter.consume(average.1);
 
-            // Send data to the application.
-            // *latest_data.lock().unwrap() = raw;
-            latest_data.lock().unwrap().led1_reading = average.1;
-            latest_data.lock().unwrap().led2_reading = dc_data;
-            latest_data.lock().unwrap().led3_reading = ac_data;
+                // Filter ac data (bandpass)
+                let ac_data = ac_filter.feed(average.1 as f32) as i32;
 
-            average = (0,0);
+                // Send data to the application.
+                // *latest_data.lock().unwrap() = raw;
+                latest_data.lock().unwrap().led1_reading = average.1;
+                latest_data.lock().unwrap().led2_reading = dc_data;
+                latest_data.lock().unwrap().led3_reading = ac_data;
+
+                average = (0, 0);
             }
         })
     });

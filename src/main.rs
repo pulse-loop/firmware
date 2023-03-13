@@ -68,7 +68,7 @@ fn main() {
                 average.1 /= average.0;
 
                 // Filter dc data (lowpass).
-                let dc_data = dc_filter.feed(raw.led1_reading as f32) as i32;
+                let dc_data = dc_filter.feed(average.1 as f32) as i32;
                 // let dc_data = dc_filter.consume(average.1);
 
                 // Filter ac data (bandpass)

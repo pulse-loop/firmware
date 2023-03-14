@@ -67,11 +67,13 @@ fn main() {
             } else {
                 average.1 /= average.0;
 
+                // Calibrate dc.
+                optical::calibration::dc_calibration(average.1);
+
                 // Filter dc data (lowpass).
                 let dc_data = dc_filter.feed(average.1 as f32) as i32;
-                // let dc_data = dc_filter.consume(average.1);
 
-                // Filter ac data (bandpass)
+                // Filter ac data (bandpass).
                 let ac_data = ac_filter.feed(average.1 as f32) as i32;
 
                 // Send data to the application.

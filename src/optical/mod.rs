@@ -24,6 +24,7 @@ use afe4404::{
 
 use crate::bluetooth::BluetoothAPI;
 
+pub(crate) mod calibration;
 pub(crate) mod char_control;
 pub(crate) mod data_reading;
 pub(crate) mod data_sending;

@@ -59,6 +59,7 @@ fn main() {
     let mut dc_filter = FirFilter::<optical::signal_processing::DcFir>::new();
     let mut ac_filter = FirFilter::<optical::signal_processing::AcFir>::new();
     let mut average = (0, 0);
+    let mut calibration = optical::calibration::Calibration::new();
     thread::spawn(move || {
         optical::data_reading::reading_task(move |raw| {
             if average.0 < 10 {
@@ -68,7 +69,8 @@ fn main() {
                 average.1 /= average.0;
 
                 // Calibrate dc.
-                optical::calibration::dc_calibration(average.1);
+                calibration.calibrate_dc(average.1);
+                log::info!("DONE");
 
                 // Filter dc data (lowpass).
                 let dc_data = dc_filter.feed(average.1 as f32) as i32;

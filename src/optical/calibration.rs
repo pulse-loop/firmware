@@ -34,27 +34,28 @@ impl Calibration {
         }
     }
 
-    pub(crate) fn calibrate_dc(&mut self, data: i32) {
+    pub(crate) fn calibrate_dc<I2C>(
+        &mut self,
+        frontend: &mut afe4404::device::AFE4404<I2C, afe4404::modes::ThreeLedsMode>,
+        data: i32,
+    ) where
+        I2C: embedded_hal::i2c::I2c,
+    {
         log::info!("1 - Calibrating DC: {} µV", data);
         if data.abs() > self.working_threshold {
             let error = (self.set_point - data) / (2 * self.resistor);
-            log::info!("2 - Error: {} µV", error);
-    
-            if let Ok(mut frontend) = super::FRONTEND.lock() {
-                log::info!("3 - Acquired frontend lock");
-                if let Some(frontend) = frontend.as_mut() {
-                    log::info!("4 - Frontend is not None");
-                    if let Ok(led_current) = frontend.set_led1_current(ElectricCurrent::new::<nanoampere>(
-                        (self.led_current + error) as f32,
-                    )) {
-                        self.led_current += led_current.get::<nanoampere>() as i32;
-                        log::info!("Led current: {} nA", self.led_current);
-                    }
-                    else {
-                        log::error!("Failed to set led current.");
-                    }
-                }
+            log::info!("2 - Error: {} nA", error);
+
+            if let Ok(led_current) = frontend.set_led1_current(ElectricCurrent::new::<nanoampere>(
+                (self.led_current + error) as f32,
+            )) {
+                self.led_current += led_current.get::<nanoampere>() as i32;
+                log::info!("Led current: {} nA", self.led_current);
+            } else {
+                log::error!("Failed to set led current.");
             }
+            log::info!("3 - END");
         }
+        log::info!("4 - END");
     }
 }

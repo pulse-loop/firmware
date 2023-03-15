@@ -13,11 +13,9 @@ use esp_idf_hal::{
 
 // If using the `binstart` feature of `esp-idf-sys`, always keep this module imported.
 use esp_idf_sys::{
-    self as _, adc_channel_t_ADC_CHANNEL_5, esp_get_free_heap_size, esp_get_free_internal_heap_size,
+    self as _, esp_get_free_heap_size, esp_get_free_internal_heap_size,
 };
 use static_fir::FirFilter;
-
-use crate::optical::signal_processing::{find_critical_value, CriticalValue};
 
 mod bluetooth;
 mod optical;
@@ -58,13 +56,19 @@ fn main() {
         optical::data_sending::notify_task(ble_api_for_notify, latest_data_for_notify)
     });
 
+    thread::sleep(Duration::from_millis(1000));
+    log::info!("Starting data reading task.");
+
     let mut dc_filter = FirFilter::<optical::signal_processing::DcFir>::new();
     let mut ac_filter = FirFilter::<optical::signal_processing::AcFir>::new();
     let mut average = (0, 0);
     let mut calibration = optical::calibration::Calibration::new();
     let mut critical_history = optical::signal_processing::CriticalHistory::new();
+    log::info!("Initialised variables.");
     thread::spawn(move || {
-        optical::data_reading::reading_task(move |raw| {
+        log::info!("Inside the thread.");
+        optical::data_reading::reading_task(move |raw, frontend| {
+            log::info!("Inside the closure.");
             if average.0 < 10 {
                 average.0 += 1;
                 average.1 += raw.led1_reading;
@@ -72,25 +76,28 @@ fn main() {
                 average.1 /= average.0;
 
                 // Calibrate dc.
-                // calibration.calibrate_dc(average.1);
-                // log::info!("DONE");
+                // calibration.calibrate_dc(frontend, average.1);
 
                 // Filter dc data (lowpass).
                 let dc_data = dc_filter.feed(average.1 as f32) as i32;
-
+                
                 // Filter ac data (bandpass).
                 let ac_data = ac_filter.feed(average.1 as f32) as i32;
 
                 // Find critical values
-                match find_critical_value(ac_data, &mut critical_history) {
-                    CriticalValue::Maximum(_,_ ) => {
-                        log::info!("Maximum");
-                    }
-                    CriticalValue::Minimum(_,_ ) => {
-                        log::info!("Minimum");
-                    }
-                    CriticalValue::None => {}
-                }
+                log::info!("Before");
+                critical_history.is_positive = false;
+                log::info!("After");
+
+                // match optical::signal_processing::find_critical_value(ac_data, &mut critical_history) {
+                //     optical::signal_processing::CriticalValue::Maximum(_,_ ) => {
+                //         log::info!("Maximum");
+                //     }
+                //     optical::signal_processing::CriticalValue::Minimum(_,_ ) => {
+                //         log::info!("Minimum");
+                //     }
+                //     optical::signal_processing::CriticalValue::None => {}
+                // }
 
                 // Send data to the application.
                 // *latest_data.lock().unwrap() = raw;

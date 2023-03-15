@@ -17,6 +17,8 @@ use esp_idf_sys::{
 };
 use static_fir::FirFilter;
 
+use crate::optical::signal_processing::{find_critical_value, CriticalValue};
+
 mod bluetooth;
 mod optical;
 
@@ -60,6 +62,7 @@ fn main() {
     let mut ac_filter = FirFilter::<optical::signal_processing::AcFir>::new();
     let mut average = (0, 0);
     let mut calibration = optical::calibration::Calibration::new();
+    let mut critical_history = optical::signal_processing::CriticalHistory::new();
     thread::spawn(move || {
         optical::data_reading::reading_task(move |raw| {
             if average.0 < 10 {
@@ -69,14 +72,25 @@ fn main() {
                 average.1 /= average.0;
 
                 // Calibrate dc.
-                calibration.calibrate_dc(average.1);
-                log::info!("DONE");
+                // calibration.calibrate_dc(average.1);
+                // log::info!("DONE");
 
                 // Filter dc data (lowpass).
                 let dc_data = dc_filter.feed(average.1 as f32) as i32;
 
                 // Filter ac data (bandpass).
                 let ac_data = ac_filter.feed(average.1 as f32) as i32;
+
+                // Find critical values
+                match find_critical_value(ac_data, &mut critical_history) {
+                    CriticalValue::Maximum(_,_ ) => {
+                        log::info!("Maximum");
+                    }
+                    CriticalValue::Minimum(_,_ ) => {
+                        log::info!("Minimum");
+                    }
+                    CriticalValue::None => {}
+                }
 
                 // Send data to the application.
                 // *latest_data.lock().unwrap() = raw;

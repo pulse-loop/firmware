@@ -70,7 +70,7 @@ fn main() {
                 average.1 /= average.0;
 
                 // Calibrate dc.
-                calibration.calibrate_dc(average.1);
+                calibration.calibrate_dc(average.1 as i64);
 
                 // Filter dc data (lowpass).
                 let dc_data = dc_filter.feed(average.1 as f32) as i32;
@@ -79,15 +79,15 @@ fn main() {
                 let ac_data = ac_filter.feed(average.1 as f32) as i32;
 
                 // Find critical values
-                match optical::signal_processing::find_critical_value(ac_data, &mut critical_history) {
-                    optical::signal_processing::CriticalValue::Maximum(_,_ ) => {
-                        log::info!("Maximum");
-                    }
-                    optical::signal_processing::CriticalValue::Minimum(_,_ ) => {
-                        log::info!("Minimum");
-                    }
-                    optical::signal_processing::CriticalValue::None => {}
-                }
+                // match optical::signal_processing::find_critical_value(ac_data, &mut critical_history) {
+                //     optical::signal_processing::CriticalValue::Maximum(_,_ ) => {
+                //         log::info!("Maximum");
+                //     }
+                //     optical::signal_processing::CriticalValue::Minimum(_,_ ) => {
+                //         log::info!("Minimum");
+                //     }
+                //     optical::signal_processing::CriticalValue::None => {}
+                // }
 
                 // Send data to the application.
                 // *latest_data.lock().unwrap() = raw;

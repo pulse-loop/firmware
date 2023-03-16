@@ -193,7 +193,6 @@ impl CriticalHistory {
 }
 
 pub(crate) fn find_critical_value(element: i32, history: &mut CriticalHistory) -> CriticalValue {
-    log::info!("Element: {}", element);
     let critical;
 
     if element > history.max.0 {
@@ -201,7 +200,6 @@ pub(crate) fn find_critical_value(element: i32, history: &mut CriticalHistory) -
     } else if element < history.min.0 {
         history.min = (element, history.time.elapsed().as_millis());
     }
-    log::info!("Max: {:?}", history.max);
 
     let is_positive = element > 0;
     if history.is_positive != is_positive {
@@ -220,7 +218,6 @@ pub(crate) fn find_critical_value(element: i32, history: &mut CriticalHistory) -
     } else {
         critical = CriticalValue::None;
     }
-    log::info!("Critical: {:?}", critical);
 
     critical
 }

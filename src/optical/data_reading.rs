@@ -18,14 +18,14 @@ pub static DATA_READY: AtomicBool = AtomicBool::new(false);
 fn request_readings<I2C, CB>(frontend: &mut AFE4404<I2C, ThreeLedsMode>, mut completion: CB)
 where
     I2C: embedded_hal::i2c::I2c,
-    CB: FnMut(Readings<ThreeLedsMode>, &mut AFE4404<I2C, ThreeLedsMode>) + 'static,
+    CB: FnMut(Readings<ThreeLedsMode>) + 'static,
 {
     if DATA_READY.load(std::sync::atomic::Ordering::Relaxed) {
         DATA_READY.store(false, std::sync::atomic::Ordering::Relaxed); // Prevent readings overlapping.
         let current_readings = frontend.read();
         if !DATA_READY.load(std::sync::atomic::Ordering::Relaxed) {
             if let Ok(readings) = current_readings {
-                completion(readings, frontend);
+                completion(readings);
             } else {
                 log::error!("Error reading from AFE4404: {:?}", current_readings);
             }
@@ -39,7 +39,7 @@ where
 /// This function should be called in a separate thread to get readings from the AFE4404.
 pub fn reading_task<CB>(callback: CB)
 where
-    CB: FnMut(RawData, &mut AFE4404<esp_idf_hal::i2c::I2cDriver, ThreeLedsMode>) + 'static,
+    CB: FnMut(RawData) + 'static,
 {
     let cb = Arc::new(Mutex::new(callback));
 
@@ -49,10 +49,10 @@ where
         thread::sleep(Duration::from_millis(1));
 
         let mut data: RawData = RawData::default();
-        log::info!("Inside reading_task");
+
         request_readings(
             super::FRONTEND.lock().unwrap().as_mut().unwrap(),
-            move |readings_frontend, frontend| {
+            move |readings_frontend| {
                 // Convert the readings to microvolts as integers.
                 data.ambient_reading =
                     readings_frontend.ambient().get::<microvolt>().round() as i32;
@@ -62,7 +62,7 @@ where
 
                 // Call the callback.
                 let mut cb = cb.lock().unwrap();
-                cb(data, frontend);
+                cb(data);
             },
         );
     }

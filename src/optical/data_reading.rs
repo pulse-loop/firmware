@@ -15,14 +15,13 @@ pub static DATA_READY: AtomicBool = AtomicBool::new(false);
 
 /// Gets the readings from the AFE4404 and calls the completion callback with them.
 /// If the readings are not ready or overlap with previous readings, the callback is not called.
-fn request_readings<I2C, CB>(frontend: &mut AFE4404<I2C, ThreeLedsMode>, mut completion: CB)
+fn request_readings<CB>(mut completion: CB)
 where
-    I2C: embedded_hal::i2c::I2c,
     CB: FnMut(Readings<ThreeLedsMode>) + 'static,
 {
     if DATA_READY.load(std::sync::atomic::Ordering::Relaxed) {
         DATA_READY.store(false, std::sync::atomic::Ordering::Relaxed); // Prevent readings overlapping.
-        let current_readings = frontend.read();
+        let current_readings = super::FRONTEND.lock().unwrap().as_mut().unwrap().read();
         if !DATA_READY.load(std::sync::atomic::Ordering::Relaxed) {
             if let Ok(readings) = current_readings {
                 completion(readings);
@@ -51,7 +50,6 @@ where
         let mut data: RawData = RawData::default();
 
         request_readings(
-            super::FRONTEND.lock().unwrap().as_mut().unwrap(),
             move |readings_frontend| {
                 // Convert the readings to microvolts as integers.
                 data.ambient_reading =

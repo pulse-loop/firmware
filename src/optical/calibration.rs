@@ -35,21 +35,23 @@ impl Calibration {
     }
 
     pub(crate) fn calibrate_dc(&mut self, data: i32) {
-        log::info!("1 - Calibrating DC: {} µV", data);
         if data.abs() > self.working_threshold {
-            let error = (self.set_point - data) / (2 * self.resistor);
-            log::info!("2 - Error: {} nA", error);
+            let error = (self.set_point - data) / (2 * self.resistor); // nA
 
-            // if let Ok(led_current) = frontend.set_led1_current(ElectricCurrent::new::<nanoampere>(
-            //     (self.led_current + error) as f32,
-            // )) {
-            //     self.led_current += led_current.get::<nanoampere>() as i32;
-            //     log::info!("Led current: {} nA", self.led_current);
-            // } else {
-            //     log::error!("Failed to set led current.");
-            // }
-            // log::info!("3 - END");
+            if let Ok(led_current) = super::FRONTEND
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .set_led1_current(ElectricCurrent::new::<nanoampere>(
+                    (self.led_current + error) as f32,
+                ))
+            {
+                self.led_current += led_current.get::<nanoampere>() as i32;
+                log::info!("Led current: {} nA", self.led_current);
+            } else {
+                log::error!("Failed to set led current.");
+            }
         }
-        log::info!("4 - END");
     }
 }

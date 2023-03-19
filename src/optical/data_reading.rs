@@ -49,19 +49,16 @@ where
 
         let mut data: RawData = RawData::default();
 
-        request_readings(
-            move |readings_frontend| {
-                // Convert the readings to microvolts as integers.
-                data.ambient_reading =
-                    readings_frontend.ambient().get::<microvolt>().round() as i32;
-                data.led1_reading = readings_frontend.led1().get::<microvolt>().round() as i32;
-                data.led2_reading = readings_frontend.led2().get::<microvolt>().round() as i32;
-                data.led3_reading = readings_frontend.led3().get::<microvolt>().round() as i32;
+        request_readings(move |readings_frontend| {
+            // Convert the readings to microvolts as integers.
+            data.ambient_reading = readings_frontend.ambient().get::<microvolt>().round() as i32;
+            data.led1_reading = readings_frontend.led1().get::<microvolt>().round() as i32;
+            data.led2_reading = readings_frontend.led2().get::<microvolt>().round() as i32;
+            data.led3_reading = readings_frontend.led3().get::<microvolt>().round() as i32;
 
-                // Call the callback.
-                let mut cb = cb.lock().unwrap();
-                cb(data);
-            },
-        );
+            // Call the callback.
+            let mut cb = cb.lock().unwrap();
+            cb(data);
+        });
     }
 }

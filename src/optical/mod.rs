@@ -6,13 +6,15 @@ use esp_idf_hal::{
 };
 
 use uom::si::{
-    f32::{Frequency, Time},
+    electric_current::milliampere,
+    f32::{ElectricCurrent, Frequency, Time},
     frequency::megahertz,
     time::microsecond,
 };
 
 use afe4404::{
     device::AFE4404,
+    led_current::LedCurrentConfiguration,
     modes::ThreeLedsMode,
     {
         clock::ClockConfiguration,
@@ -63,6 +65,14 @@ pub fn initialise<P: Pin>(
     if let Ok(mut frontend) = FRONTEND.lock() {
         if let Some(frontend) = frontend.as_mut() {
             frontend.sw_reset().expect("Cannot reset the afe.");
+
+            frontend
+                .set_leds_current(&LedCurrentConfiguration::<ThreeLedsMode>::new(
+                    ElectricCurrent::new::<milliampere>(10.0),
+                    ElectricCurrent::new::<milliampere>(0.0),
+                    ElectricCurrent::new::<milliampere>(0.0),
+                ))
+                .expect("Cannot set LEDs current.");
 
             frontend
                 .set_clock_source(ClockConfiguration::Internal)

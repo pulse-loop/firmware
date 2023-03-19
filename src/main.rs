@@ -12,9 +12,7 @@ use esp_idf_hal::{
 };
 
 // If using the `binstart` feature of `esp-idf-sys`, always keep this module imported.
-use esp_idf_sys::{
-    self as _, esp_get_free_heap_size, esp_get_free_internal_heap_size,
-};
+use esp_idf_sys::{self as _, esp_get_free_heap_size, esp_get_free_internal_heap_size};
 use static_fir::FirFilter;
 
 mod bluetooth;
@@ -60,7 +58,7 @@ fn main() {
         let mut dc_filter = FirFilter::<optical::signal_processing::DcFir>::new();
         let mut ac_filter = FirFilter::<optical::signal_processing::AcFir>::new();
         let mut average = (0, 0);
-        let mut calibration = optical::calibration::Calibration::new();
+        let mut calibrator = optical::calibration::Calibrator::new();
         let mut critical_history = optical::signal_processing::CriticalHistory::new();
         optical::data_reading::reading_task(move |raw| {
             if average.0 < 10 {
@@ -70,11 +68,11 @@ fn main() {
                 average.1 /= average.0;
 
                 // Calibrate dc.
-                calibration.calibrate_dc(average.1 as i64);
+                calibrator.calibrate_dc(average.1 as i64);
 
                 // Filter dc data (lowpass).
                 let dc_data = dc_filter.feed(average.1 as f32) as i32;
-                
+
                 // Filter ac data (bandpass).
                 let ac_data = ac_filter.feed(average.1 as f32) as i32;
 

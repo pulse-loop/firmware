@@ -50,6 +50,38 @@ impl RawData {
     }
 }
 
+impl IntoIterator for RawData {
+    type Item = i32;
+    type IntoIter = RawDataIntoIterator;
+
+    fn into_iter(self) -> Self::IntoIter {
+        RawDataIntoIterator {
+            raw_data: self,
+            index: 0,
+        }
+    }
+}
+
+pub struct RawDataIntoIterator {
+    raw_data: RawData,
+    index: usize,
+}
+
+impl Iterator for RawDataIntoIterator {
+    type Item = i32;
+    fn next(&mut self) -> Option<i32> {
+        let result = match self.index {
+            0 => self.raw_data.ambient_reading,
+            1 => self.raw_data.led1_reading,
+            2 => self.raw_data.led2_reading,
+            3 => self.raw_data.led3_reading,
+            _ => return None,
+        };
+        self.index += 1;
+        Some(result)
+    }
+}
+
 /// This funtion should be called in a separate thread to send the readings from the AFE4404.
 pub fn notify_task(
     ble_api: Arc<RwLock<crate::bluetooth::BluetoothAPI>>,

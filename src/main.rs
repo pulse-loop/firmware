@@ -60,41 +60,47 @@ fn main() {
         let mut average = (0, 0);
         let mut calibrator = optical::calibration::Calibrator::new();
         let mut critical_history = optical::signal_processing::CriticalHistory::new();
-        optical::data_reading::reading_task(move |raw| {
-            if average.0 < 10 {
-                average.0 += 1;
-                average.1 += raw.led1_reading;
-            } else {
-                average.1 /= average.0;
+        optical::data_reading::reading_task(move |raw_data| {
+            let mut raw_data_iterator = raw_data.into_iter();
+            let ambient = raw_data_iterator.next().unwrap();
 
-                // Calibrate dc.
-                calibrator.calibrate_dc(average.1 as i64);
+            // Iterate over the three leds.
+            raw_data_iterator.for_each(|led| {
+                if average.0 < 10 {
+                    average.0 += 1;
+                    average.1 += led;
+                } else {
+                    average.1 /= average.0;
 
-                // Filter dc data (lowpass).
-                let dc_data = dc_filter.feed(average.1 as f32) as i32;
+                    // Calibrate dc.
+                    calibrator.calibrate_dc(average.1 as i64);
 
-                // Filter ac data (bandpass).
-                let ac_data = ac_filter.feed(average.1 as f32) as i32;
+                    // Filter dc data (lowpass).
+                    let dc_data = dc_filter.feed(average.1 as f32) as i32;
 
-                // Find critical values
-                // match optical::signal_processing::find_critical_value(ac_data, &mut critical_history) {
-                //     optical::signal_processing::CriticalValue::Maximum(_,_ ) => {
-                //         log::info!("Maximum");
-                //     }
-                //     optical::signal_processing::CriticalValue::Minimum(_,_ ) => {
-                //         log::info!("Minimum");
-                //     }
-                //     optical::signal_processing::CriticalValue::None => {}
-                // }
+                    // Filter ac data (bandpass).
+                    let ac_data = ac_filter.feed(average.1 as f32) as i32;
 
-                // Send data to the application.
-                // *latest_data.lock().unwrap() = raw;
-                latest_data.lock().unwrap().led1_reading = average.1;
-                latest_data.lock().unwrap().led2_reading = dc_data;
-                latest_data.lock().unwrap().led3_reading = ac_data;
+                    // Find critical values
+                    // match optical::signal_processing::find_critical_value(ac_data, &mut critical_history) {
+                    //     optical::signal_processing::CriticalValue::Maximum(_,_ ) => {
+                    //         log::info!("Maximum");
+                    //     }
+                    //     optical::signal_processing::CriticalValue::Minimum(_,_ ) => {
+                    //         log::info!("Minimum");
+                    //     }
+                    //     optical::signal_processing::CriticalValue::None => {}
+                    // }
 
-                average = (0, 0);
-            }
+                    // Send data to the application.
+                    // *latest_data.lock().unwrap() = raw;
+                    latest_data.lock().unwrap().led1_reading = average.1;
+                    latest_data.lock().unwrap().led2_reading = dc_data;
+                    latest_data.lock().unwrap().led3_reading = ac_data;
+
+                    average = (0, 0);
+                }
+            });
         })
     });
 

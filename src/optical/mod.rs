@@ -68,7 +68,7 @@ pub fn initialise<P: Pin>(
 
             frontend
                 .set_leds_current(&LedCurrentConfiguration::<ThreeLedsMode>::new(
-                    ElectricCurrent::new::<milliampere>(10.0),
+                    ElectricCurrent::new::<milliampere>(0.0),
                     ElectricCurrent::new::<milliampere>(0.0),
                     ElectricCurrent::new::<milliampere>(0.0),
                 ))

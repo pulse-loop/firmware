@@ -50,9 +50,27 @@ impl RawData {
     }
 }
 
-impl IntoIterator for RawData {
+impl std::ops::AddAssign for RawData {
+    fn add_assign(&mut self, rhs: Self) {
+        self.ambient_reading += rhs.ambient_reading;
+        self.led1_reading += rhs.led1_reading;
+        self.led2_reading += rhs.led2_reading;
+        self.led3_reading += rhs.led3_reading;
+    }
+}
+
+impl std::ops::DivAssign<i32> for RawData {
+    fn div_assign(&mut self, rhs: i32) {
+        self.ambient_reading /= rhs;
+        self.led1_reading /= rhs;
+        self.led2_reading /= rhs;
+        self.led3_reading /= rhs;
+    }
+}
+
+impl<'a> IntoIterator for &'a RawData {
     type Item = i32;
-    type IntoIter = RawDataIntoIterator;
+    type IntoIter = RawDataIntoIterator<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
         RawDataIntoIterator {
@@ -62,12 +80,12 @@ impl IntoIterator for RawData {
     }
 }
 
-pub struct RawDataIntoIterator {
-    raw_data: RawData,
+pub struct RawDataIntoIterator<'a> {
+    raw_data: &'a RawData,
     index: usize,
 }
 
-impl Iterator for RawDataIntoIterator {
+impl<'a> Iterator for RawDataIntoIterator<'a> {
     type Item = i32;
     fn next(&mut self) -> Option<i32> {
         let result = match self.index {

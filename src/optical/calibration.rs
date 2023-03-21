@@ -43,26 +43,31 @@ impl Calibrator {
             if let Ok(mut frontend) = super::FRONTEND.lock() {
                 if let Some(frontend) = frontend.as_mut() {
                     // Get the led current and the offset current from the frontend.
-                    let mut led_current =
-                        frontend.get_led1_current().unwrap().get::<nanoampere>() as i64;
+                    let mut led_current = frontend
+                        .get_led2_current()
+                        .expect("Unable to get led current")
+                        .get::<nanoampere>() as i64;
                     let offset_current = frontend
-                        .get_offset_led1_current()
-                        .unwrap()
+                        .get_offset_led2_current()
+                        .expect("Unable to get offset current")
                         .get::<nanoampere>() as i64;
 
                     // The error between the set point and the sample converted in the current seen by the photodiode.
                     let error = (self.set_point - sample)
-                        / (2 * frontend.get_tia_resistor1().unwrap().get::<kiloohm>() as i64); // TODO: Handle resistor1 and resitor2.
+                        / (2 * frontend
+                            .get_tia_resistor2()
+                            .expect("Unable to get resistor2")
+                            .get::<kiloohm>() as i64); // TODO: Handle resistor1 and resitor2.
 
                     // Calculate the led current.
                     let requested_led_current = led_current + self.alpha * (error + offset_current);
 
                     led_current = frontend
-                        .set_led1_current(ElectricCurrent::new::<nanoampere>(
+                        .set_led2_current(ElectricCurrent::new::<nanoampere>(
                             requested_led_current.clamp(self.led_current_min, self.led_current_max)
                                 as f32,
                         ))
-                        .unwrap()
+                        .expect("Unable to set led current")
                         .get::<nanoampere>() as i64;
 
                     // Calculate the offset current.
@@ -70,12 +75,12 @@ impl Calibrator {
                         (requested_led_current - led_current) / self.alpha;
 
                     frontend
-                        .set_offset_led1_current(ElectricCurrent::new::<nanoampere>(
+                        .set_offset_led2_current(ElectricCurrent::new::<nanoampere>(
                             requested_offset_current
                                 .clamp(self.offset_current_min, self.offset_current_max)
                                 as f32,
                         ))
-                        .unwrap();
+                        .expect("Unable to set offset current");
 
                     log::info!(
                         "Calibrated DC: requested_led_current = {} nA, led_current = {} nA, offset_current = {} nA",

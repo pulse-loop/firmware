@@ -57,29 +57,32 @@ fn main() {
     thread::spawn(move || {
         let mut dc_filter = FirFilter::<optical::signal_processing::DcFir>::new();
         let mut ac_filter = FirFilter::<optical::signal_processing::AcFir>::new();
-        let mut average = (0, 0);
+        let mut average = (0, optical::data_sending::RawData::default());
         let mut calibrator = optical::calibration::Calibrator::new();
         let mut critical_history = optical::signal_processing::CriticalHistory::new();
         optical::data_reading::reading_task(move |raw_data| {
-            let mut raw_data_iterator = raw_data.into_iter();
-            let ambient = raw_data_iterator.next().unwrap();
+            // Average the data over 10 samples.
+            if average.0 < 10 {
+                average.0 += 1;
+                average.1 += raw_data;
+            } else {
+                average.1 /= 10;
 
-            // Iterate over the three leds.
-            raw_data_iterator.for_each(|led| {
-                if average.0 < 10 {
-                    average.0 += 1;
-                    average.1 += led;
-                } else {
-                    average.1 /= average.0;
+                let mut average_iterator = average.1.into_iter();
 
+                // Skip the ambient light.
+                let ambient = average_iterator.next().expect("No ambient light data.");
+
+                // Iterate over the three leds.
+                for led in average_iterator {
                     // Calibrate dc.
-                    calibrator.calibrate_dc(average.1 as i64);
+                    calibrator.calibrate_dc(led as i64);
 
                     // Filter dc data (lowpass).
-                    let dc_data = dc_filter.feed(average.1 as f32) as i32;
+                    let dc_data = dc_filter.feed(led as f32) as i32;
 
                     // Filter ac data (bandpass).
-                    let ac_data = ac_filter.feed(average.1 as f32) as i32;
+                    let ac_data = ac_filter.feed(led as f32) as i32;
 
                     // Find critical values
                     // match optical::signal_processing::find_critical_value(ac_data, &mut critical_history) {
@@ -94,13 +97,12 @@ fn main() {
 
                     // Send data to the application.
                     // *latest_data.lock().unwrap() = raw;
-                    latest_data.lock().unwrap().led1_reading = average.1;
+                    latest_data.lock().unwrap().led1_reading = led;
                     latest_data.lock().unwrap().led2_reading = dc_data;
                     latest_data.lock().unwrap().led3_reading = ac_data;
-
-                    average = (0, 0);
                 }
-            });
+                average = (0, optical::data_sending::RawData::default());
+            };
         })
     });
 

@@ -55,7 +55,11 @@ fn main() {
     });
 
     thread::spawn(move || {
-        let mut dc_filter = FirFilter::<optical::signal_processing::DcFir>::new();
+        let mut dc_filter1 = FirFilter::<optical::signal_processing::DcFirLed1>::new();
+        
+        // Uncommenting the following line will cause the program to crash.
+        let mut dc_filter2 = FirFilter::<optical::signal_processing::DcFirLed2>::new();
+
         let mut ac_filter = FirFilter::<optical::signal_processing::AcFir>::new();
         let mut average = (0, optical::data_sending::RawData::default());
         let mut calibrator = optical::calibration::Calibrator::new();
@@ -74,12 +78,12 @@ fn main() {
                 let ambient = average_iterator.next().expect("No ambient light data.");
 
                 // Iterate over the three leds.
-                for led in average_iterator {
+                for led in average_iterator.skip(1).take(1) {
                     // Calibrate dc.
                     calibrator.calibrate_dc(led as i64);
 
                     // Filter dc data (lowpass).
-                    let dc_data = dc_filter.feed(led as f32) as i32;
+                    let dc_data = dc_filter1.feed(led as f32) as i32;
 
                     // Filter ac data (bandpass).
                     let ac_data = ac_filter.feed(led as f32) as i32;

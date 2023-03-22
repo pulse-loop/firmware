@@ -2,41 +2,30 @@
 
 Here are described the custom data types used in BLE communication. Data is sent as a byte buffer and all values are serialised in little-endian order.
 
-## Aggregated data
+## Raw data
 
-A custom type that contains the LEDs and ambient phase readings, the calibration upper and lower thresholds for each channel and a flag for indicating critical points on LED channels.
-
-### Format
-
-| Field                   | Type                              | Length  |
-|-------------------------|-----------------------------------|---------|
-| Ambient phase reading   | `i32`                             | 4 bytes |
-| LED1 ADC reading        | `i32`                             | 4 bytes |
-| LED2 ADC reading        | `i32`                             | 4 bytes |
-| LED3 ADC reading        | `i32`                             | 4 bytes |
-| Ambient lower threshold | `i32`                             | 4 bytes |
-| Ambient upper threshold | `i32`                             | 4 bytes |
-| LED1 lower threshold    | `i32`                             | 4 bytes |
-| LED1 upper threshold    | `i32`                             | 4 bytes |
-| LED2 lower threshold    | `i32`                             | 4 bytes |
-| LED2 upper threshold    | `i32`                             | 4 bytes |
-| LED3 lower threshold    | `i32`                             | 4 bytes |
-| LED3 upper threshold    | `i32`                             | 4 bytes |
-| Padding                 | -                                 | 2 bits  |
-| LED1 critical point     | [Critical point](#critical-point) | 2 bits  |
-| LED2 critical point     | [Critical point](#critical-point) | 2 bits  |
-| LED3 critical point     | [Critical point](#critical-point) | 2 bits  |
-
-## Critical point
-
-A custom type which could assume three possible values: Maximum, Minimum and None.
-Each value is coded with two bits.
+A custom type that contains the ambient and LEDs readings from the frontend in microvolts.
 
 ### Format
 
-| Coding | Value      |
-|--------|------------|
-| 00     | None       |
-| 01     | Minimum    |
-| 10     | Maximum    |
-| 11     | Do not use |
+| Field                 | Type  | Length  |
+| --------------------- | ----- | ------- |
+| Ambient phase reading | `i32` | 4 bytes |
+| LED1 phase reading    | `i32` | 4 bytes |
+| LED2 phase reading    | `i32` | 4 bytes |
+| LED3 phase reading    | `i32` | 4 bytes |
+
+## Filtered data
+
+A custom type that contains the DC and AC filtered values in microvolts.
+
+### Format
+
+| Field   | Type  | Length  |
+| ------- | ----- | ------- |
+| LED1 DC | `i32` | 4 bytes |
+| LED1 AC | `i32` | 4 bytes |
+| LED2 DC | `i32` | 4 bytes |
+| LED2 AC | `i32` | 4 bytes |
+| LED3 DC | `i32` | 4 bytes |
+| LED3 AC | `i32` | 4 bytes |

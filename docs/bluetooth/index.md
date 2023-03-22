@@ -73,8 +73,8 @@ Data from the optical frontend and other sensors.
 | ~~LED2 ADC reading~~      | Read   | `f32`                                     | `A93B639D-8A8D-43EA-8A5A-8175D7C09E0B` | The latest reading during the LED2 phase [V].                           | **Deprecated** | Yes |
 | ~~LED3 ADC reading~~      | Read   | `f32`                                     | `C0A12246-79E4-4BD7-8A4F-B841D5590F70` | The latest reading during the LED3 phase [V].                           | **Deprecated** | Yes |
 | Raw data                  | Read   | [Raw](custom_types.md#raw-data)           | `26CB3CCA-F22E-4179-8125-55874E9153AD` | The latest readings from the frontend [µV].                             | No             | No  |
-| Filtered data             | Read   | [Filtered](custom_types.md#filtered-data) | ``                                     | The DC and AC filtered data [µV].                                       | No             | No  |
-
+| Filtered data             | Read   | [Filtered](custom_types.md#filtered-data) | `BDC0FC52-797B-4065-AABA-DC394F1DD0FD` | The DC and AC filtered data [µV].                                       | No             | No  |
+| Calibration               | Read   | [Calibration](custom_types.md#calibrator) | `CD60C165-DC7D-4F05-9BB3-C4D1833120CA` | The parameters used in the calibration process.                         | No             | No  |
 
 ### Optical frontend configuration
 

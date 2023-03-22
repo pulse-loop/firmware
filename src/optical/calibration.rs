@@ -38,7 +38,7 @@ impl Calibrator {
     // TODO: Handle unwrap fails.
     pub(crate) fn calibrate_dc(&mut self, sample: i64) {
         // Calibrate only if the sample is out of the working threshold.
-        if sample.abs() > self.working_threshold {
+        if sample < self.set_point - self.working_threshold || sample > self.set_point + self.working_threshold {
             // Acquire the frontend lock.
             if let Ok(mut frontend) = super::FRONTEND.lock() {
                 if let Some(frontend) = frontend.as_mut() {

@@ -54,7 +54,10 @@ fn main() {
         optical::data_sending::notify_task(ble_api_for_notify, latest_data_for_notify)
     });
 
-    thread::spawn(move || {
+    let builder = thread::Builder::new().name("data_reading".to_string())
+                                .stack_size(1024 * 10);
+
+    builder.spawn(move || {
         let mut dc_filter = [
             FirFilter::<optical::signal_processing::DcFir>::new(),
             FirFilter::<optical::signal_processing::DcFir>::new(),
@@ -125,7 +128,7 @@ fn main() {
                 average = (0, optical::data_sending::RawData::default());
             };
         })
-    });
+    }).unwrap();
 
     loop {
         thread::sleep(Duration::from_millis(1000));

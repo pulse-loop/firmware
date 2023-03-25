@@ -14,6 +14,7 @@ use esp_idf_hal::{
 // If using the `binstart` feature of `esp-idf-sys`, always keep this module imported.
 use esp_idf_sys::{self as _, esp_get_free_heap_size, esp_get_free_internal_heap_size};
 use static_fir::FirFilter;
+use uom::si::{electric_potential::microvolt, f32::ElectricPotential};
 
 mod bluetooth;
 mod optical;
@@ -54,81 +55,218 @@ fn main() {
         optical::data_sending::notify_task(ble_api_for_notify, latest_data_for_notify)
     });
 
-    let builder = thread::Builder::new().name("data_reading".to_string())
-                                .stack_size(1024 * 10);
+    let builder = thread::Builder::new()
+        .name("data_reading".to_string())
+        .stack_size(1024 * 10);
 
-    builder.spawn(move || {
-        let mut dc_filter = [
-            FirFilter::<optical::signal_processing::DcFir>::new(),
-            FirFilter::<optical::signal_processing::DcFir>::new(),
-            FirFilter::<optical::signal_processing::DcFir>::new(),
-        ];
-        let mut ac_filter = [
-            FirFilter::<optical::signal_processing::AcFir>::new(),
-            FirFilter::<optical::signal_processing::AcFir>::new(),
-            FirFilter::<optical::signal_processing::AcFir>::new(),
-        ];
-        let mut calibrator = [
-            optical::calibration::Calibrator::new(),
-            optical::calibration::Calibrator::new(),
-            optical::calibration::Calibrator::new(),
-        ];
-        let mut critical_history = [
-            optical::signal_processing::CriticalHistory::new(),
-            optical::signal_processing::CriticalHistory::new(),
-            optical::signal_processing::CriticalHistory::new(),
-        ];
-        let mut average = (0, optical::data_sending::RawData::default());
-        log::info!("Started data reading task.");
-        optical::data_reading::reading_task(move |raw_data| {
-            // Average the data over 10 samples.
-            log::info!("0 - Start");
-            if average.0 < 10 {
-                average.0 += 1;
-                average.1 += raw_data;
-            } else {
-                average.1 /= 10;
-                log::info!("1 - Average");
+    builder
+        .spawn(move || {
+            let mut dc_filter = [
+                FirFilter::<optical::signal_processing::DcFir>::new(),
+                FirFilter::<optical::signal_processing::DcFir>::new(),
+                FirFilter::<optical::signal_processing::DcFir>::new(),
+            ];
+            let mut ac_filter = [
+                FirFilter::<optical::signal_processing::AcFir>::new(),
+                FirFilter::<optical::signal_processing::AcFir>::new(),
+                FirFilter::<optical::signal_processing::AcFir>::new(),
+            ];
+            let mut calibrator = [
+                optical::calibration::Calibrator::new(
+                    || {
+                        optical::FRONTEND
+                            .lock()
+                            .unwrap()
+                            .as_mut()
+                            .unwrap()
+                            .get_led1_current()
+                            .unwrap()
+                    },
+                    |current| {
+                        optical::FRONTEND
+                            .lock()
+                            .unwrap()
+                            .as_mut()
+                            .unwrap()
+                            .set_led1_current(current)
+                            .unwrap()
+                    },
+                    || {
+                        optical::FRONTEND
+                            .lock()
+                            .unwrap()
+                            .as_mut()
+                            .unwrap()
+                            .get_offset_led1_current()
+                            .unwrap()
+                    },
+                    |current| {
+                        optical::FRONTEND
+                            .lock()
+                            .unwrap()
+                            .as_mut()
+                            .unwrap()
+                            .set_offset_led1_current(current)
+                            .unwrap()
+                    },
+                    || {
+                        optical::FRONTEND
+                            .lock()
+                            .unwrap()
+                            .as_mut()
+                            .unwrap()
+                            .get_tia_resistor1()
+                            .unwrap()
+                    },
+                ),
+                optical::calibration::Calibrator::new(
+                    || {
+                        optical::FRONTEND
+                            .lock()
+                            .unwrap()
+                            .as_mut()
+                            .unwrap()
+                            .get_led2_current()
+                            .unwrap()
+                    },
+                    |current| {
+                        optical::FRONTEND
+                            .lock()
+                            .unwrap()
+                            .as_mut()
+                            .unwrap()
+                            .set_led2_current(current)
+                            .unwrap()
+                    },
+                    || {
+                        optical::FRONTEND
+                            .lock()
+                            .unwrap()
+                            .as_mut()
+                            .unwrap()
+                            .get_offset_led2_current()
+                            .unwrap()
+                    },
+                    |current| {
+                        optical::FRONTEND
+                            .lock()
+                            .unwrap()
+                            .as_mut()
+                            .unwrap()
+                            .set_offset_led2_current(current)
+                            .unwrap()
+                    },
+                    || {
+                        optical::FRONTEND
+                            .lock()
+                            .unwrap()
+                            .as_mut()
+                            .unwrap()
+                            .get_tia_resistor2()
+                            .unwrap()
+                    },
+                ),
+                optical::calibration::Calibrator::new(
+                    || {
+                        optical::FRONTEND
+                            .lock()
+                            .unwrap()
+                            .as_mut()
+                            .unwrap()
+                            .get_led3_current()
+                            .unwrap()
+                    },
+                    |current| {
+                        optical::FRONTEND
+                            .lock()
+                            .unwrap()
+                            .as_mut()
+                            .unwrap()
+                            .set_led3_current(current)
+                            .unwrap()
+                    },
+                    || {
+                        optical::FRONTEND
+                            .lock()
+                            .unwrap()
+                            .as_mut()
+                            .unwrap()
+                            .get_offset_led3_current()
+                            .unwrap()
+                    },
+                    |current| {
+                        optical::FRONTEND
+                            .lock()
+                            .unwrap()
+                            .as_mut()
+                            .unwrap()
+                            .set_offset_led3_current(current)
+                            .unwrap()
+                    },
+                    || {
+                        optical::FRONTEND
+                            .lock()
+                            .unwrap()
+                            .as_mut()
+                            .unwrap()
+                            .get_tia_resistor2()
+                            .unwrap()
+                    },
+                ),
+            ];
+            let mut critical_history = [
+                optical::signal_processing::CriticalHistory::new(),
+                optical::signal_processing::CriticalHistory::new(),
+                optical::signal_processing::CriticalHistory::new(),
+            ];
+            let mut averaged_data = (0, optical::data_sending::RawData::default());
+            optical::data_reading::reading_task(move |raw_data| {
+                // Average the data over 10 samples.
+                if averaged_data.0 < 10 {
+                    averaged_data.0 += 1;
+                    averaged_data.1 += raw_data;
+                } else {
+                    averaged_data.1 /= 10;
 
-                let mut average_iterator = average.1.into_iter();
+                    let mut averaged_data_iterator = averaged_data.1.into_iter();
 
-                // Skip the ambient light.
-                let ambient = average_iterator.next().unwrap();
-                log::info!("2 - Ambient");
+                    // Skip the ambient light.
+                    let ambient = averaged_data_iterator.next().unwrap();
 
-                // Iterate over the three leds.
-                for led in average_iterator {
-                    log::info!("3 - For");
-                    // Calibrate dc.
-                    calibrator[0].calibrate_dc(led as i64);
-                    log::info!("4 - Calibrate DC");
+                    // Iterate over the three leds.
+                    for (i, led) in averaged_data_iterator.enumerate().take(1) {
+                        // Calibrate dc.
+                        calibrator[i].calibrate_dc(ElectricPotential::new::<microvolt>(led as f32));
 
-                    // Filter dc data (lowpass).
-                    let dc_data = dc_filter[0].feed(led as f32) as i32;
-                    log::info!("5 - Filter DC");
+                        // Filter dc data (lowpass).
+                        let dc_data = dc_filter[i].feed(led as f32) as i32;
 
-                    // Filter ac data (bandpass).
-                    let ac_data = ac_filter[0].feed(led as f32) as i32;
-                    log::info!("6 - Filter AC");
+                        // Filter ac data (bandpass).
+                        let ac_data = ac_filter[i].feed(led as f32) as i32;
 
-                    // Find critical values
-                    // match optical::signal_processing::find_critical_value(ac_data, &mut critical_history[0]) {
-                    //     optical::signal_processing::CriticalValue::Maximum(_,_ ) => {
-                    //         log::info!("Maximum");
-                    //     }
-                    //     optical::signal_processing::CriticalValue::Minimum(_,_ ) => {
-                    //         log::info!("Minimum");
-                    //     }
-                    //     optical::signal_processing::CriticalValue::None => {}
-                    // }
-                }
-                // Send data to the application.
-                // *latest_data.lock().unwrap() = average.1;
+                        // Find critical values
+                        // match optical::signal_processing::find_critical_value(ac_data, &mut critical_history[0]) {
+                        //     optical::signal_processing::CriticalValue::Maximum(_,_ ) => {
+                        //         log::info!("Maximum");
+                        //     }
+                        //     optical::signal_processing::CriticalValue::Minimum(_,_ ) => {
+                        //         log::info!("Minimum");
+                        //     }
+                        //     optical::signal_processing::CriticalValue::None => {}
+                        // }
 
-                average = (0, optical::data_sending::RawData::default());
-            };
+                        latest_data.lock().unwrap().ambient_reading = averaged_data.1.led1_reading;
+                        latest_data.lock().unwrap().led1_reading = dc_data;
+                        latest_data.lock().unwrap().led2_reading = ac_data;
+                    }
+
+                    // Send data to the application.
+
+                    averaged_data = (0, optical::data_sending::RawData::default());
+                };
+            })
         })
-    }).unwrap();
+        .unwrap();
 
     loop {
         thread::sleep(Duration::from_millis(1000));

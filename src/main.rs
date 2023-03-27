@@ -72,7 +72,7 @@ fn main() {
                 FirFilter::<optical::signal_processing::AcFir>::new(),
             ];
             let mut calibrator = [
-                optical::calibration::Calibrator::new(
+                optical::calibration::Calibrator::new(800.0,
                     || {
                         optical::FRONTEND
                             .lock()
@@ -119,7 +119,7 @@ fn main() {
                             .unwrap()
                     },
                 ),
-                optical::calibration::Calibrator::new(
+                optical::calibration::Calibrator::new(800.0,
                     || {
                         optical::FRONTEND
                             .lock()
@@ -166,7 +166,7 @@ fn main() {
                             .unwrap()
                     },
                 ),
-                optical::calibration::Calibrator::new(
+                optical::calibration::Calibrator::new(200.0,
                     || {
                         optical::FRONTEND
                             .lock()
@@ -255,7 +255,7 @@ fn main() {
                         //     optical::signal_processing::CriticalValue::None => {}
                         // }
 
-                        latest_data.lock().unwrap().ambient_reading = averaged_data.1.led1_reading;
+                        latest_data.lock().unwrap().ambient_reading = led;
                         latest_data.lock().unwrap().led1_reading = dc_data;
                         latest_data.lock().unwrap().led2_reading = ac_data;
                     }

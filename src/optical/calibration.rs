@@ -1,6 +1,6 @@
 use afe4404::{device::AFE4404, modes::ThreeLedsMode};
 use uom::si::{
-    electric_current::{milliampere, nanoampere, microampere},
+    electric_current::{microampere, milliampere, nanoampere},
     electric_potential::millivolt,
     electrical_resistance::kiloohm,
     f32::{ElectricCurrent, ElectricPotential, ElectricalResistance},
@@ -12,6 +12,7 @@ pub(crate) struct Calibrator {
     // Voltages are expressed in microvolts, currents in nanoamperes and resistors in kiloohms.
 
     // Afe4404 values.
+    led_current: ElectricCurrent,
     led_current_min: ElectricCurrent,
     led_current_max: ElectricCurrent,
     offset_current_min: ElectricCurrent,
@@ -46,13 +47,14 @@ impl Calibrator {
     {
         let calibrator = Calibrator {
             // TODO: Change to optimal initial value.
-            led_current_min: ElectricCurrent::new::<milliampere>(5.0),
+            led_current: ElectricCurrent::new::<milliampere>(0.0),
+            led_current_min: ElectricCurrent::new::<milliampere>(0.0),
             led_current_max: ElectricCurrent::new::<milliampere>(100.0),
             offset_current_min: ElectricCurrent::new::<microampere>(-7.0),
-            offset_current_max: ElectricCurrent::new::<microampere>(7.0),
-            alpha: 800.0,
-            set_point: ElectricPotential::new::<millivolt>(800.0),
-            working_threshold: ElectricPotential::new::<millivolt>(200.0),
+            offset_current_max: ElectricCurrent::new::<microampere>(-2.0),
+            alpha: 1500.0,
+            set_point: ElectricPotential::new::<millivolt>(0.0),
+            working_threshold: ElectricPotential::new::<millivolt>(800.0),
             get_led_current: Box::new(get_led_current),
             set_led_current: Box::new(set_led_current),
             get_offset_current: Box::new(get_offset_current),
@@ -61,6 +63,7 @@ impl Calibrator {
         };
 
         (calibrator.set_led_current)(calibrator.led_current_min);
+        (calibrator.set_offset_current)((calibrator.offset_current_min + calibrator.offset_current_max) / 2.0);
 
         return calibrator;
     }
@@ -75,36 +78,46 @@ impl Calibrator {
         {
             // Get the led current and the offset current from the frontend.
             let mut led_current = (self.get_led_current)();
-            let offset_current = (self.get_offset_current)();
+            let mut offset_current = (self.get_offset_current)();
 
             // The error between the set point and the sample converted in the current seen by the photodiode.
             let error = (self.set_point - sample) / (2.0 * (self.get_resistor)());
             // Calculate the led current.
-            let requested_led_current = led_current + self.alpha * (error + offset_current);
-
-            led_current = (self.set_led_current)(if requested_led_current < self.led_current_min {
+            let requested_led_current = led_current
+                + self.alpha
+                    * (error + offset_current
+                        - (self.offset_current_min + self.offset_current_max) / 2.0);
+            led_current = if requested_led_current < self.led_current_min {
                 self.led_current_min
             } else if requested_led_current > self.led_current_max {
                 self.led_current_max
             } else {
                 requested_led_current
-            });
+            };
+            led_current = (self.set_led_current)(led_current);
 
             // Calculate the offset current.
-            let requested_offset_current = (requested_led_current - led_current) / self.alpha;
+            let requested_offset_current = (self.offset_current_min + self.offset_current_max) / 2.0 + (requested_led_current - led_current) / self.alpha;
 
-            (self.set_offset_current)(if requested_offset_current < self.offset_current_min {
-                self.offset_current_min
-            } else if requested_offset_current > self.offset_current_max {
-                self.offset_current_max
-            } else {
-                requested_offset_current
-            });
+            // PROBLEMA: Corrente al massimo, lettura -1.2V, offset resta a -7 e non vuole salire.
+
+            offset_current =
+                (self.set_offset_current)(if requested_offset_current < self.offset_current_min {
+                    log::warn!("Offset too low");
+                    self.offset_current_min
+                } else if requested_offset_current > self.offset_current_max {
+                    log::warn!("Offset too high");
+                    self.offset_current_max
+                } else {
+                    requested_offset_current
+                });
 
             log::info!(
-                "Calibrated DC {:?}, {:?}",
+                "Calibrated DC {:?} {:?}, {:?}, {:?}",
+                error,
+                requested_led_current,
                 led_current,
-                requested_offset_current
+                offset_current,
             );
         }
     }

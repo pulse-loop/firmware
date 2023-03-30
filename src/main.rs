@@ -51,16 +51,162 @@ fn main() {
 
     let ble_api_for_notify = ble_api;
     let latest_data_for_notify = latest_data.clone();
+
     thread::spawn(move || {
         optical::data_sending::notify_task(ble_api_for_notify, latest_data_for_notify)
     });
-
+    
+    let mut calibrator_led1 = optical::calibration::Calibrator::new(
+        23000.0,
+        || {
+            optical::FRONTEND
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .get_led1_current()
+                .unwrap()
+        },
+        |current| {
+            optical::FRONTEND
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .set_led1_current(current)
+                .unwrap()
+        },
+        || {
+            optical::FRONTEND
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .get_offset_led1_current()
+                .unwrap()
+        },
+        |current| {
+            optical::FRONTEND
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .set_offset_led1_current(current)
+                .unwrap()
+        },
+        || {
+            optical::FRONTEND
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .get_tia_resistor1()
+                .unwrap()
+        },
+    );
+    let mut calibrator_led2 = optical::calibration::Calibrator::new(
+        1000.0,
+        || {
+            optical::FRONTEND
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .get_led2_current()
+                .unwrap()
+        },
+        |current| {
+            optical::FRONTEND
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .set_led2_current(current)
+                .unwrap()
+        },
+        || {
+            optical::FRONTEND
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .get_offset_led2_current()
+                .unwrap()
+        },
+        |current| {
+            optical::FRONTEND
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .set_offset_led2_current(current)
+                .unwrap()
+        },
+        || {
+            optical::FRONTEND
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .get_tia_resistor2()
+                .unwrap()
+        },
+    );
+    let mut calibrator_led3 = optical::calibration::Calibrator::new(
+        570.0,
+        || {
+            optical::FRONTEND
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .get_led3_current()
+                .unwrap()
+        },
+        |current| {
+            optical::FRONTEND
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .set_led3_current(current)
+                .unwrap()
+        },
+        || {
+            optical::FRONTEND
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .get_offset_led3_current()
+                .unwrap()
+        },
+        |current| {
+            optical::FRONTEND
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .set_offset_led3_current(current)
+                .unwrap()
+        },
+        || {
+            optical::FRONTEND
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .get_tia_resistor2()
+                .unwrap()
+        },
+    );
     let builder = thread::Builder::new()
         .name("data_reading".to_string())
         .stack_size(1024 * 10);
 
     builder
         .spawn(move || {
+            let mut calibrators = [calibrator_led1, calibrator_led2, calibrator_led3];
             let mut dc_filter = [
                 FirFilter::<optical::signal_processing::DcFir>::new(),
                 FirFilter::<optical::signal_processing::DcFir>::new(),
@@ -70,149 +216,6 @@ fn main() {
                 FirFilter::<optical::signal_processing::AcFir>::new(),
                 FirFilter::<optical::signal_processing::AcFir>::new(),
                 FirFilter::<optical::signal_processing::AcFir>::new(),
-            ];
-            let mut calibrator = [
-                optical::calibration::Calibrator::new(800.0,
-                    || {
-                        optical::FRONTEND
-                            .lock()
-                            .unwrap()
-                            .as_mut()
-                            .unwrap()
-                            .get_led1_current()
-                            .unwrap()
-                    },
-                    |current| {
-                        optical::FRONTEND
-                            .lock()
-                            .unwrap()
-                            .as_mut()
-                            .unwrap()
-                            .set_led1_current(current)
-                            .unwrap()
-                    },
-                    || {
-                        optical::FRONTEND
-                            .lock()
-                            .unwrap()
-                            .as_mut()
-                            .unwrap()
-                            .get_offset_led1_current()
-                            .unwrap()
-                    },
-                    |current| {
-                        optical::FRONTEND
-                            .lock()
-                            .unwrap()
-                            .as_mut()
-                            .unwrap()
-                            .set_offset_led1_current(current)
-                            .unwrap()
-                    },
-                    || {
-                        optical::FRONTEND
-                            .lock()
-                            .unwrap()
-                            .as_mut()
-                            .unwrap()
-                            .get_tia_resistor1()
-                            .unwrap()
-                    },
-                ),
-                optical::calibration::Calibrator::new(800.0,
-                    || {
-                        optical::FRONTEND
-                            .lock()
-                            .unwrap()
-                            .as_mut()
-                            .unwrap()
-                            .get_led2_current()
-                            .unwrap()
-                    },
-                    |current| {
-                        optical::FRONTEND
-                            .lock()
-                            .unwrap()
-                            .as_mut()
-                            .unwrap()
-                            .set_led2_current(current)
-                            .unwrap()
-                    },
-                    || {
-                        optical::FRONTEND
-                            .lock()
-                            .unwrap()
-                            .as_mut()
-                            .unwrap()
-                            .get_offset_led2_current()
-                            .unwrap()
-                    },
-                    |current| {
-                        optical::FRONTEND
-                            .lock()
-                            .unwrap()
-                            .as_mut()
-                            .unwrap()
-                            .set_offset_led2_current(current)
-                            .unwrap()
-                    },
-                    || {
-                        optical::FRONTEND
-                            .lock()
-                            .unwrap()
-                            .as_mut()
-                            .unwrap()
-                            .get_tia_resistor2()
-                            .unwrap()
-                    },
-                ),
-                optical::calibration::Calibrator::new(200.0,
-                    || {
-                        optical::FRONTEND
-                            .lock()
-                            .unwrap()
-                            .as_mut()
-                            .unwrap()
-                            .get_led3_current()
-                            .unwrap()
-                    },
-                    |current| {
-                        optical::FRONTEND
-                            .lock()
-                            .unwrap()
-                            .as_mut()
-                            .unwrap()
-                            .set_led3_current(current)
-                            .unwrap()
-                    },
-                    || {
-                        optical::FRONTEND
-                            .lock()
-                            .unwrap()
-                            .as_mut()
-                            .unwrap()
-                            .get_offset_led3_current()
-                            .unwrap()
-                    },
-                    |current| {
-                        optical::FRONTEND
-                            .lock()
-                            .unwrap()
-                            .as_mut()
-                            .unwrap()
-                            .set_offset_led3_current(current)
-                            .unwrap()
-                    },
-                    || {
-                        optical::FRONTEND
-                            .lock()
-                            .unwrap()
-                            .as_mut()
-                            .unwrap()
-                            .get_tia_resistor2()
-                            .unwrap()
-                    },
-                ),
             ];
             let mut critical_history = [
                 optical::signal_processing::CriticalHistory::new(),
@@ -234,9 +237,10 @@ fn main() {
                     let ambient = averaged_data_iterator.next().unwrap();
 
                     // Iterate over the three leds.
-                    for (i, led) in averaged_data_iterator.enumerate().take(1) {
+                    for (i, led) in averaged_data_iterator.enumerate() {
                         // Calibrate dc.
-                        calibrator[i].calibrate_dc(ElectricPotential::new::<microvolt>(led as f32));
+                        calibrators[i]
+                            .calibrate_dc(ElectricPotential::new::<microvolt>(led as f32));
 
                         // Filter dc data (lowpass).
                         let dc_data = dc_filter[i].feed(led as f32) as i32;
@@ -255,12 +259,10 @@ fn main() {
                         //     optical::signal_processing::CriticalValue::None => {}
                         // }
 
-                        latest_data.lock().unwrap().ambient_reading = led;
-                        latest_data.lock().unwrap().led1_reading = dc_data;
-                        latest_data.lock().unwrap().led2_reading = ac_data;
                     }
-
+                    
                     // Send data to the application.
+                    *latest_data.lock().unwrap() = averaged_data.1;
 
                     averaged_data = (0, optical::data_sending::RawData::default());
                 };

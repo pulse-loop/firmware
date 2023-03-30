@@ -1,16 +1,10 @@
-use afe4404::{device::AFE4404, modes::ThreeLedsMode};
 use uom::si::{
-    electric_current::{microampere, milliampere, nanoampere},
+    electric_current::{microampere, milliampere},
     electric_potential::millivolt,
-    electrical_resistance::kiloohm,
     f32::{ElectricCurrent, ElectricPotential, ElectricalResistance},
 };
 
-use super::FRONTEND;
-
 pub(crate) struct Calibrator {
-    // Voltages are expressed in microvolts, currents in nanoamperes and resistors in kiloohms.
-
     // Afe4404 values.
     led_current_min: ElectricCurrent,
     led_current_max: ElectricCurrent,
@@ -19,6 +13,7 @@ pub(crate) struct Calibrator {
 
     // Dc calibration.
     alpha: f32, // Skin coefficient, alpha = i_led / i_photodiode.
+    offset_current_set_point: ElectricCurrent, // In order to turn on the LED, set a negative offset.
     adc_set_point: ElectricPotential,
     adc_working_threshold: ElectricPotential,
 
@@ -52,8 +47,9 @@ impl Calibrator {
             offset_current_min: ElectricCurrent::new::<microampere>(-7.0),
             offset_current_max: ElectricCurrent::new::<microampere>(7.0),
             alpha,
+            offset_current_set_point: ElectricCurrent::new::<microampere>(-6.5),
             adc_set_point: ElectricPotential::new::<millivolt>(0.0),
-            adc_working_threshold: ElectricPotential::new::<millivolt>(800.0),
+            adc_working_threshold: ElectricPotential::new::<millivolt>(1000.0),
             get_led_current: Box::new(get_led_current),
             set_led_current: Box::new(set_led_current),
             get_offset_current: Box::new(get_offset_current),
@@ -82,12 +78,9 @@ impl Calibrator {
             // The error between the set point and the sample converted in the current seen by the photodiode.
             let error = (self.adc_set_point - sample) / (2.0 * (self.get_resistor)());
 
-            // The set point of the offset current, it corresponds to the minimum offset current for a better signal.
-            let offset_current_set_point = self.offset_current_min;
-
             // Calculate the requested led current.
             let requested_led_current =
-                led_current + self.alpha * (error - offset_current_set_point + offset_current);
+                led_current + self.alpha * (error - self.offset_current_set_point + offset_current);
 
             led_current = (self.set_led_current)(if requested_led_current < self.led_current_min {
                 self.led_current_min
@@ -99,7 +92,7 @@ impl Calibrator {
 
             // Calculate the requested offset current.
             let requested_offset_current =
-                offset_current_set_point + (requested_led_current - led_current) / self.alpha;
+                self.offset_current_set_point + (requested_led_current - led_current) / self.alpha;
 
             offset_current =
                 (self.set_offset_current)(if requested_offset_current < self.offset_current_min {
@@ -122,3 +115,5 @@ impl Calibrator {
         }
     }
 }
+
+unsafe impl Send for Calibrator {}

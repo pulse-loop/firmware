@@ -10,7 +10,7 @@ The specifications for the standardised services are specified by the Bluetooth 
 Here is a list of the SIG-defined services used by the pulse.loop:
 
 | Service            | UUID     | Description                                  |
-| ------------------ | -------- | -------------------------------------------- |
+|--------------------|----------|----------------------------------------------|
 | Battery            | `0x180F` | Battery level                                |
 | Current Time       | `0x1805` | Current time                                 |
 | Device Information | `0x180A` | Manufacturer, model, serial number, ...      |
@@ -21,67 +21,87 @@ Here is a list of the SIG-defined services used by the pulse.loop:
 
 We also use some custom services for internal debugging and configuration.
 
-| Service                        | UUID                                   | Description                                                                |
-| ------------------------------ | -------------------------------------- | -------------------------------------------------------------------------- |
-| Firmware upgrade               | `0BA1B4AC-734A-4E75-AD22-8D5BBDEA5025` | Firmware upgrade service                                                   |
-| Historic data                  | `DE753059-8906-4F07-A192-12879BB84DA7` | Historic data that can be downloaded by the user                           |
-| Optical frontend configuration | `C8F276D4-E0DD-4660-8070-619FF734134B` | `[DEBUG ONLY]` Optical sensor configuration                                |
-| Raw sensor data                | `272DF1F7-9D28-4B8C-86F6-30DB30ACE42C` | `[DEBUG ONLY]` Optical sensor data, IMU data, system status and parameters |
-| Settings                       | `821198C8-3036-4E14-B01C-364F2B20C603` | Settings that can be changed by the user                                   |
-| pulse.loop identifier          | `68D68245-CFD8-4A1C-9858-B27ABC4C382E` | pulse.loop BLE API version. Used for detection.                            |
+| Service                        | UUID                                   | Description                                                                 |
+|--------------------------------|----------------------------------------|-----------------------------------------------------------------------------|
+| Firmware upgrade               | `0BA1B4AC-734A-4E75-AD22-8D5BBDEA5025` | Firmware upgrade service.                                                   |
+| Historic data                  | `DE753059-8906-4F07-A192-12879BB84DA7` | Historic data that can be downloaded by the user.                           |
+| Calibration                    | `0E87EDC7-757C-49BA-87A8-F1EA1053F4C1` | `[DEBUG ONLY]` Calibration data.                                            |
+| Optical frontend configuration | `C8F276D4-E0DD-4660-8070-619FF734134B` | `[DEBUG ONLY]` Optical sensor configuration.                                |
+| Raw sensor data                | `272DF1F7-9D28-4B8C-86F6-30DB30ACE42C` | `[DEBUG ONLY]` Optical sensor data, IMU data, system status and parameters. |
+| Settings                       | `821198C8-3036-4E14-B01C-364F2B20C603` | Settings that can be changed by the user.                                   |
+| pulse.loop identifier          | `68D68245-CFD8-4A1C-9858-B27ABC4C382E` | pulse.loop BLE API version. Used for detection.                             |
 
 ### pulse.loop identifier
 
 This service is used to detect if a device is a pulse.loop or not. It contains a single characteristic, which is a read-only string containing the BLE API version.
 This service is advertised in scan response data, so it is not necessary to connect to the device to detect it.
 
-| Characteristic | Access | UUID                                   | Description      | FW  | SW  |
-| -------------- | ------ | -------------------------------------- | ---------------- | --- | --- |
-| Version        | Read   | `1852299D-AE64-4E4F-B915-CB37E7FD57C9` | BLE API version. | Yes | No  |
+| Characteristic | Access | UUID                                   | Description      | FW  | SW |
+|----------------|--------|----------------------------------------|------------------|-----|----|
+| Version        | Read   | `1852299D-AE64-4E4F-B915-CB37E7FD57C9` | BLE API version. | Yes | No |
 
 ### Settings
 
 The settings service is used to change the settings of the pulse.loop. It exposes high-level settings that can be changed by the user.
 
 | Characteristic | Access | UUID | Description |
-| -------------- | ------ | ---- | ----------- |
+|----------------|--------|------|-------------|
 
 ### Historic data
 
 The historic data service is used to download historic data from the pulse.loop.
 
 | Characteristic | Access | UUID | Description |
-| -------------- | ------ | ---- | ----------- |
+|----------------|--------|------|-------------|
 
 ### Firmware upgrade
 
 The firmware upgrade service is used to upgrade the firmware of the pulse.loop. It exposes a special serial port over BLE that can be used to send firmware images to the pulse.loop.
 
 | Characteristic | Access | UUID | Description |
-| -------------- | ------ | ---- | ----------- |
+|----------------|--------|------|-------------|
 
-### Raw sensor data
+### Sensor data
 
 Data from the optical frontend and other sensors.
 
-| Characteristic            | Access | Type                                      | UUID                                   | Description                                                             | FW             | SW  |
-| ------------------------- | ------ | ----------------------------------------- | -------------------------------------- | ----------------------------------------------------------------------- | -------------- | --- |
-| ~~Ambient phase reading~~ | Read   | `f32`                                     | `33EAF25F-7A5C-4327-A95B-B602DA54C443` | The latest reading during the ambient phase [V].                        | **Deprecated** | Yes |
-| ~~AVG LED1 - Ambient~~    | Read   | `f32`                                     | `0237DF64-3110-48CA-B3C8-82DF0F7A6A91` | The averaged reading during the LED1 phase minus the ambient phase [V]. | **Deprecated** | No  |
-| ~~LED1 - Ambient~~        | Read   | `f32`                                     | `CF66D344-584D-4E67-AC30-17D28B099A30` | The latest reading during the LED1 phase minus the ambient phase [V].   | **Deprecated** | Yes |
-| ~~LED1 ADC reading~~      | Read   | `f32`                                     | `05500B81-516D-4BD9-95BA-C0B87C911DDB` | The latest reading during the LED1 phase [V].                           | **Deprecated** | Yes |
-| ~~LED2 ADC reading~~      | Read   | `f32`                                     | `A93B639D-8A8D-43EA-8A5A-8175D7C09E0B` | The latest reading during the LED2 phase [V].                           | **Deprecated** | Yes |
-| ~~LED3 ADC reading~~      | Read   | `f32`                                     | `C0A12246-79E4-4BD7-8A4F-B841D5590F70` | The latest reading during the LED3 phase [V].                           | **Deprecated** | Yes |
-| Raw data                  | Read   | [Raw](custom_types.md#raw-data)           | `26CB3CCA-F22E-4179-8125-55874E9153AD` | The latest readings from the frontend [µV].                             | No             | No  |
-| Filtered data             | Read   | [Filtered](custom_types.md#filtered-data) | `BDC0FC52-797B-4065-AABA-DC394F1DD0FD` | The DC and AC filtered data [µV].                                       | No             | No  |
-| Calibration               | Read   | [Calibration](custom_types.md#calibrator) | `CD60C165-DC7D-4F05-9BB3-C4D1833120CA` | The parameters used in the calibration process.                         | No             | No  |
+| Characteristic        | Access | Type                                      | UUID                                   | Description                                 | FW | SW |
+|-----------------------|--------|-------------------------------------------|----------------------------------------|---------------------------------------------|----|----|
+| Raw optical data      | Read   | [Raw](custom_types.md#raw-data)           | `26CB3CCA-F22E-4179-8125-55874E9153AD` | The latest readings from the frontend [µV]. | No | No |
+| Filtered optical data | Read   | [Filtered](custom_types.md#filtered-data) | `BDC0FC52-797B-4065-AABA-DC394F1DD0FD` | The DC and AC filtered data [µV].           | No | No |
+
+### Calibration
+
+| Characteristic          | Access     | Type  | UUID                                   | Description                                            | FW | SW |
+|-------------------------|------------|-------|----------------------------------------|--------------------------------------------------------|----|----|
+| LED1 current min        | Read/Write | `f32` | `2043264C-C1A8-4A62-8FDE-525BE380AA13` | The minimum current of LED1 [mA].                      | No | No |
+| LED1 current max        | Read/Write | `f32` | `71F1573E-DB0D-4B52-9E9F-AA505719D41D` | The maximum current of LED1 [mA].                      | No | No |
+| LED1 offset current min | Read/Write | `f32` | `914E65A0-F10D-4E35-9705-424FBE514594` | The minimum offset current of LED1 [µA].               | No | No |
+| LED1 offset current max | Read/Write | `f32` | `0428B369-BD92-4625-BEF3-55B9C054411E` | The maximum offset current of LED1 [µA].               | No | No |
+| LED1 set point          | Read/Write | `f32` | `9B98BA9A-9EEA-40F6-87F4-53BF2BB19699` | The set point of the readings when LED1 is active [V]. | No | No |
+| LED1 working threshold  | Read/Write | `f32` | `41A91B62-9FB2-41E3-906A-E24697D938D5` | The working threshold of LED1 [V].                     | No | No |
+| LED1 alpha              | Read/Write | `f32` | `A01B4911-9CA4-4E51-A484-C0E5E962FDA6` | The skin reflectance parameter for LED1 [-].           | No | No |
+| LED2 current min        | Read/Write | `f32` | `9621CF82-87A9-4794-AB81-7BAC475574BD` | The minimum current of LED2 [mA].                      | No | No |
+| LED2 current max        | Read/Write | `f32` | `2EB0E60C-B688-479A-AC80-D196F3146FD0` | The maximum current of LED2 [mA].                      | No | No |
+| LED2 offset current min | Read/Write | `f32` | `913C4C37-63E9-49C4-9944-782DD702D503` | The minimum offset current of LED2 [µA].               | No | No |
+| LED2 offset current max | Read/Write | `f32` | `6F2BB2FE-6DB8-4D3B-8AA6-5D4845CFBFA2` | The maximum offset current of LED2 [µA].               | No | No |
+| LED2 set point          | Read/Write | `f32` | `BA113050-05DC-4A44-B4EF-7DBF10E74171` | The set point of the readings when LED2 is active [V]. | No | No |
+| LED2 working threshold  | Read/Write | `f32` | `43C5ECAD-63F4-42A8-A3AE-7F799FF6B01B` | The working threshold of LED2 [V].                     | No | No |
+| LED2 alpha              | Read/Write | `f32` | `1E33ED6E-1EB1-4738-9BAA-6A617BECB801` | The skin reflectance parameter for LED2 [-].           | No | No |
+| LED3 current min        | Read/Write | `f32` | `B7FF9A50-9954-4E5E-AD49-1A1925C51C33` | The minimum current of LED3 [mA].                      | No | No |
+| LED3 current max        | Read/Write | `f32` | `EB28857B-622F-42D8-B304-F7CCAE955EC0` | The maximum current of LED3 [mA].                      | No | No |
+| LED3 offset current min | Read/Write | `f32` | `BC9E526F-E17D-43DE-B2B9-E36A0461D7BB` | The minimum offset current of LED3 [µA].               | No | No |
+| LED3 offset current max | Read/Write | `f32` | `1C7EDBC5-4613-4FFF-9F8A-E1952E3CCDE6` | The maximum offset current of LED3 [µA].               | No | No |
+| LED3 set point          | Read/Write | `f32` | `4D149938-C228-4345-B41C-26CDFF119B41` | The set point of the readings when LED3 is active [V]. | No | No |
+| LED3 working threshold  | Read/Write | `f32` | `337F34FC-E9A3-4BEC-817D-2E194D60E0B6` | The working threshold of LED3 [V].                     | No | No |
+| LED3 alpha              | Read/Write | `f32` | `A067A9B6-5395-448B-90D5-B243FE8E120D` | The skin reflectance parameter for LED3 [-].           | No | No |
 
 ### Optical frontend configuration
 
 Analog frontend parameter configuration for testing and algorithm development.
 
 | Characteristic               | Access     | Type  | UUID                                   | Description                                      | FW  | SW  |
-| ---------------------------- | ---------- | ----- | -------------------------------------- | ------------------------------------------------ | --- | --- |
+|------------------------------|------------|-------|----------------------------------------|--------------------------------------------------|-----|-----|
 | ADC averages                 | Read/Write | `u8`  | `7ADE19EA-2202-48E1-AFFB-4D8504024C37` | The number of averages performed by the ADC [-]. | Yes | No  |
 | Ambient ADC conversion end   | Read/Write | `f32` | `9B6AF28C-9558-49ED-844B-06E7B8B0E6C3` | The end time of ambient ADC conversion [µs].     | Yes | Yes |
 | Ambient ADC conversion start | Read/Write | `f32` | `66DC5EDA-B89E-43D5-B940-13E29A468C77` | The start time of ambient ADC conversion [µs].   | Yes | Yes |

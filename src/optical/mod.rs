@@ -37,10 +37,13 @@ lazy_static::lazy_static! {
 }
 
 /// Initialises the `FRONTEND` with default values.
-pub fn initialise<P: Pin>(
+pub(crate) fn initialise<P: Pin>(
     i2c: I2cDriver<'static>,
     interrupt_pin: &mut PinDriver<P, Input>,
     ble_api: Arc<RwLock<BluetoothAPI>>,
+    calibrator_led1: Arc<Mutex<calibration::Calibrator>>,
+    calibrator_led2: Arc<Mutex<calibration::Calibrator>>,
+    calibrator_led3: Arc<Mutex<calibration::Calibrator>>,
 ) {
     // Interrupt pin.
     interrupt_pin

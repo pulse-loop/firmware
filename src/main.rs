@@ -43,20 +43,7 @@ fn main() {
     let mut interrupt_pin = PinDriver::input(peripherals.pins.gpio4).unwrap();
     let ble_api = Arc::new(RwLock::new(bluetooth::BluetoothAPI::initialise()));
 
-    optical::initialise(i2c, &mut interrupt_pin, ble_api.clone());
-
-    // The latest data that will be sent to the application.
-    let latest_data: Arc<Mutex<optical::data_sending::RawData>> =
-        Arc::new(Mutex::new(optical::data_sending::RawData::default()));
-
-    let ble_api_for_notify = ble_api;
-    let latest_data_for_notify = latest_data.clone();
-
-    thread::spawn(move || {
-        optical::data_sending::notify_task(ble_api_for_notify, latest_data_for_notify)
-    });
-    
-    let mut calibrator_led1 = optical::calibration::Calibrator::new(
+    let calibrator_led1 = Arc::new(Mutex::new(optical::calibration::Calibrator::new(
         23000.0,
         || {
             optical::FRONTEND
@@ -103,8 +90,8 @@ fn main() {
                 .get_tia_resistor1()
                 .unwrap()
         },
-    );
-    let mut calibrator_led2 = optical::calibration::Calibrator::new(
+    )));
+    let calibrator_led2 = Arc::new(Mutex::new(optical::calibration::Calibrator::new(
         1000.0,
         || {
             optical::FRONTEND
@@ -151,8 +138,8 @@ fn main() {
                 .get_tia_resistor2()
                 .unwrap()
         },
-    );
-    let mut calibrator_led3 = optical::calibration::Calibrator::new(
+    )));
+    let calibrator_led3 = Arc::new(Mutex::new(optical::calibration::Calibrator::new(
         570.0,
         || {
             optical::FRONTEND
@@ -199,7 +186,28 @@ fn main() {
                 .get_tia_resistor2()
                 .unwrap()
         },
+    )));
+
+    optical::initialise(
+        i2c,
+        &mut interrupt_pin,
+        ble_api.clone(),
+        calibrator_led1.clone(),
+        calibrator_led2.clone(),
+        calibrator_led3.clone(),
     );
+
+    // The latest data that will be sent to the application.
+    let latest_data: Arc<Mutex<optical::data_sending::RawData>> =
+        Arc::new(Mutex::new(optical::data_sending::RawData::default()));
+
+    let ble_api_for_notify = ble_api;
+    let latest_data_for_notify = latest_data.clone();
+
+    thread::spawn(move || {
+        optical::data_sending::notify_task(ble_api_for_notify, latest_data_for_notify)
+    });
+
     let builder = thread::Builder::new()
         .name("data_reading".to_string())
         .stack_size(1024 * 10);
@@ -240,6 +248,8 @@ fn main() {
                     for (i, led) in averaged_data_iterator.enumerate() {
                         // Calibrate dc.
                         calibrators[i]
+                            .lock()
+                            .unwrap()
                             .calibrate_dc(ElectricPotential::new::<microvolt>(led as f32));
 
                         // Filter dc data (lowpass).
@@ -258,9 +268,8 @@ fn main() {
                         //     }
                         //     optical::signal_processing::CriticalValue::None => {}
                         // }
-
                     }
-                    
+
                     // Send data to the application.
                     *latest_data.lock().unwrap() = averaged_data.1;
 

@@ -117,3 +117,4 @@ impl Calibrator {
 }
 
 unsafe impl Send for Calibrator {}
+unsafe impl Sync for Calibrator {}

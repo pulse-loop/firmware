@@ -46,14 +46,16 @@ fn main() {
     optical::initialise(i2c, &mut interrupt_pin, ble_api.clone());
 
     // The latest data that will be sent to the application.
-    let latest_data: Arc<Mutex<optical::data_sending::RawData>> =
+    let latest_raw_data: Arc<Mutex<optical::data_sending::RawData>> =
         Arc::new(Mutex::new(optical::data_sending::RawData::default()));
+    let latest_filtered_data: Arc<Mutex<optical::data_sending::FilteredData>> =
+        Arc::new(Mutex::new(optical::data_sending::FilteredData::default()));
 
     let ble_api_for_notify = ble_api;
-    let latest_data_for_notify = latest_data.clone();
-
+    let latest_data_for_notify = latest_raw_data.clone();
+    let latest_filtered_data_for_notify = latest_filtered_data.clone();
     thread::spawn(move || {
-        optical::data_sending::notify_task(ble_api_for_notify, latest_data_for_notify)
+        optical::data_sending::notify_task(ble_api_for_notify, latest_data_for_notify, latest_filtered_data_for_notify)
     });
 
     let builder = thread::Builder::new()
@@ -118,10 +120,12 @@ fn main() {
                         //     }
                         //     optical::signal_processing::CriticalValue::None => {}
                         // }
+
+                        latest_filtered_data.lock().unwrap()[i] = (dc_data, ac_data);
                     }
 
                     // Send data to the application.
-                    *latest_data.lock().unwrap() = averaged_data.1;
+                    *latest_raw_data.lock().unwrap() = averaged_data.1;
 
                     averaged_data = (0, optical::data_sending::RawData::default());
                 };

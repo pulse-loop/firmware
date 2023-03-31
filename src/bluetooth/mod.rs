@@ -3,6 +3,7 @@
 use bluedroid::gatt_server::{Profile, GLOBAL_GATT_SERVER};
 
 mod battery;
+mod calibration;
 mod current_time;
 mod device_information;
 mod firmware_upgrade;
@@ -26,6 +27,7 @@ pub struct BluetoothAPI {
     pub(crate) sensor_data: sensor_data::SensorDataServiceContainer,
     pub(crate) optical_frontend_configuration:
         optical_frontend_configuration::OpticalFrontendConfigurationServiceContainer,
+    pub(crate) calibration: calibration::CalibrationServiceContainer,
     // pub(crate) firmware_upgrade: firmware_upgrade::FirmwareUpgradeServiceContainer,
 }
 
@@ -59,12 +61,14 @@ impl BluetoothAPI {
         let pulse_loop = pulse_loop::PulseLoopServiceContainer::initialise();
         let sensor_data = sensor_data::SensorDataServiceContainer::initialise();
         let optical_frontend_configuration = optical_frontend_configuration::OpticalFrontendConfigurationServiceContainer::initialise();
+        let calibration = calibration::CalibrationServiceContainer::initialise();
         // let firmware_upgrade = firmware_upgrade::FirmwareUpgradeServiceContainer::initialise();
 
         Self {
             pulse_loop,
             sensor_data,
             optical_frontend_configuration,
+            calibration,
         }
     }
 }

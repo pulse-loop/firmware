@@ -34,6 +34,9 @@ pub(crate) mod signal_processing;
 
 lazy_static::lazy_static! {
     pub static ref FRONTEND: Arc<Mutex<Option<AFE4404<I2cDriver<'static>, ThreeLedsMode>>>> = Arc::new(Mutex::new(None));
+    pub(crate) static ref CALIBRATOR_LED1: Arc<Mutex<Option<calibration::Calibrator>>> = Arc::new(Mutex::new(None));
+    pub(crate) static ref CALIBRATOR_LED2: Arc<Mutex<Option<calibration::Calibrator>>> = Arc::new(Mutex::new(None));
+    pub(crate) static ref CALIBRATOR_LED3: Arc<Mutex<Option<calibration::Calibrator>>> = Arc::new(Mutex::new(None));
 }
 
 /// Initialises the `FRONTEND` with default values.
@@ -41,7 +44,7 @@ pub(crate) fn initialise<P: Pin>(
     i2c: I2cDriver<'static>,
     interrupt_pin: &mut PinDriver<P, Input>,
     ble_api: Arc<RwLock<BluetoothAPI>>,
-) -> [Arc<Mutex<calibration::Calibrator>>; 3] {
+) {
     // Interrupt pin.
     interrupt_pin
         .set_interrupt_type(esp_idf_hal::gpio::InterruptType::PosEdge)
@@ -131,7 +134,7 @@ pub(crate) fn initialise<P: Pin>(
     }
 
     // Calibration.
-    let calibrator_led1 = Arc::new(Mutex::new(calibration::Calibrator::new(
+    *CALIBRATOR_LED1.lock().unwrap() = Some(calibration::Calibrator::new(
         23000.0,
         || {
             FRONTEND
@@ -178,8 +181,8 @@ pub(crate) fn initialise<P: Pin>(
                 .get_tia_resistor1()
                 .unwrap()
         },
-    )));
-    let calibrator_led2 = Arc::new(Mutex::new(calibration::Calibrator::new(
+    ));
+    *CALIBRATOR_LED2.lock().unwrap() = Some(calibration::Calibrator::new(
         1000.0,
         || {
             FRONTEND
@@ -226,8 +229,8 @@ pub(crate) fn initialise<P: Pin>(
                 .get_tia_resistor2()
                 .unwrap()
         },
-    )));
-    let calibrator_led3 = Arc::new(Mutex::new(calibration::Calibrator::new(
+    ));
+    *CALIBRATOR_LED3.lock().unwrap() = Some(calibration::Calibrator::new(
         570.0,
         || {
             FRONTEND
@@ -274,16 +277,19 @@ pub(crate) fn initialise<P: Pin>(
                 .get_tia_resistor2()
                 .unwrap()
         },
-    )));
+    ));
 
     // Bluetooth.
     crate::optical::char_control::attach_optical_frontend_chars(
         &FRONTEND,
         &mut ble_api.write().unwrap(),
     );
+    crate::optical::char_control::attach_optical_calibration_chars(
+        &CALIBRATOR_LED1,
+        &CALIBRATOR_LED2,
+        &CALIBRATOR_LED3,
+        &mut ble_api.write().unwrap(),
+    );
 
     ble_api.read().unwrap().start();
-
-    // Return values.
-    [calibrator_led1, calibrator_led2, calibrator_led3]
 }

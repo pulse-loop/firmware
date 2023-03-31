@@ -12,11 +12,12 @@ pub(crate) struct Calibrator {
     offset_current_max: ElectricCurrent,
 
     // Dc calibration.
-    alpha: f32, // Skin coefficient, alpha = i_led / i_photodiode.
+    alpha: f32, // The skin reflectance parameter (alpha = i_led / i_photodiode).
     offset_current_set_point: ElectricCurrent, // In order to turn on the LED, set a negative offset.
     adc_set_point: ElectricPotential,
     adc_working_threshold: ElectricPotential,
 
+    // Frontend functions.
     get_led_current: Box<dyn Fn() -> ElectricCurrent>,
     set_led_current: Box<dyn Fn(ElectricCurrent) -> ElectricCurrent>,
     get_offset_current: Box<dyn Fn() -> ElectricCurrent>,
@@ -24,7 +25,11 @@ pub(crate) struct Calibrator {
     get_resistor: Box<dyn Fn() -> ElectricalResistance>,
 }
 
+unsafe impl Send for Calibrator {}
+unsafe impl Sync for Calibrator {}
+
 impl Calibrator {
+    /// Creates a new `Calibrator`.
     pub(crate) fn new<GLC, SLC, GOC, SOC, GR>(
         alpha: f32,
         get_led_current: GLC,
@@ -60,11 +65,91 @@ impl Calibrator {
         (calibrator.set_led_current)(calibrator.led_current_min);
         (calibrator.set_offset_current)(calibrator.offset_current_min);
 
-        return calibrator;
+        calibrator
     }
 
-    // Calibrates the DC component of the signal by changing the LED current and the offset current.
-    // The calibration is firstly performed on the LED current for larger changes, then on the offset current for better accuracy.
+    /// Gets an immutable reference of the minimum led current.
+    pub(crate) fn led_current_min(&self) -> &ElectricCurrent {
+        &self.led_current_min
+    }
+
+    /// Gets an immutable reference of the maximum led current.
+    pub(crate) fn led_current_max(&self) -> &ElectricCurrent {
+        &self.led_current_max
+    }
+
+    /// Gets an immutable reference of the minimum offset current.
+    pub(crate) fn offset_current_min(&self) -> &ElectricCurrent {
+        &self.offset_current_min
+    }
+
+    /// Gets an immutable reference of the maximum offset current.
+    pub(crate) fn offset_current_max(&self) -> &ElectricCurrent {
+        &self.offset_current_max
+    }
+
+    /// Gets an immutable reference of the skin reflectance parameter alpha.
+    pub(crate) fn alpha(&self) -> &f32 {
+        &self.alpha
+    }
+
+    /// Gets an immutable reference of the offset current set point.
+    pub(crate) fn offset_current_set_point(&self) -> &ElectricCurrent {
+        &self.offset_current_set_point
+    }
+
+    /// Gets an immutable reference of the adc set point.
+    pub(crate) fn adc_set_point(&self) -> &ElectricPotential {
+        &self.adc_set_point
+    }
+
+    /// Gets an immutable reference of the adc working threshold.
+    pub(crate) fn adc_working_threshold(&self) -> &ElectricPotential {
+        &self.adc_working_threshold
+    }
+
+    /// Gets a mutable reference of the minimum led current.
+    pub(crate) fn led_current_min_mut(&mut self) -> &mut ElectricCurrent {
+        &mut self.led_current_min
+    }
+
+    /// Gets a mutable reference of the maximum led current.
+    pub(crate) fn led_current_max_mut(&mut self) -> &mut ElectricCurrent {
+        &mut self.led_current_max
+    }
+
+    /// Gets a mutable reference of the minimum offset current.
+    pub(crate) fn offset_current_min_mut(&mut self) -> &mut ElectricCurrent {
+        &mut self.offset_current_min
+    }
+
+    /// Gets a mutable reference of the maximum offset current.
+    pub(crate) fn offset_current_max_mut(&mut self) -> &mut ElectricCurrent {
+        &mut self.offset_current_max
+    }
+
+    /// Gets a mutable reference of the skin reflectance parameter alpha.
+    pub(crate) fn alpha_mut(&mut self) -> &mut f32 {
+        &mut self.alpha
+    }
+
+    /// Gets a mutable reference of the offset current set point.
+    pub(crate) fn offset_current_set_point_mut(&mut self) -> &mut ElectricCurrent {
+        &mut self.offset_current_set_point
+    }
+
+    /// Gets a mutable reference of the adc set point.
+    pub(crate) fn adc_set_point_mut(&mut self) -> &mut ElectricPotential {
+        &mut self.adc_set_point
+    }
+
+    /// Gets a mutable reference of the adc working threshold.
+    pub(crate) fn adc_working_threshold_mut(&mut self) -> &mut ElectricPotential {
+        &mut self.adc_working_threshold
+    }
+
+    /// Calibrates the DC component of the signal by changing the LED current and the offset current.
+    /// The calibration is firstly performed on the LED current for larger changes, then on the offset current for better accuracy.
     // TODO: Handle unwrap fails.
     pub(crate) fn calibrate_dc(&mut self, sample: ElectricPotential) {
         // Calibrate only if the sample is out of the working threshold.
@@ -115,6 +200,3 @@ impl Calibrator {
         }
     }
 }
-
-unsafe impl Send for Calibrator {}
-unsafe impl Sync for Calibrator {}

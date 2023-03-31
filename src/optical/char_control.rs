@@ -57,7 +57,7 @@ macro_rules! attach_char {
         });
     };
 
-    ($ble_characteristic:expr, $frontend:ident, $setter:ident, $getter:ident) => {
+    (optical frontend, $ble_characteristic:expr, $frontend:ident, $setter:ident, $getter:ident) => {
         log::info!("Attaching {}.", stringify!($ble_characteristic));
 
         $ble_characteristic
@@ -95,6 +95,43 @@ macro_rules! attach_char {
             }
         });
     };
+
+    (optical calibration, $ble_characteristic:expr, $calibrator:ident, $setter:ident, $getter:ident, $quantity:ident, $unit:ident) => {
+        log::info!("Attaching {}.", stringify!($ble_characteristic));
+
+        $ble_characteristic
+            .write()
+            .unwrap()
+            .on_write(move |value, _| {
+                let mut slice: [u8; 4] = [0; 4];
+                slice.copy_from_slice(&value[..4]);
+                let value = f32::from_le_bytes(slice);
+
+                log::info!("Setting {} to {}", stringify!($ble_characteristic), value);
+
+                let mut _field = $calibrator.lock().unwrap().as_mut().unwrap().$setter();
+                _field = &$quantity::new::<$unit>(value);
+
+                log::info!(
+                    "{} set to {:?}",
+                    stringify!($ble_characteristic),
+                    $quantity::new::<$unit>(value)
+                );
+            });
+
+        $ble_characteristic.write().unwrap().on_read(move |_| {
+            let value = $calibrator
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .$getter()
+                .clone();
+            log::info!("{} is {:?}", stringify!($ble_characteristic), value);
+
+            value.value.to_le_bytes().to_vec()
+        });
+    };
 }
 
 pub(crate) fn attach_optical_frontend_chars(
@@ -102,6 +139,7 @@ pub(crate) fn attach_optical_frontend_chars(
     ble_api: &mut crate::bluetooth::BluetoothAPI,
 ) {
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .adc_averages_characteristic),
@@ -180,6 +218,7 @@ pub(crate) fn attach_optical_frontend_chars(
         ampere
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .decimation_factor_characteristic),
@@ -557,4 +596,32 @@ pub(crate) fn attach_optical_frontend_chars(
         Time,
         second
     );
+}
+
+pub(crate) fn attach_optical_calibration_chars(
+    calibrator1: &'static Arc<Mutex<Option<super::calibration::Calibrator>>>,
+    calibrator2: &'static Arc<Mutex<Option<super::calibration::Calibrator>>>,
+    calibrator3: &'static Arc<Mutex<Option<super::calibration::Calibrator>>>,
+    ble_api: &mut crate::bluetooth::BluetoothAPI,
+) {
+    for calibrator in [calibrator1, calibrator2, calibrator3] {
+        attach_char!(
+            optical calibration,
+            (ble_api.calibration.led1_current_min),
+            calibrator,
+            led_current_min,
+            led_current_min_mut,
+            ElectricCurrent,
+            ampere
+        );
+        attach_char!(
+            optical calibration,
+            (ble_api.calibration.led1_current_max),
+            calibrator,
+            led_current_max,
+            led_current_max_mut,
+            ElectricCurrent,
+            ampere
+        );
+    }
 }

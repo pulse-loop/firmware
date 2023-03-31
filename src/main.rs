@@ -42,12 +42,8 @@ fn main() {
 
     let mut interrupt_pin = PinDriver::input(peripherals.pins.gpio4).unwrap();
     let ble_api = Arc::new(RwLock::new(bluetooth::BluetoothAPI::initialise()));
-    
-    let calibrators = optical::initialise(
-        i2c,
-        &mut interrupt_pin,
-        ble_api.clone(),
-    );
+
+    optical::initialise(i2c, &mut interrupt_pin, ble_api.clone());
 
     // The latest data that will be sent to the application.
     let latest_data: Arc<Mutex<optical::data_sending::RawData>> =
@@ -66,6 +62,7 @@ fn main() {
 
     builder
         .spawn(move || {
+            let calibrators: [&Arc<Mutex<Option<optical::calibration::Calibrator>>>; 3] = [&optical::CALIBRATOR_LED1, &optical::CALIBRATOR_LED2, &optical::CALIBRATOR_LED3];
             let mut dc_filter = [
                 FirFilter::<optical::signal_processing::DcFir>::new(),
                 FirFilter::<optical::signal_processing::DcFir>::new(),
@@ -100,6 +97,8 @@ fn main() {
                         // Calibrate dc.
                         calibrators[i]
                             .lock()
+                            .unwrap()
+                            .as_mut()
                             .unwrap()
                             .calibrate_dc(ElectricPotential::new::<microvolt>(led as f32));
 

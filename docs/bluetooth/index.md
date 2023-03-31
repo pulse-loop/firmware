@@ -27,7 +27,7 @@ We also use some custom services for internal debugging and configuration.
 | Historic data                  | `DE753059-8906-4F07-A192-12879BB84DA7` | Historic data that can be downloaded by the user.                           |
 | Calibration                    | `0E87EDC7-757C-49BA-87A8-F1EA1053F4C1` | `[DEBUG ONLY]` Calibration data.                                            |
 | Optical frontend configuration | `C8F276D4-E0DD-4660-8070-619FF734134B` | `[DEBUG ONLY]` Optical sensor configuration.                                |
-| Raw sensor data                | `272DF1F7-9D28-4B8C-86F6-30DB30ACE42C` | `[DEBUG ONLY]` Optical sensor data, IMU data, system status and parameters. |
+| Sensor data                | `272DF1F7-9D28-4B8C-86F6-30DB30ACE42C` | `[DEBUG ONLY]` Optical sensor data, IMU data, system status and parameters. |
 | Settings                       | `821198C8-3036-4E14-B01C-364F2B20C603` | Settings that can be changed by the user.                                   |
 | pulse.loop identifier          | `68D68245-CFD8-4A1C-9858-B27ABC4C382E` | pulse.loop BLE API version. Used for detection.                             |
 
@@ -67,8 +67,8 @@ Data from the optical frontend and other sensors.
 
 | Characteristic        | Access | Type                                      | UUID                                   | Description                                 | FW | SW |
 |-----------------------|--------|-------------------------------------------|----------------------------------------|---------------------------------------------|----|----|
-| Raw optical data      | Read   | [Raw](custom_types.md#raw-data)           | `26CB3CCA-F22E-4179-8125-55874E9153AD` | The latest readings from the frontend [µV]. | No | No |
-| Filtered optical data | Read   | [Filtered](custom_types.md#filtered-data) | `BDC0FC52-797B-4065-AABA-DC394F1DD0FD` | The DC and AC filtered data [µV].           | No | No |
+| Raw optical data      | Read   | [Raw](custom_types.md#raw-data)           | `26CB3CCA-F22E-4179-8125-55874E9153AD` | The latest readings from the frontend [µV]. | Yes | No |
+| Filtered optical data | Read   | [Filtered](custom_types.md#filtered-data) | `BDC0FC52-797B-4065-AABA-DC394F1DD0FD` | The DC and AC filtered data [µV].           | Yes | No |
 
 ### Calibration
 

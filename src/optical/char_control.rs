@@ -5,13 +5,14 @@ use esp_idf_hal::i2c::I2cDriver;
 use uom::si::{
     capacitance::farad,
     electric_current::ampere,
+    electric_potential::volt,
     electrical_resistance::ohm,
-    f32::{Capacitance, ElectricCurrent, ElectricalResistance, Time},
+    f32::{Capacitance, ElectricCurrent, ElectricPotential, ElectricalResistance, Time},
     time::second,
 };
 
 macro_rules! attach_char {
-    ($ble_characteristic:expr, $frontend:ident, $setter:ident, $getter:ident, $quantity:ident, $unit:ident) => {
+    (optical frontend, $ble_characteristic:expr, $frontend:ident, $setter:ident, $getter:ident, $quantity:ident, $unit:ident) => {
         log::info!("Attaching {}.", stringify!($ble_characteristic));
 
         $ble_characteristic
@@ -47,7 +48,7 @@ macro_rules! attach_char {
             match result {
                 Ok(result) => {
                     log::info!("{} is {:?}", stringify!($ble_characteristic), result);
-                    result.value.to_le_bytes().to_vec()
+                    result.get::<$unit>().to_le_bytes().to_vec()
                 }
                 Err(e) => {
                     log::error!("Error getting {}: {:?}", stringify!($ble_characteristic), e);
@@ -109,8 +110,7 @@ macro_rules! attach_char {
 
                 log::info!("Setting {} to {}", stringify!($ble_characteristic), value);
 
-                let mut _field = $calibrator.lock().unwrap().as_mut().unwrap().$setter();
-                _field = &$quantity::new::<$unit>(value);
+                *$calibrator.lock().unwrap().as_mut().unwrap().$setter() = $quantity::new::<$unit>(value);
 
                 log::info!(
                     "{} set to {:?}",
@@ -120,16 +120,48 @@ macro_rules! attach_char {
             });
 
         $ble_characteristic.write().unwrap().on_read(move |_| {
-            let value = $calibrator
+            let value = *$calibrator
                 .lock()
                 .unwrap()
                 .as_mut()
                 .unwrap()
-                .$getter()
-                .clone();
+                .$getter();
+
             log::info!("{} is {:?}", stringify!($ble_characteristic), value);
 
-            value.value.to_le_bytes().to_vec()
+            value.get::<$unit>().to_le_bytes().to_vec()
+        });
+    };
+
+    (optical calibration, $ble_characteristic:expr, $calibrator:ident, $setter:ident, $getter:ident) => {
+        log::info!("Attaching {}.", stringify!($ble_characteristic));
+
+        $ble_characteristic
+            .write()
+            .unwrap()
+            .on_write(move |value, _| {
+                let mut slice: [u8; 4] = [0; 4];
+                slice.copy_from_slice(&value[..4]);
+                let value = f32::from_le_bytes(slice);
+
+                log::info!("Setting {} to {}", stringify!($ble_characteristic), value);
+
+                *$calibrator.lock().unwrap().as_mut().unwrap().$setter() = value;
+
+                log::info!("{} set to {}", stringify!($ble_characteristic), value);
+            });
+
+        $ble_characteristic.write().unwrap().on_read(move |_| {
+            let value = *$calibrator
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .$getter();
+
+            log::info!("{} is {}", stringify!($ble_characteristic), value);
+
+            value.to_le_bytes().to_vec()
         });
     };
 }
@@ -148,6 +180,7 @@ pub(crate) fn attach_optical_frontend_chars(
         get_averaging
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .ambient_adc_conversion_end_characteristic),
@@ -158,6 +191,7 @@ pub(crate) fn attach_optical_frontend_chars(
         second
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .ambient_adc_conversion_start_characteristic),
@@ -168,6 +202,7 @@ pub(crate) fn attach_optical_frontend_chars(
         second
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .ambient_adc_reset_end_characteristic),
@@ -178,6 +213,7 @@ pub(crate) fn attach_optical_frontend_chars(
         second
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .ambient_adc_reset_start_characteristic),
@@ -188,6 +224,7 @@ pub(crate) fn attach_optical_frontend_chars(
         second
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .ambient_sample_end_characteristic),
@@ -198,6 +235,7 @@ pub(crate) fn attach_optical_frontend_chars(
         second
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .ambient_sample_start_characteristic),
@@ -208,6 +246,7 @@ pub(crate) fn attach_optical_frontend_chars(
         second
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .ambient_offset_current_characteristic),
@@ -227,6 +266,7 @@ pub(crate) fn attach_optical_frontend_chars(
         get_decimation
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .dynamic_power_down_end_characteristic),
@@ -237,6 +277,7 @@ pub(crate) fn attach_optical_frontend_chars(
         second
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .dynamic_power_down_start_characteristic),
@@ -247,6 +288,7 @@ pub(crate) fn attach_optical_frontend_chars(
         second
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .led1_adc_conversion_end_characteristic),
@@ -257,6 +299,7 @@ pub(crate) fn attach_optical_frontend_chars(
         second
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .led1_adc_conversion_start_characteristic),
@@ -267,6 +310,7 @@ pub(crate) fn attach_optical_frontend_chars(
         second
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .led1_adc_reset_end_characteristic),
@@ -277,6 +321,7 @@ pub(crate) fn attach_optical_frontend_chars(
         second
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .led1_adc_reset_start_characteristic),
@@ -287,6 +332,7 @@ pub(crate) fn attach_optical_frontend_chars(
         second
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .led1_lighting_end_characteristic),
@@ -297,6 +343,7 @@ pub(crate) fn attach_optical_frontend_chars(
         second
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .led1_lighting_start_characteristic),
@@ -307,6 +354,7 @@ pub(crate) fn attach_optical_frontend_chars(
         second
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .led1_current_characteristic),
@@ -317,6 +365,7 @@ pub(crate) fn attach_optical_frontend_chars(
         ampere
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .led1_sample_end_characteristic),
@@ -327,6 +376,7 @@ pub(crate) fn attach_optical_frontend_chars(
         second
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .led1_sample_start_characteristic),
@@ -337,6 +387,7 @@ pub(crate) fn attach_optical_frontend_chars(
         second
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .led1_offset_current_characteristic),
@@ -347,6 +398,7 @@ pub(crate) fn attach_optical_frontend_chars(
         ampere
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .led2_adc_conversion_end_characteristic),
@@ -357,6 +409,7 @@ pub(crate) fn attach_optical_frontend_chars(
         second
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .led2_adc_conversion_start_characteristic),
@@ -367,6 +420,7 @@ pub(crate) fn attach_optical_frontend_chars(
         second
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .led2_adc_reset_end_characteristic),
@@ -377,6 +431,7 @@ pub(crate) fn attach_optical_frontend_chars(
         second
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .led2_adc_reset_start_characteristic),
@@ -387,6 +442,7 @@ pub(crate) fn attach_optical_frontend_chars(
         second
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .led2_lighting_end_characteristic),
@@ -397,6 +453,7 @@ pub(crate) fn attach_optical_frontend_chars(
         second
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .led2_lighting_start_characteristic),
@@ -407,6 +464,7 @@ pub(crate) fn attach_optical_frontend_chars(
         second
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .led2_current_characteristic),
@@ -417,6 +475,7 @@ pub(crate) fn attach_optical_frontend_chars(
         ampere
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .led2_sample_end_characteristic),
@@ -427,6 +486,7 @@ pub(crate) fn attach_optical_frontend_chars(
         second
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .led2_sample_start_characteristic),
@@ -437,6 +497,7 @@ pub(crate) fn attach_optical_frontend_chars(
         second
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .led2_offset_current_characteristic),
@@ -447,6 +508,7 @@ pub(crate) fn attach_optical_frontend_chars(
         ampere
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .led3_adc_conversion_end_characteristic),
@@ -457,6 +519,7 @@ pub(crate) fn attach_optical_frontend_chars(
         second
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .led3_adc_conversion_start_characteristic),
@@ -467,6 +530,7 @@ pub(crate) fn attach_optical_frontend_chars(
         second
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .led3_adc_reset_end_characteristic),
@@ -477,6 +541,7 @@ pub(crate) fn attach_optical_frontend_chars(
         second
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .led3_adc_reset_start_characteristic),
@@ -487,6 +552,7 @@ pub(crate) fn attach_optical_frontend_chars(
         second
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .led3_lighting_end_characteristic),
@@ -497,6 +563,7 @@ pub(crate) fn attach_optical_frontend_chars(
         second
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .led3_lighting_start_characteristic),
@@ -507,6 +574,7 @@ pub(crate) fn attach_optical_frontend_chars(
         second
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .led3_current_characteristic),
@@ -517,6 +585,7 @@ pub(crate) fn attach_optical_frontend_chars(
         ampere
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .led3_sample_end_characteristic),
@@ -527,6 +596,7 @@ pub(crate) fn attach_optical_frontend_chars(
         second
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .led3_sample_start_characteristic),
@@ -537,6 +607,7 @@ pub(crate) fn attach_optical_frontend_chars(
         second
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .led3_offset_current_characteristic),
@@ -547,6 +618,7 @@ pub(crate) fn attach_optical_frontend_chars(
         ampere
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .tia_capacitor_1_characteristic),
@@ -557,6 +629,7 @@ pub(crate) fn attach_optical_frontend_chars(
         farad
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .tia_capacitor_2_characteristic),
@@ -567,6 +640,7 @@ pub(crate) fn attach_optical_frontend_chars(
         farad
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .tia_resistor_1_characteristic),
@@ -577,6 +651,7 @@ pub(crate) fn attach_optical_frontend_chars(
         ohm
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .tia_resistor_2_characteristic),
@@ -587,6 +662,7 @@ pub(crate) fn attach_optical_frontend_chars(
         ohm
     );
     attach_char!(
+        optical frontend,
         (ble_api
             .optical_frontend_configuration
             .total_window_length_characteristic),
@@ -604,24 +680,133 @@ pub(crate) fn attach_optical_calibration_chars(
     calibrator3: &'static Arc<Mutex<Option<super::calibration::Calibrator>>>,
     ble_api: &mut crate::bluetooth::BluetoothAPI,
 ) {
-    for calibrator in [calibrator1, calibrator2, calibrator3] {
-        attach_char!(
-            optical calibration,
-            (ble_api.calibration.led1_current_min),
-            calibrator,
-            led_current_min,
-            led_current_min_mut,
-            ElectricCurrent,
-            ampere
-        );
-        attach_char!(
-            optical calibration,
-            (ble_api.calibration.led1_current_max),
-            calibrator,
-            led_current_max,
-            led_current_max_mut,
-            ElectricCurrent,
-            ampere
-        );
-    }
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led1_current_min),
+        calibrator1,
+        led_current_min_mut,
+        led_current_min,
+        ElectricCurrent,
+        ampere
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led1_current_max),
+        calibrator1,
+        led_current_max_mut,
+        led_current_max,
+        ElectricCurrent,
+        ampere
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led1_adc_set_point),
+        calibrator1,
+        adc_set_point_mut,
+        adc_set_point,
+        ElectricPotential,
+        volt
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led1_adc_working_threshold),
+        calibrator1,
+        adc_working_threshold_mut,
+        adc_working_threshold,
+        ElectricPotential,
+        volt
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led1_alpha),
+        calibrator1,
+        alpha_mut,
+        alpha
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led2_current_min),
+        calibrator2,
+        led_current_min_mut,
+        led_current_min,
+        ElectricCurrent,
+        ampere
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led2_current_max),
+        calibrator2,
+        led_current_max_mut,
+        led_current_max,
+        ElectricCurrent,
+        ampere
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led2_adc_set_point),
+        calibrator2,
+        adc_set_point_mut,
+        adc_set_point,
+        ElectricPotential,
+        volt
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led2_adc_working_threshold),
+        calibrator2,
+        adc_working_threshold_mut,
+        adc_working_threshold,
+        ElectricPotential,
+        volt
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led2_alpha),
+        calibrator2,
+        alpha_mut,
+        alpha
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led3_current_min),
+        calibrator3,
+        led_current_min_mut,
+        led_current_min,
+        ElectricCurrent,
+        ampere
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led3_current_max),
+        calibrator3,
+        led_current_max_mut,
+        led_current_max,
+        ElectricCurrent,
+        ampere
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led3_adc_set_point),
+        calibrator3,
+        adc_set_point_mut,
+        adc_set_point,
+        ElectricPotential,
+        volt
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led3_adc_working_threshold),
+        calibrator3,
+        adc_working_threshold_mut,
+        adc_working_threshold,
+        ElectricPotential,
+        volt
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led3_alpha),
+        calibrator3,
+        alpha_mut,
+        alpha
+    );
 }

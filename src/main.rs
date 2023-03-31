@@ -42,159 +42,11 @@ fn main() {
 
     let mut interrupt_pin = PinDriver::input(peripherals.pins.gpio4).unwrap();
     let ble_api = Arc::new(RwLock::new(bluetooth::BluetoothAPI::initialise()));
-
-    let calibrator_led1 = Arc::new(Mutex::new(optical::calibration::Calibrator::new(
-        23000.0,
-        || {
-            optical::FRONTEND
-                .lock()
-                .unwrap()
-                .as_mut()
-                .unwrap()
-                .get_led1_current()
-                .unwrap()
-        },
-        |current| {
-            optical::FRONTEND
-                .lock()
-                .unwrap()
-                .as_mut()
-                .unwrap()
-                .set_led1_current(current)
-                .unwrap()
-        },
-        || {
-            optical::FRONTEND
-                .lock()
-                .unwrap()
-                .as_mut()
-                .unwrap()
-                .get_offset_led1_current()
-                .unwrap()
-        },
-        |current| {
-            optical::FRONTEND
-                .lock()
-                .unwrap()
-                .as_mut()
-                .unwrap()
-                .set_offset_led1_current(current)
-                .unwrap()
-        },
-        || {
-            optical::FRONTEND
-                .lock()
-                .unwrap()
-                .as_mut()
-                .unwrap()
-                .get_tia_resistor1()
-                .unwrap()
-        },
-    )));
-    let calibrator_led2 = Arc::new(Mutex::new(optical::calibration::Calibrator::new(
-        1000.0,
-        || {
-            optical::FRONTEND
-                .lock()
-                .unwrap()
-                .as_mut()
-                .unwrap()
-                .get_led2_current()
-                .unwrap()
-        },
-        |current| {
-            optical::FRONTEND
-                .lock()
-                .unwrap()
-                .as_mut()
-                .unwrap()
-                .set_led2_current(current)
-                .unwrap()
-        },
-        || {
-            optical::FRONTEND
-                .lock()
-                .unwrap()
-                .as_mut()
-                .unwrap()
-                .get_offset_led2_current()
-                .unwrap()
-        },
-        |current| {
-            optical::FRONTEND
-                .lock()
-                .unwrap()
-                .as_mut()
-                .unwrap()
-                .set_offset_led2_current(current)
-                .unwrap()
-        },
-        || {
-            optical::FRONTEND
-                .lock()
-                .unwrap()
-                .as_mut()
-                .unwrap()
-                .get_tia_resistor2()
-                .unwrap()
-        },
-    )));
-    let calibrator_led3 = Arc::new(Mutex::new(optical::calibration::Calibrator::new(
-        570.0,
-        || {
-            optical::FRONTEND
-                .lock()
-                .unwrap()
-                .as_mut()
-                .unwrap()
-                .get_led3_current()
-                .unwrap()
-        },
-        |current| {
-            optical::FRONTEND
-                .lock()
-                .unwrap()
-                .as_mut()
-                .unwrap()
-                .set_led3_current(current)
-                .unwrap()
-        },
-        || {
-            optical::FRONTEND
-                .lock()
-                .unwrap()
-                .as_mut()
-                .unwrap()
-                .get_offset_led3_current()
-                .unwrap()
-        },
-        |current| {
-            optical::FRONTEND
-                .lock()
-                .unwrap()
-                .as_mut()
-                .unwrap()
-                .set_offset_led3_current(current)
-                .unwrap()
-        },
-        || {
-            optical::FRONTEND
-                .lock()
-                .unwrap()
-                .as_mut()
-                .unwrap()
-                .get_tia_resistor2()
-                .unwrap()
-        },
-    )));
-
-    optical::initialise(
+    
+    let calibrators = optical::initialise(
         i2c,
         &mut interrupt_pin,
         ble_api.clone(),
-        calibrator_led1.clone(),
-        calibrator_led2.clone(),
-        calibrator_led3.clone(),
     );
 
     // The latest data that will be sent to the application.
@@ -214,7 +66,6 @@ fn main() {
 
     builder
         .spawn(move || {
-            let mut calibrators = [calibrator_led1, calibrator_led2, calibrator_led3];
             let mut dc_filter = [
                 FirFilter::<optical::signal_processing::DcFir>::new(),
                 FirFilter::<optical::signal_processing::DcFir>::new(),

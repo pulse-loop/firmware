@@ -41,10 +41,7 @@ pub(crate) fn initialise<P: Pin>(
     i2c: I2cDriver<'static>,
     interrupt_pin: &mut PinDriver<P, Input>,
     ble_api: Arc<RwLock<BluetoothAPI>>,
-    calibrator_led1: Arc<Mutex<calibration::Calibrator>>,
-    calibrator_led2: Arc<Mutex<calibration::Calibrator>>,
-    calibrator_led3: Arc<Mutex<calibration::Calibrator>>,
-) {
+) -> [Arc<Mutex<calibration::Calibrator>>; 3] {
     // Interrupt pin.
     interrupt_pin
         .set_interrupt_type(esp_idf_hal::gpio::InterruptType::PosEdge)
@@ -133,6 +130,152 @@ pub(crate) fn initialise<P: Pin>(
         }
     }
 
+    // Calibration.
+    let calibrator_led1 = Arc::new(Mutex::new(calibration::Calibrator::new(
+        23000.0,
+        || {
+            FRONTEND
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .get_led1_current()
+                .unwrap()
+        },
+        |current| {
+            FRONTEND
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .set_led1_current(current)
+                .unwrap()
+        },
+        || {
+            FRONTEND
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .get_offset_led1_current()
+                .unwrap()
+        },
+        |current| {
+            FRONTEND
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .set_offset_led1_current(current)
+                .unwrap()
+        },
+        || {
+            FRONTEND
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .get_tia_resistor1()
+                .unwrap()
+        },
+    )));
+    let calibrator_led2 = Arc::new(Mutex::new(calibration::Calibrator::new(
+        1000.0,
+        || {
+            FRONTEND
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .get_led2_current()
+                .unwrap()
+        },
+        |current| {
+            FRONTEND
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .set_led2_current(current)
+                .unwrap()
+        },
+        || {
+            FRONTEND
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .get_offset_led2_current()
+                .unwrap()
+        },
+        |current| {
+            FRONTEND
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .set_offset_led2_current(current)
+                .unwrap()
+        },
+        || {
+            FRONTEND
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .get_tia_resistor2()
+                .unwrap()
+        },
+    )));
+    let calibrator_led3 = Arc::new(Mutex::new(calibration::Calibrator::new(
+        570.0,
+        || {
+            FRONTEND
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .get_led3_current()
+                .unwrap()
+        },
+        |current| {
+            FRONTEND
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .set_led3_current(current)
+                .unwrap()
+        },
+        || {
+            FRONTEND
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .get_offset_led3_current()
+                .unwrap()
+        },
+        |current| {
+            FRONTEND
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .set_offset_led3_current(current)
+                .unwrap()
+        },
+        || {
+            FRONTEND
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .get_tia_resistor2()
+                .unwrap()
+        },
+    )));
+
     // Bluetooth.
     crate::optical::char_control::attach_optical_frontend_chars(
         &FRONTEND,
@@ -140,4 +283,7 @@ pub(crate) fn initialise<P: Pin>(
     );
 
     ble_api.read().unwrap().start();
+
+    // Return values.
+    [calibrator_led1, calibrator_led2, calibrator_led3]
 }

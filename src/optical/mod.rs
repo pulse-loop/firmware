@@ -21,7 +21,7 @@ use afe4404::{
         measurement_window::{
             ActiveTiming, AmbientTiming, LedTiming, MeasurementWindowConfiguration, PowerDownTiming,
         },
-    },
+    }, tia::values::ResistorValue,
 };
 
 use crate::bluetooth::BluetoothAPI;
@@ -76,6 +76,13 @@ pub(crate) fn initialise<P: Pin>(
                     ElectricCurrent::new::<milliampere>(0.0),
                 ))
                 .expect("Cannot set LEDs current.");
+
+            frontend
+                .set_tia_resistor1_enum(ResistorValue::from_u8(2))
+                .expect("Cannot set TIA resistor 1.");
+            frontend
+                .set_tia_resistor2_enum(ResistorValue::R100k)
+                .expect("Cannot set TIA resistor 2.");
 
             frontend
                 .set_clock_source(ClockConfiguration::Internal)

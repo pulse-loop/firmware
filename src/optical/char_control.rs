@@ -12,6 +12,7 @@ use uom::si::{
 };
 
 macro_rules! attach_char {
+    // Otical frontend uom f32 value.
     (optical frontend, $ble_characteristic:expr, $frontend:ident, $setter:ident, $getter:ident, $quantity:ident, $unit:ident) => {
         log::info!("Attaching {}.", stringify!($ble_characteristic));
 
@@ -58,6 +59,52 @@ macro_rules! attach_char {
         });
     };
 
+    // Otical frontend afe4404 u8 value.
+    (optical frontend, $ble_characteristic:expr, $frontend:ident, $setter:ident, $getter:ident, $component_cast:path) => {
+        log::info!("Attaching {}.", stringify!($ble_characteristic));
+
+        $ble_characteristic
+            .write()
+            .unwrap()
+            .on_write(move |value, _| {
+                let value = value[0];
+
+                log::info!("Setting {} to {}", stringify!($ble_characteristic), value);
+
+                let result = $frontend
+                    .lock()
+                    .unwrap()
+                    .as_mut()
+                    .unwrap()
+                    .$setter($component_cast(value));
+
+                match result {
+                    Ok(result) => {
+                        log::info!("{} set to {:?}", stringify!($ble_characteristic), result);
+                    }
+                    Err(e) => {
+                        log::error!("Error setting {}: {:?}", stringify!($ble_characteristic), e);
+                    }
+                }
+            });
+
+        $ble_characteristic.write().unwrap().on_read(move |_| {
+            let result = $frontend.lock().unwrap().as_mut().unwrap().$getter();
+
+            match result {
+                Ok(result) => {
+                    log::info!("{} is {:?}", stringify!($ble_characteristic), result);
+                    vec![result as u8]
+                }
+                Err(e) => {
+                    log::error!("Error getting {}: {:?}", stringify!($ble_characteristic), e);
+                    vec![]
+                }
+            }
+        });
+    };
+
+    // Optical frontend u8 value.
     (optical frontend, $ble_characteristic:expr, $frontend:ident, $setter:ident, $getter:ident) => {
         log::info!("Attaching {}.", stringify!($ble_characteristic));
 
@@ -97,6 +144,7 @@ macro_rules! attach_char {
         });
     };
 
+    // Optical calibration uom f32 value.
     (optical calibration, $ble_characteristic:expr, $calibrator:ident, $setter:ident, $getter:ident, $quantity:ident, $unit:ident) => {
         log::info!("Attaching {}.", stringify!($ble_characteristic));
 
@@ -110,7 +158,8 @@ macro_rules! attach_char {
 
                 log::info!("Setting {} to {}", stringify!($ble_characteristic), value);
 
-                *$calibrator.lock().unwrap().as_mut().unwrap().$setter() = $quantity::new::<$unit>(value);
+                *$calibrator.lock().unwrap().as_mut().unwrap().$setter() =
+                    $quantity::new::<$unit>(value);
 
                 log::info!(
                     "{} set to {:?}",
@@ -120,12 +169,7 @@ macro_rules! attach_char {
             });
 
         $ble_characteristic.write().unwrap().on_read(move |_| {
-            let value = *$calibrator
-                .lock()
-                .unwrap()
-                .as_mut()
-                .unwrap()
-                .$getter();
+            let value = *$calibrator.lock().unwrap().as_mut().unwrap().$getter();
 
             log::info!("{} is {:?}", stringify!($ble_characteristic), value);
 
@@ -133,6 +177,7 @@ macro_rules! attach_char {
         });
     };
 
+    // Optical calibration f32 value.
     (optical calibration, $ble_characteristic:expr, $calibrator:ident, $setter:ident, $getter:ident) => {
         log::info!("Attaching {}.", stringify!($ble_characteristic));
 
@@ -152,12 +197,7 @@ macro_rules! attach_char {
             });
 
         $ble_characteristic.write().unwrap().on_read(move |_| {
-            let value = *$calibrator
-                .lock()
-                .unwrap()
-                .as_mut()
-                .unwrap()
-                .$getter();
+            let value = *$calibrator.lock().unwrap().as_mut().unwrap().$getter();
 
             log::info!("{} is {}", stringify!($ble_characteristic), value);
 
@@ -623,10 +663,9 @@ pub(crate) fn attach_optical_frontend_chars(
             .optical_frontend_configuration
             .tia_capacitor_1_characteristic),
         frontend,
-        set_tia_capacitor1,
-        get_tia_capacitor1,
-        Capacitance,
-        farad
+        set_tia_capacitor1_enum,
+        get_tia_capacitor1_enum,
+        afe4404::tia::values::CapacitorValue::from_u8
     );
     attach_char!(
         optical frontend,
@@ -634,10 +673,9 @@ pub(crate) fn attach_optical_frontend_chars(
             .optical_frontend_configuration
             .tia_capacitor_2_characteristic),
         frontend,
-        set_tia_capacitor2,
-        get_tia_capacitor2,
-        Capacitance,
-        farad
+        set_tia_capacitor2_enum,
+        get_tia_capacitor2_enum,
+        afe4404::tia::values::CapacitorValue::from_u8
     );
     attach_char!(
         optical frontend,
@@ -645,10 +683,9 @@ pub(crate) fn attach_optical_frontend_chars(
             .optical_frontend_configuration
             .tia_resistor_1_characteristic),
         frontend,
-        set_tia_resistor1,
-        get_tia_resistor1,
-        ElectricalResistance,
-        ohm
+        set_tia_resistor1_enum,
+        get_tia_resistor1_enum,
+        afe4404::tia::values::ResistorValue::from_u8
     );
     attach_char!(
         optical frontend,
@@ -656,10 +693,9 @@ pub(crate) fn attach_optical_frontend_chars(
             .optical_frontend_configuration
             .tia_resistor_2_characteristic),
         frontend,
-        set_tia_resistor2,
-        get_tia_resistor2,
-        ElectricalResistance,
-        ohm
+        set_tia_resistor2_enum,
+        get_tia_resistor2_enum,
+        afe4404::tia::values::ResistorValue::from_u8
     );
     attach_char!(
         optical frontend,

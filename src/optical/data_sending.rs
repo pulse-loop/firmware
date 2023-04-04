@@ -1,3 +1,4 @@
+use esp_idf_sys::time;
 use std::{
     sync::{Arc, Mutex, RwLock},
     thread,
@@ -130,11 +131,11 @@ pub fn notify_task(
     raw_data: Arc<Mutex<RawData>>,
     filtered_data: Arc<Mutex<FilteredData>>,
 ) {
-    let mut time = std::time::Instant::now();
+    let mut notify_timer = super::timer::Timer::new(50);
     loop {
         thread::sleep(Duration::from_millis(10));
 
-        if time.elapsed().as_millis() > 50 {
+        if notify_timer.is_expired() {
             if let (Ok(ble_api), Ok(raw_data), Ok(filtered_data)) =
                 (ble_api.write(), raw_data.lock(), filtered_data.lock())
             {
@@ -150,7 +151,7 @@ pub fn notify_task(
                     .write()
                     .unwrap()
                     .set_value(filtered_data.serialise());
-                time = std::time::Instant::now();
+                notify_timer.reset();
             }
         }
     }

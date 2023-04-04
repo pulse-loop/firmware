@@ -31,6 +31,7 @@ pub(crate) mod char_control;
 pub(crate) mod data_reading;
 pub(crate) mod data_sending;
 pub(crate) mod signal_processing;
+pub(crate) mod timer;
 
 lazy_static::lazy_static! {
     pub static ref FRONTEND: Arc<Mutex<Option<AFE4404<I2cDriver<'static>, ThreeLedsMode>>>> = Arc::new(Mutex::new(None));

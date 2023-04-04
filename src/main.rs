@@ -55,7 +55,11 @@ fn main() {
     let latest_data_for_notify = latest_raw_data.clone();
     let latest_filtered_data_for_notify = latest_filtered_data.clone();
     thread::spawn(move || {
-        optical::data_sending::notify_task(ble_api_for_notify, latest_data_for_notify, latest_filtered_data_for_notify)
+        optical::data_sending::notify_task(
+            ble_api_for_notify,
+            latest_data_for_notify,
+            latest_filtered_data_for_notify,
+        )
     });
 
     let builder = thread::Builder::new()
@@ -64,7 +68,11 @@ fn main() {
 
     builder
         .spawn(move || {
-            let calibrators: [&Arc<Mutex<Option<optical::calibration::Calibrator>>>; 3] = [&optical::CALIBRATOR_LED1, &optical::CALIBRATOR_LED2, &optical::CALIBRATOR_LED3];
+            let calibrators: [&Arc<Mutex<Option<optical::calibration::Calibrator>>>; 3] = [
+                &optical::CALIBRATOR_LED1,
+                &optical::CALIBRATOR_LED2,
+                &optical::CALIBRATOR_LED3,
+            ];
             let mut dc_filter = [
                 FirFilter::<optical::signal_processing::DcFir>::new(),
                 FirFilter::<optical::signal_processing::DcFir>::new(),
@@ -81,6 +89,8 @@ fn main() {
                 optical::signal_processing::CriticalHistory::new(),
             ];
             let mut averaged_data = (0, optical::data_sending::RawData::default());
+            let mut frontend_set_up_timer = optical::timer::Timer::new(200); // Corresponds to the time needed, after any change to the frontend settings, for high-accuracy data.
+            let mut filter_plus_frontend_set_up_timer = optical::timer::Timer::new(3300 + 200); // Corresponds to the time needed for the filters to settle plus the time needed for high-accuracy data.
             optical::data_reading::reading_task(move |raw_data| {
                 // Average the data over 10 samples.
                 if averaged_data.0 < 10 {
@@ -96,35 +106,48 @@ fn main() {
 
                     // Iterate over the three leds.
                     for (i, led) in averaged_data_iterator.enumerate() {
-                        // Calibrate dc.
-                        calibrators[i]
+                        // Calibrate.
+                        if calibrators[i]
                             .lock()
                             .unwrap()
                             .as_mut()
                             .unwrap()
-                            .calibrate_dc(ElectricPotential::new::<microvolt>(led as f32));
+                            .calibrate_dc(ElectricPotential::new::<microvolt>(led as f32))
+                        {
+                            frontend_set_up_timer.reset();
+                            filter_plus_frontend_set_up_timer.reset();
+                        }
 
-                        // Filter dc data (lowpass).
-                        let dc_data = dc_filter[i].feed(led as f32) as i32;
+                        // Process data.
+                        if frontend_set_up_timer.is_expired() {
+                            // Filter dc data (lowpass).
+                            let dc_data = dc_filter[i].feed(led as f32) as i32;
 
-                        // Filter ac data (bandpass).
-                        let ac_data = ac_filter[i].feed(led as f32) as i32;
+                            // Filter ac data (bandpass).
+                            let ac_data = ac_filter[i].feed(led as f32) as i32;
 
-                        // Find critical values
-                        // match optical::signal_processing::find_critical_value(ac_data, &mut critical_history[0]) {
-                        //     optical::signal_processing::CriticalValue::Maximum(_,_ ) => {
-                        //         log::info!("Maximum");
-                        //     }
-                        //     optical::signal_processing::CriticalValue::Minimum(_,_ ) => {
-                        //         log::info!("Minimum");
-                        //     }
-                        //     optical::signal_processing::CriticalValue::None => {}
-                        // }
+                            if filter_plus_frontend_set_up_timer.is_expired() {
+                                // Find critical values
+                                match optical::signal_processing::find_critical_value(
+                                    ac_data,
+                                    &mut critical_history[0],
+                                ) {
+                                    optical::signal_processing::CriticalValue::Maximum(_, _) => {
+                                        log::info!("Maximum");
+                                    }
+                                    optical::signal_processing::CriticalValue::Minimum(_, _) => {
+                                        log::info!("Minimum");
+                                    }
+                                    optical::signal_processing::CriticalValue::None => {}
+                                }
+                            }
 
-                        latest_filtered_data.lock().unwrap()[i] = (dc_data, ac_data);
+                            // Send filtered data to the application.
+                            latest_filtered_data.lock().unwrap()[i] = (dc_data, ac_data);
+                        }
                     }
 
-                    // Send data to the application.
+                    // Send raw data to the application.
                     *latest_raw_data.lock().unwrap() = averaged_data.1;
 
                     averaged_data = (0, optical::data_sending::RawData::default());

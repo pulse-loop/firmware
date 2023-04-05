@@ -74,14 +74,14 @@ fn main() {
                 &optical::CALIBRATOR_LED3,
             ];
             let mut dc_filter = [
-                FirFilter::<optical::signal_processing::DcFir>::new(),
-                FirFilter::<optical::signal_processing::DcFir>::new(),
-                FirFilter::<optical::signal_processing::DcFir>::new(),
+                FirFilter::<optical::signal_processing::filters::DcFir>::new(),
+                FirFilter::<optical::signal_processing::filters::DcFir>::new(),
+                FirFilter::<optical::signal_processing::filters::DcFir>::new(),
             ];
             let mut ac_filter = [
-                FirFilter::<optical::signal_processing::AcFir>::new(),
-                FirFilter::<optical::signal_processing::AcFir>::new(),
-                FirFilter::<optical::signal_processing::AcFir>::new(),
+                FirFilter::<optical::signal_processing::filters::AcFir>::new(),
+                FirFilter::<optical::signal_processing::filters::AcFir>::new(),
+                FirFilter::<optical::signal_processing::filters::AcFir>::new(),
             ];
             let mut critical_history = [
                 optical::signal_processing::CriticalHistory::new(),
@@ -126,8 +126,8 @@ fn main() {
                             // Filter ac data (bandpass).
                             let ac_data = ac_filter[i].feed(led as f32) as i32;
 
+                            // Find critical values
                             if filter_plus_frontend_set_up_timer.is_expired() {
-                                // Find critical values
                                 match optical::signal_processing::find_critical_value(
                                     ac_data,
                                     &mut critical_history[0],

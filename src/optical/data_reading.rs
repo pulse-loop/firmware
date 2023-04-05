@@ -35,7 +35,7 @@ where
     }
 }
 
-/// This function should be called in a separate thread to get readings from the AFE4404.
+/// This function should be called in a separate thread to get readings from the AFE4404 in microvolts.
 pub fn reading_task<CB>(callback: CB)
 where
     CB: FnMut(RawData) + 'static,

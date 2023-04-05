@@ -3,11 +3,9 @@ use std::sync::{Arc, Mutex};
 use afe4404::{device::AFE4404, modes::ThreeLedsMode};
 use esp_idf_hal::i2c::I2cDriver;
 use uom::si::{
-    capacitance::farad,
     electric_current::ampere,
     electric_potential::volt,
-    electrical_resistance::ohm,
-    f32::{Capacitance, ElectricCurrent, ElectricPotential, ElectricalResistance, Time},
+    f32::{ElectricCurrent, ElectricPotential, Time},
     time::second,
 };
 

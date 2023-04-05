@@ -91,6 +91,7 @@ fn main() {
             let mut averaged_data = (0, optical::data_sending::RawData::default());
             let mut frontend_set_up_timer = optical::timer::Timer::new(200); // Corresponds to the time needed, after any change to the frontend settings, for high-accuracy data.
             let mut filter_plus_frontend_set_up_timer = optical::timer::Timer::new(3300 + 200); // Corresponds to the time needed for the filters to settle plus the time needed for high-accuracy data.
+            let mut previous_maximum: [Option<(i32, u128)>; 3] = [None; 3];
             optical::data_reading::reading_task(move |raw_data| {
                 // Average the data over 10 samples.
                 if averaged_data.0 < 10 {
@@ -120,6 +121,8 @@ fn main() {
 
                         // Process data.
                         if frontend_set_up_timer.is_expired() {
+                            // TODO: Normalise data (led / (2*R) - ambient / (2*R)).
+
                             // Filter dc data (lowpass).
                             let dc_data = dc_filter[i].feed(led as f32) as i32;
 
@@ -132,11 +135,25 @@ fn main() {
                                     ac_data,
                                     &mut critical_history[0],
                                 ) {
-                                    optical::signal_processing::CriticalValue::Maximum(_, _) => {
-                                        log::info!("Maximum");
+                                    optical::signal_processing::CriticalValue::Maximum(
+                                        amplitude,
+                                        time,
+                                    ) => {
+                                        if let Some(previous_maximum) = previous_maximum[i] {
+                                            let rr = time - previous_maximum.1;
+                                            log::info!("RR{}: {} ms", i, rr);
+                                        }
+                                        previous_maximum[i] = Some((amplitude, time));
                                     }
-                                    optical::signal_processing::CriticalValue::Minimum(_, _) => {
-                                        log::info!("Minimum");
+                                    optical::signal_processing::CriticalValue::Minimum(
+                                        amplitude,
+                                        _time,
+                                    ) => {
+                                        if let Some(previous_maximum) = previous_maximum[i] {
+                                            let ac = previous_maximum.0 - amplitude;
+                                            let dc = dc_data;
+                                            log::info!("AC{}: {} DC{}: {}", i, ac, i, dc);
+                                        }
                                     }
                                     optical::signal_processing::CriticalValue::None => {}
                                 }

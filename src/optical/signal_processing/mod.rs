@@ -53,7 +53,7 @@ pub(crate) fn find_critical_value(element: i32, history: &mut CriticalHistory) -
         if history.is_positive {
             // The signal was positive, the maximum is the critical value.
             critical = CriticalValue::Maximum(history.max.0, history.max.1);
-            history.max.1 = 0;
+            history.max.0 = 0;
         } else {
             // The signal was negative, the minimum is the critical value.
             critical = CriticalValue::Minimum(history.min.0, history.min.1);

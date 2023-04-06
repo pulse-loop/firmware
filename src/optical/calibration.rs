@@ -15,7 +15,7 @@ pub(crate) struct Calibrator {
     alpha: f32, // The skin reflectance parameter (alpha = i_led / i_photodiode).
     offset_current_set_point: ElectricCurrent, // In order to turn on the LED, set a negative offset.
     adc_set_point: ElectricPotential,
-    adc_working_threshold: ElectricPotential,
+    adc_working_threshold: ElectricPotential, // Around the adc_set_point.
 
     // Frontend functions.
     get_led_current: Box<dyn Fn() -> ElectricCurrent>,

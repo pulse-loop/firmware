@@ -52,28 +52,57 @@ impl AggregatedData {
 
 /// This funtion should be called in a separate thread to send the readings from the AFE4404.
 pub fn notify_task(
-    ble_api: Arc<RwLock<crate::bluetooth::BluetoothAPI>>,
-    readings: Arc<Mutex<AggregatedData>>,
+    ble_api: &crate::bluetooth::BluetoothAPI,
+    raw_data: Arc<Mutex<RawData>>,
+    filtered_data: Arc<Mutex<FilteredData>>,
+    calibration_receiver: std::sync::mpsc::Receiver<(f32, f32)>,
 ) {
-    let mut time = std::time::Instant::now();
+    let mut notify_timer = super::timer::Timer::new(50);
+    let mut latest_calibration_data: Option<(f32, f32)> = None;
     loop {
-        thread::sleep(Duration::from_millis(10));
+        latest_calibration_data = calibration_receiver.try_recv().map(Some).unwrap_or(None);
 
-        if time.elapsed().as_millis() > 50 {
-            if let (Ok(ble_api), Ok(mut readings)) = (ble_api.write(), readings.lock()) {
+        if notify_timer.is_expired() {
+            if let (Ok(raw_data), Ok(filtered_data)) = (raw_data.lock(), filtered_data.lock()) {
+                thread::sleep(Duration::from_millis(5));
+
                 ble_api
                     .raw_sensor_data
                     .aggregated_data_characteristic
                     .write()
                     .unwrap()
-                    .set_value(readings.serialise());
+                    .set_value(raw_data.serialise());
 
-                // Reset the critical values;
-                readings.led1_critical_value = super::signal_processing::CriticalValue::None;
-                readings.led2_critical_value = super::signal_processing::CriticalValue::None;
-                readings.led3_critical_value = super::signal_processing::CriticalValue::None;
+                thread::sleep(Duration::from_millis(5));
 
-                time = std::time::Instant::now();
+                ble_api
+                    .sensor_data
+                    .filtered_optical_data_characteristic
+                    .write()
+                    .unwrap()
+                    .set_value(filtered_data.serialise());
+
+                // #[cfg(feature = "notify-calibration")]
+                // if let Some(latest_calibration_data) = latest_calibration_data {
+                //     thread::sleep(Duration::from_millis(5));
+
+                //     ble_api
+                //         .optical_frontend_configuration
+                //         .led1_current_characteristic
+                //         .write()
+                //         .unwrap()
+                //         .set_value(latest_calibration_data.0.to_le_bytes());
+
+                //     thread::sleep(Duration::from_millis(5));
+
+                //     ble_api
+                //         .optical_frontend_configuration
+                //         .led1_offset_current_characteristic
+                //         .write()
+                //         .unwrap()
+                //         .set_value(latest_calibration_data.1.to_le_bytes());
+                // }
+                notify_timer.reset();
             }
         }
     }

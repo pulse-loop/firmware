@@ -3,6 +3,7 @@ use std::sync::{Arc, RwLock};
 use bluedroid::gatt_server::{Characteristic, Service};
 use bluedroid::utilities::{AttributePermissions, BleUuid, CharacteristicProperties};
 
+#[derive(Clone)]
 pub struct PulseLoopServiceContainer {
     pub(crate) service: Arc<RwLock<Service>>,
     pub(crate) api_version_characteristic: Arc<RwLock<Characteristic>>,

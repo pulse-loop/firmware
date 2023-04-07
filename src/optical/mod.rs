@@ -37,7 +37,7 @@ lazy_static::lazy_static! {
 pub fn initialise<P: Pin>(
     i2c: I2cDriver<'static>,
     interrupt_pin: &mut PinDriver<P, Input>,
-    ble_api: Arc<RwLock<BluetoothAPI>>,
+    ble_api: &BluetoothAPI,
 ) {
     // Interrupt pin.
     interrupt_pin
@@ -122,8 +122,14 @@ pub fn initialise<P: Pin>(
     // Bluetooth.
     crate::optical::char_control::attach_optical_frontend_chars(
         &FRONTEND,
-        &mut ble_api.write().unwrap(),
+        ble_api,
+    );
+    crate::optical::char_control::attach_optical_calibration_chars(
+        &CALIBRATOR_LED1,
+        &CALIBRATOR_LED2,
+        &CALIBRATOR_LED3,
+        ble_api,
     );
 
-    ble_api.read().unwrap().start();
+    ble_api.start();
 }

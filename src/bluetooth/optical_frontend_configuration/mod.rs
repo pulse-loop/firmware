@@ -4,6 +4,7 @@ use bluedroid::gatt_server::{Characteristic, Service};
 use bluedroid::utilities::{AttributePermissions, BleUuid, CharacteristicProperties};
 use log::warn;
 
+#[derive(Clone)]
 pub struct OpticalFrontendConfigurationServiceContainer {
     pub(crate) service: Arc<RwLock<Service>>,
     pub(crate) adc_averages_characteristic: Arc<RwLock<Characteristic>>,
@@ -58,53 +59,53 @@ impl OpticalFrontendConfigurationServiceContainer {
     #[allow(clippy::too_many_lines)]
     pub(crate) fn initialise() -> Self {
         #[rustfmt::skip]
-        let characteristic_list: [(&str, &str); 46] = [
-            ("7ADE19EA-2202-48E1-AFFB-4D8504024C37", "ADC averages"),
-            ("9B6AF28C-9558-49ED-844B-06E7B8B0E6C3", "Ambient ADC conversion end"),
-            ("66DC5EDA-B89E-43D5-B940-13E29A468C77", "Ambient ADC conversion start"),
-            ("E9AB33D4-DA9C-4424-851A-16CF66AA08C0", "Ambient ADC reset end"),
-            ("FD7FAFE2-4464-4F8C-A55C-79E45FB916B3", "Ambient ADC reset start"),
-            ("83C29A09-B658-4316-A1FD-D8AD97C02F80", "Ambient sample end"),
-            ("C35EBCC5-BCA4-4716-90E3-37B94D9AD6FF", "Ambient sample start"),
-            ("4ED69FED-8261-4931-A8A4-CA67B406A73A", "Ambient offset current"),
-            ("4D5A0E9C-0164-4D65-8F2D-86741B820EEF", "Decimation factor"),
-            ("BC276997-792F-4391-9371-78F1C1038DB7", "Dynamic power-down end"),
-            ("0B68331C-B628-4D81-BBDB-47B79EA2430E", "Dynamic power-down start"),
-            ("C455472B-4231-4EF7-A3BD-A1AE2676F9D2", "LED1 ADC conversion end"),
-            ("ED9B9EE3-AAFE-4034-8C07-1D7F495288B1", "LED1 ADC conversion start"),
-            ("7049E8C6-A0CE-4380-8186-1B7CD34179ED", "LED1 ADC reset end"),
-            ("C8B42A6D-ECFC-40E8-8E3C-F5876EE749A3", "LED1 ADC reset start"),
-            ("9C678B37-F3AA-4B8C-AFD5-10B4694E49C7", "LED1 lighting end"),
-            ("F02C15DF-14F1-4872-BE99-33EE64F0E0B3", "LED1 lighting start"),
-            ("A20B7943-5E1D-4053-8C4E-CD44463F460D", "LED1 current"),
-            ("F60A8B03-FAB1-433D-9D9E-8722DF003329", "LED1 sample end"),
-            ("FB219512-DC81-461A-B558-FE6E310E9333", "LED1 sample start"),
-            ("C5C6B835-56A6-4FC5-81BF-7512595DF3BD", "LED1 offset current"),
-            ("40314C89-306E-47F0-AE1F-C5DDD8C0CDDD", "LED2 ADC conversion end"),
-            ("160CC306-3CA6-4BF5-AC0B-85443F3CFC6B", "LED2 ADC conversion start"),
-            ("34D6F164-543F-49F4-B0F1-6E68DC4CEE6B", "LED2 ADC reset end"),
-            ("E34424D5-68DA-467F-93FE-BE49F19FAB0E", "LED2 ADC reset start"),
-            ("B85968BA-FB52-46E8-81A5-0F837BF3D6EB", "LED2 lighting end"),
-            ("F710D5DC-2655-42D6-97AA-7A5FDF0285C8", "LED2 lighting start"),
-            ("29CA51A3-B33B-44FD-853C-00FE8827ADC4", "LED2 current"),
-            ("F752142C-5BFC-4274-9044-E81D3F2F274A", "LED2 sample end"),
-            ("38644B85-3D2E-4D31-9679-06C9EB6BAC2D", "LED2 sample start"),
-            ("1F23AD86-30CB-4AC2-AD23-226DA5B2EB0C", "LED2 offset current"),
-            ("7C2A9A6F-95EB-45ED-B7E1-BB290F7853ED", "LED3 ADC conversion end"),
-            ("C03D3143-E6B6-49AB-85FC-EEED3A43B530", "LED3 ADC conversion start"),
-            ("A7D441AA-C456-4CBF-A0B9-84DBF33934EF", "LED3 ADC reset end"),
-            ("536D72C8-DFF0-4E38-93F7-7F376316EA8D", "LED3 ADC reset start"),
-            ("5B7F9859-092B-43D4-AC6B-AC9DD4742AB2", "LED3 lighting end"),
-            ("0B098015-110E-487E-AAE9-BEA1ED1F54A0", "LED3 lighting start"),
-            ("F7535ED9-CB9F-469A-817E-1635DC3B68B0", "LED3 current"),
-            ("249782EC-004B-4A3D-9608-5143E69AB294", "LED3 sample end"),
-            ("733C5AED-D3B3-4F65-8898-6EA37DA30F71", "LED3 sample start"),
-            ("41AE7B18-F5D7-4475-9E3F-49354F077CED", "LED3 offset current"),
-            ("08B3B8E9-D3AD-48EB-B93B-AF4D3695F05C", "TIA capacitor 1"),
-            ("740669DF-57D3-4147-87B4-DC302512F20A", "TIA capacitor 2"),
-            ("81831E3A-917E-4252-9C16-42BA8FF3F47A", "TIA resistor 1"),
-            ("A3F694D1-C378-4124-BF56-468DFAFF14E6", "TIA resistor 2"),
-            ("B904BD23-6082-4507-8BD2-7333EF6A2726", "Total window length"),
+        let characteristic_list: [(&str, &str, bool); 46] = [
+            ("7ADE19EA-2202-48E1-AFFB-4D8504024C37", "ADC averages", false),
+            ("9B6AF28C-9558-49ED-844B-06E7B8B0E6C3", "Ambient ADC conversion end", false),
+            ("66DC5EDA-B89E-43D5-B940-13E29A468C77", "Ambient ADC conversion start", false),
+            ("E9AB33D4-DA9C-4424-851A-16CF66AA08C0", "Ambient ADC reset end", false),
+            ("FD7FAFE2-4464-4F8C-A55C-79E45FB916B3", "Ambient ADC reset start", false),
+            ("83C29A09-B658-4316-A1FD-D8AD97C02F80", "Ambient sample end", false),
+            ("C35EBCC5-BCA4-4716-90E3-37B94D9AD6FF", "Ambient sample start", false),
+            ("4ED69FED-8261-4931-A8A4-CA67B406A73A", "Ambient offset current", false),
+            ("4D5A0E9C-0164-4D65-8F2D-86741B820EEF", "Decimation factor", false),
+            ("BC276997-792F-4391-9371-78F1C1038DB7", "Dynamic power-down end", false),
+            ("0B68331C-B628-4D81-BBDB-47B79EA2430E", "Dynamic power-down start", false),
+            ("C455472B-4231-4EF7-A3BD-A1AE2676F9D2", "LED1 ADC conversion end", false),
+            ("ED9B9EE3-AAFE-4034-8C07-1D7F495288B1", "LED1 ADC conversion start", false),
+            ("7049E8C6-A0CE-4380-8186-1B7CD34179ED", "LED1 ADC reset end", false),
+            ("C8B42A6D-ECFC-40E8-8E3C-F5876EE749A3", "LED1 ADC reset start", false),
+            ("9C678B37-F3AA-4B8C-AFD5-10B4694E49C7", "LED1 lighting end", false),
+            ("F02C15DF-14F1-4872-BE99-33EE64F0E0B3", "LED1 lighting start", false),
+            ("A20B7943-5E1D-4053-8C4E-CD44463F460D", "LED1 current", true),
+            ("F60A8B03-FAB1-433D-9D9E-8722DF003329", "LED1 sample end", false),
+            ("FB219512-DC81-461A-B558-FE6E310E9333", "LED1 sample start", false),
+            ("C5C6B835-56A6-4FC5-81BF-7512595DF3BD", "LED1 offset current", true),
+            ("40314C89-306E-47F0-AE1F-C5DDD8C0CDDD", "LED2 ADC conversion end", false),
+            ("160CC306-3CA6-4BF5-AC0B-85443F3CFC6B", "LED2 ADC conversion start", false),
+            ("34D6F164-543F-49F4-B0F1-6E68DC4CEE6B", "LED2 ADC reset end", false),
+            ("E34424D5-68DA-467F-93FE-BE49F19FAB0E", "LED2 ADC reset start", false),
+            ("B85968BA-FB52-46E8-81A5-0F837BF3D6EB", "LED2 lighting end", false),
+            ("F710D5DC-2655-42D6-97AA-7A5FDF0285C8", "LED2 lighting start", false),
+            ("29CA51A3-B33B-44FD-853C-00FE8827ADC4", "LED2 current", true),
+            ("F752142C-5BFC-4274-9044-E81D3F2F274A", "LED2 sample end", false),
+            ("38644B85-3D2E-4D31-9679-06C9EB6BAC2D", "LED2 sample start", false),
+            ("1F23AD86-30CB-4AC2-AD23-226DA5B2EB0C", "LED2 offset current", true),
+            ("7C2A9A6F-95EB-45ED-B7E1-BB290F7853ED", "LED3 ADC conversion end", false),
+            ("C03D3143-E6B6-49AB-85FC-EEED3A43B530", "LED3 ADC conversion start", false),
+            ("A7D441AA-C456-4CBF-A0B9-84DBF33934EF", "LED3 ADC reset end", false),
+            ("536D72C8-DFF0-4E38-93F7-7F376316EA8D", "LED3 ADC reset start", false),
+            ("5B7F9859-092B-43D4-AC6B-AC9DD4742AB2", "LED3 lighting end", false),
+            ("0B098015-110E-487E-AAE9-BEA1ED1F54A0", "LED3 lighting start", false),
+            ("F7535ED9-CB9F-469A-817E-1635DC3B68B0", "LED3 current", true),
+            ("249782EC-004B-4A3D-9608-5143E69AB294", "LED3 sample end", false),
+            ("733C5AED-D3B3-4F65-8898-6EA37DA30F71", "LED3 sample start", false),
+            ("41AE7B18-F5D7-4475-9E3F-49354F077CED", "LED3 offset current", true),
+            ("08B3B8E9-D3AD-48EB-B93B-AF4D3695F05C", "TIA capacitor 1", false),
+            ("740669DF-57D3-4147-87B4-DC302512F20A", "TIA capacitor 2", false),
+            ("81831E3A-917E-4252-9C16-42BA8FF3F47A", "TIA resistor 1", false),
+            ("A3F694D1-C378-4124-BF56-468DFAFF14E6", "TIA resistor 2", false),
+            ("B904BD23-6082-4507-8BD2-7333EF6A2726", "Total window length", false),
         ];
 
         let mut characteristics: Vec<Arc<RwLock<Characteristic>>> = vec![];
@@ -117,11 +118,13 @@ impl OpticalFrontendConfigurationServiceContainer {
         .clone();
 
         for item in characteristic_list {
+            let mut properties = CharacteristicProperties::new().read().write();
+
             let characteristic = Characteristic::new(BleUuid::from_uuid128_string(item.0))
                 .name(item.1)
                 .show_name()
                 .permissions(AttributePermissions::new().read().write())
-                .properties(CharacteristicProperties::new().read().write())
+                .properties(properties)
                 .on_read(|_| {
                     warn!("Read not implemented.");
                     vec![0x00]

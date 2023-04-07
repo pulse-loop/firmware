@@ -11,6 +11,10 @@ categories = ["embedded"]
 edition = "2018"
 resolver = "2"
 
+[features]
+default = ["notify-calibration"]
+notify-calibration = []
+
 [profile.release]
 opt-level = "z"
 lto = true

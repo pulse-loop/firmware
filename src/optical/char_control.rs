@@ -57,7 +57,54 @@ macro_rules! attach_char {
         });
     };
 
-    ($ble_characteristic:expr, $frontend:ident, $setter:ident, $getter:ident) => {
+    // Otical frontend afe4404 u8 value.
+    (optical frontend enum, $ble_characteristic:expr, $frontend:ident, $setter:ident, $getter:ident) => {
+        log::info!("Attaching {}.", stringify!($ble_characteristic));
+
+        $ble_characteristic
+            .write()
+            .unwrap()
+            .on_write(move |value, _| {
+                let value = value[0];
+
+                log::info!("Setting {} to {}", stringify!($ble_characteristic), value);
+
+                let result = $frontend
+                    .lock()
+                    .unwrap()
+                    .as_mut()
+                    .unwrap()
+                    .$setter(value.try_into().expect("Unable to convert u8 to enum."));
+
+                match result {
+                    Ok(()) => {
+                        log::info!("{} set to {}", stringify!($ble_characteristic), value);
+                    }
+                    Err(e) => {
+                        log::error!("Error setting {}: {:?}", stringify!($ble_characteristic), e);
+                    }
+                }
+            });
+
+        $ble_characteristic.write().unwrap().on_read(move |_| {
+            let result = $frontend.lock().unwrap().as_mut().unwrap().$getter();
+
+            match result {
+                Ok(result) => {
+                    let result: u8 = result.try_into().expect("Unable to convert enum to u8."); // Convert to u8.
+                    log::info!("{} is {}", stringify!($ble_characteristic), result);
+                    vec![result]
+                }
+                Err(e) => {
+                    log::error!("Error getting {}: {:?}", stringify!($ble_characteristic), e);
+                    vec![]
+                }
+            }
+        });
+    };
+
+    // Optical frontend u8 value.
+    (optical frontend, $ble_characteristic:expr, $frontend:ident, $setter:ident, $getter:ident) => {
         log::info!("Attaching {}.", stringify!($ble_characteristic));
 
         $ble_characteristic
@@ -99,7 +146,7 @@ macro_rules! attach_char {
 
 pub(crate) fn attach_optical_frontend_chars(
     frontend: &'static Arc<Mutex<Option<AFE4404<I2cDriver, ThreeLedsMode>>>>,
-    ble_api: &mut crate::bluetooth::BluetoothAPI,
+    ble_api: &crate::bluetooth::BluetoothAPI,
 ) {
     attach_char!(
         (ble_api
@@ -556,5 +603,142 @@ pub(crate) fn attach_optical_frontend_chars(
         get_window_period,
         Time,
         second
+    );
+}
+
+pub(crate) fn attach_optical_calibration_chars(
+    calibrator1: &'static Arc<Mutex<Option<super::calibration::Calibrator>>>,
+    calibrator2: &'static Arc<Mutex<Option<super::calibration::Calibrator>>>,
+    calibrator3: &'static Arc<Mutex<Option<super::calibration::Calibrator>>>,
+    ble_api: &crate::bluetooth::BluetoothAPI,
+) {
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led1_current_min),
+        calibrator1,
+        led_current_min_mut,
+        led_current_min,
+        ElectricCurrent,
+        ampere
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led1_current_max),
+        calibrator1,
+        led_current_max_mut,
+        led_current_max,
+        ElectricCurrent,
+        ampere
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led1_adc_set_point),
+        calibrator1,
+        adc_set_point_mut,
+        adc_set_point,
+        ElectricPotential,
+        volt
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led1_adc_working_threshold),
+        calibrator1,
+        adc_working_threshold_mut,
+        adc_working_threshold,
+        ElectricPotential,
+        volt
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led1_alpha),
+        calibrator1,
+        alpha_mut,
+        alpha
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led2_current_min),
+        calibrator2,
+        led_current_min_mut,
+        led_current_min,
+        ElectricCurrent,
+        ampere
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led2_current_max),
+        calibrator2,
+        led_current_max_mut,
+        led_current_max,
+        ElectricCurrent,
+        ampere
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led2_adc_set_point),
+        calibrator2,
+        adc_set_point_mut,
+        adc_set_point,
+        ElectricPotential,
+        volt
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led2_adc_working_threshold),
+        calibrator2,
+        adc_working_threshold_mut,
+        adc_working_threshold,
+        ElectricPotential,
+        volt
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led2_alpha),
+        calibrator2,
+        alpha_mut,
+        alpha
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led3_current_min),
+        calibrator3,
+        led_current_min_mut,
+        led_current_min,
+        ElectricCurrent,
+        ampere
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led3_current_max),
+        calibrator3,
+        led_current_max_mut,
+        led_current_max,
+        ElectricCurrent,
+        ampere
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led3_adc_set_point),
+        calibrator3,
+        adc_set_point_mut,
+        adc_set_point,
+        ElectricPotential,
+        volt
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led3_adc_working_threshold),
+        calibrator3,
+        adc_working_threshold_mut,
+        adc_working_threshold,
+        ElectricPotential,
+        volt
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led3_alpha),
+        calibrator3,
+        alpha_mut,
+        alpha
     );
 }

@@ -14,6 +14,7 @@ mod pulse_oximeter;
 mod raw_sensor_data;
 mod settings;
 
+#[derive(Clone)]
 pub struct BluetoothAPI {
     // pub(crate) pulse_oximeter: pulse_oximeter::PulseOximeterServiceContainer,
     // pub(crate) heart_rate: heart_rate::HeartRateServiceContainer,

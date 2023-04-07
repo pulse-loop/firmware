@@ -8,6 +8,7 @@ use uom::si::{
     f32::{ElectricCurrent, ElectricPotential, Time},
     time::second,
 };
+use core::convert::TryInto;
 
 macro_rules! attach_char {
     // Otical frontend uom f32 value.
@@ -58,7 +59,7 @@ macro_rules! attach_char {
     };
 
     // Otical frontend afe4404 u8 value.
-    (optical frontend, $ble_characteristic:expr, $frontend:ident, $setter:ident, $getter:ident, $component_cast:path) => {
+    (optical frontend enum, $ble_characteristic:expr, $frontend:ident, $setter:ident, $getter:ident) => {
         log::info!("Attaching {}.", stringify!($ble_characteristic));
 
         $ble_characteristic
@@ -74,11 +75,11 @@ macro_rules! attach_char {
                     .unwrap()
                     .as_mut()
                     .unwrap()
-                    .$setter($component_cast(value));
+                    .$setter(value.try_into().expect("Unable to convert u8 to enum."));
 
                 match result {
-                    Ok(result) => {
-                        log::info!("{} set to {:?}", stringify!($ble_characteristic), result);
+                    Ok(()) => {
+                        log::info!("{} set to {}", stringify!($ble_characteristic), value);
                     }
                     Err(e) => {
                         log::error!("Error setting {}: {:?}", stringify!($ble_characteristic), e);
@@ -91,8 +92,9 @@ macro_rules! attach_char {
 
             match result {
                 Ok(result) => {
-                    log::info!("{} is {:?}", stringify!($ble_characteristic), result);
-                    vec![result as u8]
+                    let result: u8 = result.try_into().expect("Unable to convert enum to u8."); // Convert to u8.
+                    log::info!("{} is {}", stringify!($ble_characteristic), result);
+                    vec![result]
                 }
                 Err(e) => {
                     log::error!("Error getting {}: {:?}", stringify!($ble_characteristic), e);
@@ -656,44 +658,40 @@ pub(crate) fn attach_optical_frontend_chars(
         ampere
     );
     attach_char!(
-        optical frontend,
+        optical frontend enum,
         (ble_api
             .optical_frontend_configuration
             .tia_capacitor_1_characteristic),
         frontend,
         set_tia_capacitor1_enum,
-        get_tia_capacitor1_enum,
-        afe4404::tia::values::CapacitorValue::from_u8
+        get_tia_capacitor1_enum
     );
     attach_char!(
-        optical frontend,
+        optical frontend enum,
         (ble_api
             .optical_frontend_configuration
             .tia_capacitor_2_characteristic),
         frontend,
         set_tia_capacitor2_enum,
-        get_tia_capacitor2_enum,
-        afe4404::tia::values::CapacitorValue::from_u8
+        get_tia_capacitor2_enum
     );
     attach_char!(
-        optical frontend,
+        optical frontend enum,
         (ble_api
             .optical_frontend_configuration
             .tia_resistor_1_characteristic),
         frontend,
         set_tia_resistor1_enum,
-        get_tia_resistor1_enum,
-        afe4404::tia::values::ResistorValue::from_u8
+        get_tia_resistor1_enum
     );
     attach_char!(
-        optical frontend,
+        optical frontend enum,
         (ble_api
             .optical_frontend_configuration
             .tia_resistor_2_characteristic),
         frontend,
         set_tia_resistor2_enum,
-        get_tia_resistor2_enum,
-        afe4404::tia::values::ResistorValue::from_u8
+        get_tia_resistor2_enum
     );
     attach_char!(
         optical frontend,

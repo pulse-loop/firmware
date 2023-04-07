@@ -36,9 +36,9 @@ We also use some custom services for internal debugging and configuration.
 This service is used to detect if a device is a pulse.loop or not. It contains a single characteristic, which is a read-only string containing the BLE API version.
 This service is advertised in scan response data, so it is not necessary to connect to the device to detect it.
 
-| Characteristic | Access | UUID                                   | Description      | FW  | SW |
-|----------------|--------|----------------------------------------|------------------|-----|----|
-| Version        | Read   | `1852299D-AE64-4E4F-B915-CB37E7FD57C9` | BLE API version. | Yes | No |
+| Characteristic | Access | UUID                                   | Description      | FW  | SW  |
+|----------------|--------|----------------------------------------|------------------|-----|-----|
+| Version        | Read   | `1852299D-AE64-4E4F-B915-CB37E7FD57C9` | BLE API version. | Yes | Yes |
 
 ### Settings
 
@@ -65,39 +65,39 @@ The firmware upgrade service is used to upgrade the firmware of the pulse.loop. 
 
 Data from the optical frontend and other sensors.
 
-| Characteristic        | Access | Type                                      | UUID                                   | Description                                 | FW  | SW |
-|-----------------------|--------|-------------------------------------------|----------------------------------------|---------------------------------------------|-----|----|
-| Raw optical data      | Read   | [Raw](custom_types.md#raw-data)           | `26CB3CCA-F22E-4179-8125-55874E9153AD` | The latest readings from the frontend [µV]. | Yes | No |
-| Filtered optical data | Read   | [Filtered](custom_types.md#filtered-data) | `BDC0FC52-797B-4065-AABA-DC394F1DD0FD` | The DC and AC filtered data [µV].           | Yes | No |
+| Characteristic        | Access | Type                                      | UUID                                   | Description                                 | FW  | SW  |
+|-----------------------|--------|-------------------------------------------|----------------------------------------|---------------------------------------------|-----|-----|
+| Raw optical data      | Read   | [Raw](custom_types.md#raw-data)           | `26CB3CCA-F22E-4179-8125-55874E9153AD` | The latest readings from the frontend [µV]. | Yes | Yes |
+| Filtered optical data | Read   | [Filtered](custom_types.md#filtered-data) | `BDC0FC52-797B-4065-AABA-DC394F1DD0FD` | The DC and AC filtered data [µV].           | Yes | Yes |
 
 ### Calibration
 
-| Characteristic                | Access     | Type  | UUID                                   | Description                                            | FW  | SW |
-|-------------------------------|------------|-------|----------------------------------------|--------------------------------------------------------|-----|----|
-| LED1 adc set point            | Read/Write | `f32` | `9B98BA9A-9EEA-40F6-87F4-53BF2BB19699` | The set point of the readings when LED1 is active [V]. | Yes | No |
-| LED1 adc working threshold    | Read/Write | `f32` | `41A91B62-9FB2-41E3-906A-E24697D938D5` | The working threshold of LED1 [V].                     | Yes | No |
-| LED1 alpha                    | Read/Write | `f32` | `A01B4911-9CA4-4E51-A484-C0E5E962FDA6` | The skin reflectance parameter for LED1 [-].           | Yes | No |
-| LED1 current max              | Read/Write | `f32` | `71F1573E-DB0D-4B52-9E9F-AA505719D41D` | The maximum current of LED1 [A].                       | Yes | No |
-| LED1 current min              | Read/Write | `f32` | `2043264C-C1A8-4A62-8FDE-525BE380AA13` | The minimum current of LED1 [A].                       | Yes | No |
-| LED1 offset current max       | Read/Write | `f32` | `0428B369-BD92-4625-BEF3-55B9C054411E` | The maximum offset current of LED1 [A].                | No  | No |
-| LED1 offset current min       | Read/Write | `f32` | `914E65A0-F10D-4E35-9705-424FBE514594` | The minimum offset current of LED1 [A].                | No  | No |
-| LED1 offset current set point | Read/Write | `f32` | `BA6BFE73-1621-42CC-B792-AEE5BAAE57CD` | The set point of the offset current of LED1 [A].       | No  | No |
-| LED2 adc set point            | Read/Write | `f32` | `BA113050-05DC-4A44-B4EF-7DBF10E74171` | The set point of the readings when LED2 is active [V]. | Yes | No |
-| LED2 adc working threshold    | Read/Write | `f32` | `43C5ECAD-63F4-42A8-A3AE-7F799FF6B01B` | The working threshold of LED2 [V].                     | Yes | No |
-| LED2 alpha                    | Read/Write | `f32` | `1E33ED6E-1EB1-4738-9BAA-6A617BECB801` | The skin reflectance parameter for LED2 [-].           | Yes | No |
-| LED2 current max              | Read/Write | `f32` | `2EB0E60C-B688-479A-AC80-D196F3146FD0` | The maximum current of LED2 [A].                       | Yes | No |
-| LED2 current min              | Read/Write | `f32` | `9621CF82-87A9-4794-AB81-7BAC475574BD` | The minimum current of LED2 [A].                       | Yes | No |
-| LED2 offset current max       | Read/Write | `f32` | `6F2BB2FE-6DB8-4D3B-8AA6-5D4845CFBFA2` | The maximum offset current of LED2 [A].                | No  | No |
-| LED2 offset current min       | Read/Write | `f32` | `913C4C37-63E9-49C4-9944-782DD702D503` | The minimum offset current of LED2 [A].                | No  | No |
-| LED2 offset current set point | Read/Write | `f32` | `FDBB0D89-33B6-40E0-B7B5-1C5E74D3FB05` | The set point of the offset current of LED2 [A].       | No  | No |
-| LED3 adc set point            | Read/Write | `f32` | `4D149938-C228-4345-B41C-26CDFF119B41` | The set point of the readings when LED3 is active [V]. | Yes | No |
-| LED3 adc working threshold    | Read/Write | `f32` | `337F34FC-E9A3-4BEC-817D-2E194D60E0B6` | The working threshold of LED3 [V].                     | Yes | No |
-| LED3 alpha                    | Read/Write | `f32` | `A067A9B6-5395-448B-90D5-B243FE8E120D` | The skin reflectance parameter for LED3 [-].           | Yes | No |
-| LED3 current max              | Read/Write | `f32` | `EB28857B-622F-42D8-B304-F7CCAE955EC0` | The maximum current of LED3 [A].                       | Yes | No |
-| LED3 current min              | Read/Write | `f32` | `B7FF9A50-9954-4E5E-AD49-1A1925C51C33` | The minimum current of LED3 [A].                       | Yes | No |
-| LED3 offset current max       | Read/Write | `f32` | `1C7EDBC5-4613-4FFF-9F8A-E1952E3CCDE6` | The maximum offset current of LED3 [A].                | No  | No |
-| LED3 offset current min       | Read/Write | `f32` | `BC9E526F-E17D-43DE-B2B9-E36A0461D7BB` | The minimum offset current of LED3 [A].                | No  | No |
-| LED3 offset current set point | Read/Write | `f32` | `1AAA3A9F-680D-4530-A08E-CB90E8B34142` | The set point of the offset current of LED3 [A].       | No  | No |
+| Characteristic                | Access     | Type  | UUID                                   | Description                                            | FW  | SW  |
+|-------------------------------|------------|-------|----------------------------------------|--------------------------------------------------------|-----|-----|
+| LED1 adc set point            | Read/Write | `f32` | `9B98BA9A-9EEA-40F6-87F4-53BF2BB19699` | The set point of the readings when LED1 is active [V]. | Yes | Yes |
+| LED1 adc working threshold    | Read/Write | `f32` | `41A91B62-9FB2-41E3-906A-E24697D938D5` | The working threshold of LED1 [V].                     | Yes | Yes |
+| LED1 alpha                    | Read/Write | `f32` | `A01B4911-9CA4-4E51-A484-C0E5E962FDA6` | The skin reflectance parameter for LED1 [-].           | Yes | Yes |
+| LED1 current max              | Read/Write | `f32` | `71F1573E-DB0D-4B52-9E9F-AA505719D41D` | The maximum current of LED1 [A].                       | Yes | Yes |
+| LED1 current min              | Read/Write | `f32` | `2043264C-C1A8-4A62-8FDE-525BE380AA13` | The minimum current of LED1 [A].                       | Yes | Yes |
+| LED1 offset current max       | Read/Write | `f32` | `0428B369-BD92-4625-BEF3-55B9C054411E` | The maximum offset current of LED1 [A].                | No  | Yes |
+| LED1 offset current min       | Read/Write | `f32` | `914E65A0-F10D-4E35-9705-424FBE514594` | The minimum offset current of LED1 [A].                | No  | Yes |
+| LED1 offset current set point | Read/Write | `f32` | `BA6BFE73-1621-42CC-B792-AEE5BAAE57CD` | The set point of the offset current of LED1 [A].       | No  | Yes |
+| LED2 adc set point            | Read/Write | `f32` | `BA113050-05DC-4A44-B4EF-7DBF10E74171` | The set point of the readings when LED2 is active [V]. | Yes | Yes |
+| LED2 adc working threshold    | Read/Write | `f32` | `43C5ECAD-63F4-42A8-A3AE-7F799FF6B01B` | The working threshold of LED2 [V].                     | Yes | Yes |
+| LED2 alpha                    | Read/Write | `f32` | `1E33ED6E-1EB1-4738-9BAA-6A617BECB801` | The skin reflectance parameter for LED2 [-].           | Yes | Yes |
+| LED2 current max              | Read/Write | `f32` | `2EB0E60C-B688-479A-AC80-D196F3146FD0` | The maximum current of LED2 [A].                       | Yes | Yes |
+| LED2 current min              | Read/Write | `f32` | `9621CF82-87A9-4794-AB81-7BAC475574BD` | The minimum current of LED2 [A].                       | Yes | Yes |
+| LED2 offset current max       | Read/Write | `f32` | `6F2BB2FE-6DB8-4D3B-8AA6-5D4845CFBFA2` | The maximum offset current of LED2 [A].                | No  | Yes |
+| LED2 offset current min       | Read/Write | `f32` | `913C4C37-63E9-49C4-9944-782DD702D503` | The minimum offset current of LED2 [A].                | No  | Yes |
+| LED2 offset current set point | Read/Write | `f32` | `FDBB0D89-33B6-40E0-B7B5-1C5E74D3FB05` | The set point of the offset current of LED2 [A].       | No  | Yes |
+| LED3 adc set point            | Read/Write | `f32` | `4D149938-C228-4345-B41C-26CDFF119B41` | The set point of the readings when LED3 is active [V]. | Yes | Yes |
+| LED3 adc working threshold    | Read/Write | `f32` | `337F34FC-E9A3-4BEC-817D-2E194D60E0B6` | The working threshold of LED3 [V].                     | Yes | Yes |
+| LED3 alpha                    | Read/Write | `f32` | `A067A9B6-5395-448B-90D5-B243FE8E120D` | The skin reflectance parameter for LED3 [-].           | Yes | Yes |
+| LED3 current max              | Read/Write | `f32` | `EB28857B-622F-42D8-B304-F7CCAE955EC0` | The maximum current of LED3 [A].                       | Yes | Yes |
+| LED3 current min              | Read/Write | `f32` | `B7FF9A50-9954-4E5E-AD49-1A1925C51C33` | The minimum current of LED3 [A].                       | Yes | Yes |
+| LED3 offset current max       | Read/Write | `f32` | `1C7EDBC5-4613-4FFF-9F8A-E1952E3CCDE6` | The maximum offset current of LED3 [A].                | No  | Yes |
+| LED3 offset current min       | Read/Write | `f32` | `BC9E526F-E17D-43DE-B2B9-E36A0461D7BB` | The minimum offset current of LED3 [A].                | No  | Yes |
+| LED3 offset current set point | Read/Write | `f32` | `1AAA3A9F-680D-4530-A08E-CB90E8B34142` | The set point of the offset current of LED3 [A].       | No  | Yes |
 
 ### Optical frontend configuration
 
@@ -105,7 +105,7 @@ Analog frontend parameter configuration for testing and algorithm development.
 
 | Characteristic               | Access     | Type  | UUID                                   | Description                                                                       | FW  | SW  |
 |------------------------------|------------|-------|----------------------------------------|-----------------------------------------------------------------------------------|-----|-----|
-| ADC averages                 | Read/Write | `u8`  | `7ADE19EA-2202-48E1-AFFB-4D8504024C37` | The number of averages performed by the ADC [-].                                  | Yes | No  |
+| ADC averages                 | Read/Write | `u8`  | `7ADE19EA-2202-48E1-AFFB-4D8504024C37` | The number of averages performed by the ADC [-].                                  | Yes | Yes |
 | Ambient ADC conversion end   | Read/Write | `f32` | `9B6AF28C-9558-49ED-844B-06E7B8B0E6C3` | The end time of ambient ADC conversion [s].                                       | Yes | Yes |
 | Ambient ADC conversion start | Read/Write | `f32` | `66DC5EDA-B89E-43D5-B940-13E29A468C77` | The start time of ambient ADC conversion [s].                                     | Yes | Yes |
 | Ambient ADC reset end        | Read/Write | `f32` | `E9AB33D4-DA9C-4424-851A-16CF66AA08C0` | The end time of ambient ADC reset [s].                                            | Yes | Yes |
@@ -113,7 +113,7 @@ Analog frontend parameter configuration for testing and algorithm development.
 | Ambient offset current       | Read/Write | `f32` | `4ED69FED-8261-4931-A8A4-CA67B406A73A` | The offset current of ambient [A].                                                | Yes | Yes |
 | Ambient sample end           | Read/Write | `f32` | `83C29A09-B658-4316-A1FD-D8AD97C02F80` | The end time of ambient sample [s].                                               | Yes | Yes |
 | Ambient sample start         | Read/Write | `f32` | `C35EBCC5-BCA4-4716-90E3-37B94D9AD6FF` | The start time of ambient sample [s].                                             | Yes | Yes |
-| Decimation factor            | Read/Write | `u8`  | `4D5A0E9C-0164-4D65-8F2D-86741B820EEF` | The number of data samples to be averaged [-].                                    | Yes | No  |
+| Decimation factor            | Read/Write | `u8`  | `4D5A0E9C-0164-4D65-8F2D-86741B820EEF` | The number of data samples to be averaged [-].                                    | Yes | Yes |
 | Dynamic power-down end       | Read/Write | `f32` | `BC276997-792F-4391-9371-78F1C1038DB7` | The end time of dynamic power-down [s].                                           | Yes | Yes |
 | Dynamic power-down start     | Read/Write | `f32` | `0B68331C-B628-4D81-BBDB-47B79EA2430E` | The start time of dynamic power-down [s].                                         | Yes | Yes |
 | LED1 ADC conversion end      | Read/Write | `f32` | `C455472B-4231-4EF7-A3BD-A1AE2676F9D2` | The end time of LED1 ADC conversion [s].                                          | Yes | Yes |

@@ -133,7 +133,7 @@ fn main() {
                             if filter_plus_frontend_set_up_timer.is_expired() {
                                 match optical::signal_processing::find_critical_value(
                                     ac_data,
-                                    &mut critical_history[0],
+                                    &mut critical_history[i],
                                 ) {
                                     optical::signal_processing::CriticalValue::Maximum(
                                         amplitude,

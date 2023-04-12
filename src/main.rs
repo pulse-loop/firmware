@@ -84,6 +84,16 @@ fn main() {
                 FirFilter::<optical::signal_processing::filters::AcFir>::new(),
                 FirFilter::<optical::signal_processing::filters::AcFir>::new(),
             ];
+            let mut rr_average_filter = [
+                FirFilter::<optical::signal_processing::filters::AverageFir>::new(),
+                FirFilter::<optical::signal_processing::filters::AverageFir>::new(),
+                FirFilter::<optical::signal_processing::filters::AverageFir>::new(),
+            ];
+            let mut ac_average_filter = [
+                FirFilter::<optical::signal_processing::filters::AverageFir>::new(),
+                FirFilter::<optical::signal_processing::filters::AverageFir>::new(),
+                FirFilter::<optical::signal_processing::filters::AverageFir>::new(),
+            ];
 
             let mut critical_history = [
                 optical::signal_processing::CriticalHistory::new(),
@@ -137,7 +147,18 @@ fn main() {
                                 ) => {
                                     if let Some(previous_maximum) = previous_maximum[i] {
                                         let rr = time - previous_maximum.1;
-                                        log::info!("RR{}: {} ms", i, rr);
+                                        if rr > 250 && rr < 2000 {
+                                            let averaged_rr = rr_average_filter[i].feed(rr as f32);
+                                            log::info!(
+                                                "RR{}: {} ms, BPM{}: {}",
+                                                i,
+                                                averaged_rr,
+                                                i,
+                                                60_000.0 / averaged_rr
+                                            );
+                                        } else {
+                                            log::error!("RR{}: {} ms", i, rr);
+                                        }
                                     }
                                     previous_maximum[i] = Some((amplitude, time));
                                 }
@@ -148,7 +169,7 @@ fn main() {
                                     if let Some(previous_maximum) = previous_maximum[i] {
                                         let ac = previous_maximum.0 - amplitude;
                                         let dc = dc_data;
-                                        log::info!("AC{}: {} DC{}: {}", i, ac, i, dc);
+                                        // log::info!("AC{}: {} DC{}: {}", i, ac, i, dc);
                                     }
                                 }
                                 optical::signal_processing::CriticalValue::None => {}

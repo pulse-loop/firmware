@@ -48,7 +48,7 @@ impl Calibrator {
         let calibrator = Calibrator {
             // TODO: Change to optimal initial value.
             led_current_min: ElectricCurrent::new::<milliampere>(0.0),
-            led_current_max: ElectricCurrent::new::<milliampere>(100.0),
+            led_current_max: ElectricCurrent::new::<milliampere>(50.0),
             offset_current_min: ElectricCurrent::new::<microampere>(-7.0),
             offset_current_max: ElectricCurrent::new::<microampere>(7.0),
             alpha,

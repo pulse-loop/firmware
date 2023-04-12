@@ -1,8 +1,8 @@
 use static_fir::impl_fir;
 
 // Implement a low-pass filter for the DC component.
-// Passband: 0 - 0.3 Hz, ripple: 0.06 dB
-// Stopband: 0.8 - 5 Hz, attenuation: -22.24 dB
+// Passband: 0 - 0.3 Hz, ripple: 2.24 dB
+// Stopband: 0.8 - 5 Hz, attenuation: -25.31 dB
 impl_fir!(
     DcFir,
     f32,
@@ -97,9 +97,9 @@ impl_fir!(
 );
 
 // Implement a band-pass filter for the AC component.
-// Stopband: 0 - 0.1 Hz, attenuation: -60.76 dB
-// Passband: 0.5 - 4 Hz, ripple: 3.81 dB
-// Stopband: 4.3 - 5 Hz, attenuation: -40.76 dB
+// Stopband: 0 - 0.1 Hz, attenuation: -80.34 dB
+// Passband: 0.5 - 4 Hz, ripple: 4.01 dB
+// Stopband: 4.3 - 5 Hz, attenuation: -40.34 dB
 impl_fir!(
     AcFir,
     f32,

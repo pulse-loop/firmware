@@ -16,12 +16,13 @@ use afe4404::{
     device::AFE4404,
     led_current::LedCurrentConfiguration,
     modes::ThreeLedsMode,
+    tia::values::ResistorValue,
     {
         clock::ClockConfiguration,
         measurement_window::{
             ActiveTiming, AmbientTiming, LedTiming, MeasurementWindowConfiguration, PowerDownTiming,
         },
-    }, tia::values::ResistorValue,
+    },
 };
 
 use crate::bluetooth::BluetoothAPI;
@@ -82,7 +83,7 @@ pub(crate) fn initialise<P: Pin>(
                 .set_tia_resistor1_enum(ResistorValue::R100k)
                 .expect("Cannot set TIA resistor 1.");
             frontend
-                .set_tia_resistor2_enum(ResistorValue::R100k)
+                .set_tia_resistor2_enum(ResistorValue::R10k)
                 .expect("Cannot set TIA resistor 2.");
 
             frontend
@@ -91,53 +92,55 @@ pub(crate) fn initialise<P: Pin>(
 
             frontend
                 .set_measurement_window(&MeasurementWindowConfiguration::<ThreeLedsMode>::new(
-                    Time::new::<microsecond>(10_000.0),
+                    Time::new::<microsecond>(50_000.0),
                     ActiveTiming::<ThreeLedsMode>::new(
                         LedTiming {
-                            lighting_st: Time::new::<microsecond>(200.5),
-                            lighting_end: Time::new::<microsecond>(300.25),
-                            sample_st: Time::new::<microsecond>(225.5),
-                            sample_end: Time::new::<microsecond>(300.25),
-                            reset_st: Time::new::<microsecond>(634.75),
-                            reset_end: Time::new::<microsecond>(636.25),
-                            conv_st: Time::new::<microsecond>(636.75),
-                            conv_end: Time::new::<microsecond>(901.5),
+                            lighting_st: Time::new::<microsecond>(600.0),
+                            lighting_end: Time::new::<microsecond>(890.0),
+                            sample_st: Time::new::<microsecond>(680.0),
+                            sample_end: Time::new::<microsecond>(890.0),
+                            reset_st: Time::new::<microsecond>(3200.0),
+                            reset_end: Time::new::<microsecond>(3208.0),
+                            conv_st: Time::new::<microsecond>(3210.0),
+                            conv_end: Time::new::<microsecond>(3690.0),
                         },
                         LedTiming {
                             lighting_st: Time::new::<microsecond>(0.0),
-                            lighting_end: Time::new::<microsecond>(99.75),
-                            sample_st: Time::new::<microsecond>(25.0),
-                            sample_end: Time::new::<microsecond>(99.75),
-                            reset_st: Time::new::<microsecond>(100.25),
-                            reset_end: Time::new::<microsecond>(101.75),
-                            conv_st: Time::new::<microsecond>(102.25),
-                            conv_end: Time::new::<microsecond>(367.0),
+                            lighting_end: Time::new::<microsecond>(290.0),
+                            sample_st: Time::new::<microsecond>(80.0),
+                            sample_end: Time::new::<microsecond>(290.0),
+                            reset_st: Time::new::<microsecond>(2200.0),
+                            reset_end: Time::new::<microsecond>(2208.0),
+                            conv_st: Time::new::<microsecond>(2210.0),
+                            conv_end: Time::new::<microsecond>(2690.0),
                         },
                         LedTiming {
-                            lighting_st: Time::new::<microsecond>(100.25),
-                            lighting_end: Time::new::<microsecond>(200.0),
-                            sample_st: Time::new::<microsecond>(125.25),
-                            sample_end: Time::new::<microsecond>(200.0),
-                            reset_st: Time::new::<microsecond>(367.5),
-                            reset_end: Time::new::<microsecond>(369.0),
-                            conv_st: Time::new::<microsecond>(369.5),
-                            conv_end: Time::new::<microsecond>(634.25),
+                            lighting_st: Time::new::<microsecond>(300.0),
+                            lighting_end: Time::new::<microsecond>(590.0),
+                            sample_st: Time::new::<microsecond>(380.0),
+                            sample_end: Time::new::<microsecond>(590.0),
+                            reset_st: Time::new::<microsecond>(2700.0),
+                            reset_end: Time::new::<microsecond>(2708.0),
+                            conv_st: Time::new::<microsecond>(2710.0),
+                            conv_end: Time::new::<microsecond>(3190.0),
                         },
                         AmbientTiming {
-                            sample_st: Time::new::<microsecond>(325.75),
-                            sample_end: Time::new::<microsecond>(400.5),
-                            reset_st: Time::new::<microsecond>(902.0),
-                            reset_end: Time::new::<microsecond>(903.5),
-                            conv_st: Time::new::<microsecond>(904.0),
-                            conv_end: Time::new::<microsecond>(1168.75),
+                            sample_st: Time::new::<microsecond>(980.0),
+                            sample_end: Time::new::<microsecond>(1190.0),
+                            reset_st: Time::new::<microsecond>(3700.0),
+                            reset_end: Time::new::<microsecond>(3708.0),
+                            conv_st: Time::new::<microsecond>(3710.0),
+                            conv_end: Time::new::<microsecond>(4190.0),
                         },
                     ),
                     PowerDownTiming {
-                        power_down_st: Time::new::<microsecond>(1368.75),
-                        power_down_end: Time::new::<microsecond>(9799.75),
+                        power_down_st: Time::new::<microsecond>(4400.0),
+                        power_down_end: Time::new::<microsecond>(49_800.0),
                     },
                 ))
                 .expect("Cannot set timing window.");
+
+            frontend.set_averaging(8).expect("Cannot set averaging.");
         }
     }
 

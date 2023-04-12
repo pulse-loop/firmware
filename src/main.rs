@@ -94,11 +94,11 @@ fn main() {
             let mut previous_maximum: [Option<(i32, u128)>; 3] = [None; 3];
             optical::data_reading::reading_task(move |raw_data| {
                 // Average the data over 10 samples.
-                if averaged_data.0 < 10 {
+                if averaged_data.0 < 1 {
                     averaged_data.0 += 1;
                     averaged_data.1 += raw_data;
                 } else {
-                    averaged_data.1 /= 10;
+                    averaged_data.1 /= 1;
 
                     let mut averaged_data_iterator = averaged_data.1.into_iter();
 

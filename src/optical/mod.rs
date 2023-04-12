@@ -80,7 +80,7 @@ pub(crate) fn initialise<P: Pin>(
                 .expect("Cannot set LEDs current.");
 
             frontend
-                .set_tia_resistor1_enum(ResistorValue::R100k)
+                .set_tia_resistor1_enum(ResistorValue::R500k)
                 .expect("Cannot set TIA resistor 1.");
             frontend
                 .set_tia_resistor2_enum(ResistorValue::R10k)

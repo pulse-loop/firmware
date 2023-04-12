@@ -1,6 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use afe4404::{device::AFE4404, modes::ThreeLedsMode};
+use core::convert::TryInto;
 use esp_idf_hal::i2c::I2cDriver;
 use uom::si::{
     electric_current::ampere,
@@ -8,7 +9,6 @@ use uom::si::{
     f32::{ElectricCurrent, ElectricPotential, Time},
     time::second,
 };
-use core::convert::TryInto;
 
 macro_rules! attach_char {
     // Otical frontend uom f32 value.
@@ -732,6 +732,33 @@ pub(crate) fn attach_optical_calibration_chars(
     );
     attach_char!(
         optical calibration,
+        (ble_api.calibration.led1_offset_current_min),
+        calibrator1,
+        offset_current_min_mut,
+        offset_current_min,
+        ElectricCurrent,
+        ampere
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led1_offset_current_max),
+        calibrator1,
+        offset_current_max_mut,
+        offset_current_max,
+        ElectricCurrent,
+        ampere
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led1_offset_current_set_point),
+        calibrator1,
+        offset_current_set_point_mut,
+        offset_current_set_point,
+        ElectricCurrent,
+        ampere
+    );
+    attach_char!(
+        optical calibration,
         (ble_api.calibration.led1_adc_set_point),
         calibrator1,
         adc_set_point_mut,
@@ -775,6 +802,33 @@ pub(crate) fn attach_optical_calibration_chars(
     );
     attach_char!(
         optical calibration,
+        (ble_api.calibration.led2_offset_current_min),
+        calibrator2,
+        offset_current_min_mut,
+        offset_current_min,
+        ElectricCurrent,
+        ampere
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led2_offset_current_max),
+        calibrator2,
+        offset_current_max_mut,
+        offset_current_max,
+        ElectricCurrent,
+        ampere
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led2_offset_current_set_point),
+        calibrator2,
+        offset_current_set_point_mut,
+        offset_current_set_point,
+        ElectricCurrent,
+        ampere
+    );
+    attach_char!(
+        optical calibration,
         (ble_api.calibration.led2_adc_set_point),
         calibrator2,
         adc_set_point_mut,
@@ -813,6 +867,33 @@ pub(crate) fn attach_optical_calibration_chars(
         calibrator3,
         led_current_max_mut,
         led_current_max,
+        ElectricCurrent,
+        ampere
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led3_offset_current_min),
+        calibrator3,
+        offset_current_min_mut,
+        offset_current_min,
+        ElectricCurrent,
+        ampere
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led3_offset_current_max),
+        calibrator3,
+        offset_current_max_mut,
+        offset_current_max,
+        ElectricCurrent,
+        ampere
+    );
+    attach_char!(
+        optical calibration,
+        (ble_api.calibration.led3_offset_current_set_point),
+        calibrator3,
+        offset_current_set_point_mut,
+        offset_current_set_point,
         ElectricCurrent,
         ampere
     );

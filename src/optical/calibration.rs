@@ -11,6 +11,9 @@ pub(crate) struct Calibrator {
     offset_current_min: ElectricCurrent,
     offset_current_max: ElectricCurrent,
 
+    // Chaced Afe4404 values.
+    pub(crate)offset_current: ElectricCurrent,
+
     // Dc calibration.
     alpha: f32, // The skin reflectance parameter (alpha = i_led / i_photodiode).
     offset_current_set_point: ElectricCurrent, // In order to turn on the LED, set a negative offset.
@@ -51,6 +54,7 @@ impl Calibrator {
             led_current_max: ElectricCurrent::new::<milliampere>(50.0),
             offset_current_min: ElectricCurrent::new::<microampere>(-7.0),
             offset_current_max: ElectricCurrent::new::<microampere>(7.0),
+            offset_current: ElectricCurrent::new::<microampere>(-7.0),
             alpha,
             offset_current_set_point: ElectricCurrent::new::<microampere>(-6.5),
             adc_set_point: ElectricPotential::new::<millivolt>(500.0),
@@ -159,7 +163,7 @@ impl Calibrator {
         {
             // Get the led current and the offset current from the frontend.
             let mut led_current = (self.get_led_current)();
-            let mut offset_current = (self.get_offset_current)();
+            let offset_current = (self.get_offset_current)();
 
             // The error between the set point and the sample converted in the current seen by the photodiode.
             let error = (self.adc_set_point - sample) / (2.0 * (self.get_resistor)());
@@ -180,7 +184,7 @@ impl Calibrator {
             let requested_offset_current =
                 self.offset_current_set_point + (requested_led_current - led_current) / self.alpha;
 
-            offset_current =
+            self.offset_current =
                 (self.set_offset_current)(if requested_offset_current < self.offset_current_min {
                     log::warn!("Offset too low");
                     self.offset_current_min
@@ -191,13 +195,8 @@ impl Calibrator {
                     requested_offset_current
                 });
 
-            log::info!(
-                "Calibrated DC {:?} {:?}, {:?}, {:?}",
-                error,
-                requested_led_current,
-                led_current,
-                offset_current,
-            );
+            log::info!("Calibrated DC");
+
             true
         } else {
             false

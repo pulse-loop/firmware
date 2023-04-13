@@ -6,7 +6,6 @@ use std::{
 };
 
 use afe4404::{modes::ThreeLedsMode, value_reading::Readings};
-use uom::si::electric_potential::microvolt;
 
 use super::data_sending::RawData;
 
@@ -35,7 +34,7 @@ where
     }
 }
 
-/// This function should be called in a separate thread to get readings from the AFE4404 in microvolts.
+/// This function should be called in a separate thread to get readings from the AFE4404.
 pub fn reading_task<CB>(callback: CB)
 where
     CB: FnMut(RawData) + 'static,
@@ -51,10 +50,10 @@ where
 
         request_readings(move |readings_frontend| {
             // Convert the readings to microvolts as integers.
-            data.ambient = readings_frontend.ambient().get::<microvolt>().round() as i32;
-            data.led1 = readings_frontend.led1().get::<microvolt>().round() as i32;
-            data.led2 = readings_frontend.led2().get::<microvolt>().round() as i32;
-            data.led3 = readings_frontend.led3().get::<microvolt>().round() as i32;
+            data.ambient = *readings_frontend.ambient();
+            data.led1 = *readings_frontend.led1();
+            data.led2 = *readings_frontend.led2();
+            data.led3 = *readings_frontend.led3();
 
             // Call the callback.
             let mut cb = cb.lock().unwrap();

@@ -6,8 +6,10 @@ use esp_idf_hal::{
 };
 
 use uom::si::{
+    capacitance::picofarad,
     electric_current::milliampere,
-    f32::{ElectricCurrent, Frequency, Time},
+    electrical_resistance::ohm,
+    f32::{Capacitance, ElectricCurrent, ElectricalResistance, Frequency, Time},
     frequency::megahertz,
     time::microsecond,
 };
@@ -16,7 +18,6 @@ use afe4404::{
     device::AFE4404,
     led_current::LedCurrentConfiguration,
     modes::ThreeLedsMode,
-    tia::values::{CapacitorValue, ResistorValue},
     {
         clock::ClockConfiguration,
         measurement_window::{
@@ -40,6 +41,10 @@ lazy_static::lazy_static! {
     pub(crate) static ref CALIBRATOR_LED2: Arc<Mutex<Option<calibration::Calibrator>>> = Arc::new(Mutex::new(None));
     pub(crate) static ref CALIBRATOR_LED3: Arc<Mutex<Option<calibration::Calibrator>>> = Arc::new(Mutex::new(None));
 }
+
+// Afe4404 constants.
+static RESISTOR1: f32 = 500e3;
+static RESISTOR2: f32 = 10e3;
 
 /// Initialises the `FRONTEND` with default values.
 pub(crate) fn initialise<P: Pin>(
@@ -80,16 +85,16 @@ pub(crate) fn initialise<P: Pin>(
                 .expect("Cannot set LEDs current.");
 
             frontend
-                .set_tia_resistor1_enum(ResistorValue::R500k)
+                .set_tia_resistor1(ElectricalResistance::new::<ohm>(RESISTOR1))
                 .expect("Cannot set TIA resistor 1.");
             frontend
-                .set_tia_resistor2_enum(ResistorValue::R10k)
+                .set_tia_resistor2(ElectricalResistance::new::<ohm>(RESISTOR2))
                 .expect("Cannot set TIA resistor 2.");
             frontend
-                .set_tia_capacitor1_enum(CapacitorValue::C25p0)
+                .set_tia_capacitor1(Capacitance::new::<picofarad>(25.0))
                 .expect("Cannot set TIA capacitor 1.");
             frontend
-                .set_tia_capacitor2_enum(CapacitorValue::C25p0)
+                .set_tia_capacitor2(Capacitance::new::<picofarad>(25.0))
                 .expect("Cannot set TIA capacitor 2.");
 
             frontend

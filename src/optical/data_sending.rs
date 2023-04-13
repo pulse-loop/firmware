@@ -4,24 +4,27 @@ use std::{
     time::Duration,
 };
 
+use uom::si::{electric_potential::microvolt, f32::ElectricPotential};
+
 /// This struct contains the raw readings from the frontend that will be sent to the application via notifications.
 /// All the voltages are expressed in microvolts.
 #[derive(Debug, Default, Clone, Copy)]
 pub struct RawData {
-    pub(crate) ambient: i32,
-    pub(crate) led1: i32,
-    pub(crate) led2: i32,
-    pub(crate) led3: i32,
+    pub(crate) ambient: ElectricPotential,
+    pub(crate) led1: ElectricPotential,
+    pub(crate) led2: ElectricPotential,
+    pub(crate) led3: ElectricPotential,
 }
 
 impl RawData {
     pub fn serialise(&self) -> [u8; 16] {
         let mut data = [0; 16];
 
-        data[0..4].copy_from_slice(&self.ambient.to_le_bytes());
-        data[4..8].copy_from_slice(&self.led1.to_le_bytes());
-        data[8..12].copy_from_slice(&self.led2.to_le_bytes());
-        data[12..16].copy_from_slice(&self.led3.to_le_bytes());
+        // TODO: Remove microvolt as i32 after updating the readme file.
+        data[0..4].copy_from_slice(&(self.ambient.get::<microvolt>() as i32).to_le_bytes());
+        data[4..8].copy_from_slice(&(self.led1.get::<microvolt>() as i32).to_le_bytes());
+        data[8..12].copy_from_slice(&(self.led2.get::<microvolt>() as i32).to_le_bytes());
+        data[12..16].copy_from_slice(&(self.led3.get::<microvolt>() as i32).to_le_bytes());
 
         data
     }
@@ -36,8 +39,8 @@ impl std::ops::AddAssign for RawData {
     }
 }
 
-impl std::ops::DivAssign<i32> for RawData {
-    fn div_assign(&mut self, rhs: i32) {
+impl std::ops::DivAssign<f32> for RawData {
+    fn div_assign(&mut self, rhs: f32) {
         self.ambient /= rhs;
         self.led1 /= rhs;
         self.led2 /= rhs;
@@ -46,7 +49,7 @@ impl std::ops::DivAssign<i32> for RawData {
 }
 
 impl<'a> IntoIterator for &'a RawData {
-    type Item = i32;
+    type Item = ElectricPotential;
     type IntoIter = RawDataIntoIterator<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -63,8 +66,8 @@ pub struct RawDataIntoIterator<'a> {
 }
 
 impl<'a> Iterator for RawDataIntoIterator<'a> {
-    type Item = i32;
-    fn next(&mut self) -> Option<i32> {
+    type Item = ElectricPotential;
+    fn next(&mut self) -> Option<ElectricPotential> {
         let result = match self.index {
             0 => self.raw_data.ambient,
             1 => self.raw_data.led1,
@@ -81,29 +84,30 @@ impl<'a> Iterator for RawDataIntoIterator<'a> {
 /// All the voltages are expressed in microvolts.
 #[derive(Debug, Default, Clone, Copy)]
 pub struct FilteredData {
-    pub(crate) led1: (i32, i32), // (dc, ac).
-    pub(crate) led2: (i32, i32), // (dc, ac).
-    pub(crate) led3: (i32, i32), // (dc, ac).
+    pub(crate) led1: (f32, f32), // (dc, ac).
+    pub(crate) led2: (f32, f32), // (dc, ac).
+    pub(crate) led3: (f32, f32), // (dc, ac).
 }
 
 impl FilteredData {
     pub fn serialise(&self) -> [u8; 24] {
         let mut data = [0; 24];
 
-        data[0..4].copy_from_slice(&self.led1.0.to_le_bytes());
-        data[4..8].copy_from_slice(&self.led1.1.to_le_bytes());
-        data[8..12].copy_from_slice(&self.led2.0.to_le_bytes());
-        data[12..16].copy_from_slice(&self.led2.1.to_le_bytes());
-        data[16..20].copy_from_slice(&self.led3.0.to_le_bytes());
-        data[20..24].copy_from_slice(&self.led3.1.to_le_bytes());
+        // TODO: Remove picoampere as i32 after updating the readme file.
+        data[0..4].copy_from_slice(&((self.led1.0 * 1e12) as i32).to_le_bytes());
+        data[4..8].copy_from_slice(&((self.led1.1 * 1e12) as i32).to_le_bytes());
+        data[8..12].copy_from_slice(&((self.led2.0 * 1e12) as i32).to_le_bytes());
+        data[12..16].copy_from_slice(&((self.led2.1 * 1e12) as i32).to_le_bytes());
+        data[16..20].copy_from_slice(&((self.led3.0 * 1e12) as i32).to_le_bytes());
+        data[20..24].copy_from_slice(&((self.led3.1 * 1e12) as i32).to_le_bytes());
 
         data
     }
 }
 
 impl std::ops::Index<usize> for FilteredData {
-    type Output = (i32, i32);
-    fn index(&self, i: usize) -> &(i32, i32) {
+    type Output = (f32, f32);
+    fn index(&self, i: usize) -> &(f32, f32) {
         match i {
             0 => &self.led1,
             1 => &self.led2,
@@ -114,7 +118,7 @@ impl std::ops::Index<usize> for FilteredData {
 }
 
 impl std::ops::IndexMut<usize> for FilteredData {
-    fn index_mut(&mut self, i: usize) -> &mut (i32, i32) {
+    fn index_mut(&mut self, i: usize) -> &mut (f32, f32) {
         match i {
             0 => &mut self.led1,
             1 => &mut self.led2,

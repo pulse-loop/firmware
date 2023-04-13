@@ -13,8 +13,9 @@ use esp_idf_hal::{
 
 // If using the `binstart` feature of `esp-idf-sys`, always keep this module imported.
 use esp_idf_sys::{self as _, esp_get_free_heap_size, esp_get_free_internal_heap_size};
+
 use static_fir::FirFilter;
-use uom::si::{electric_potential::microvolt, f32::ElectricPotential};
+use uom::si::{electrical_resistance::kiloohm, f32::ElectricalResistance};
 
 mod bluetooth;
 mod optical;
@@ -95,7 +96,7 @@ fn main() {
                 optical::signal_processing::CriticalHistory::new(),
                 optical::signal_processing::CriticalHistory::new(),
             ];
-            let mut previous_maximum: [Option<(i32, u128)>; 3] = [None; 3];
+            let mut previous_maximum: [Option<(f32, u128)>; 3] = [None; 3];
 
             let mut frontend_set_up_timer = optical::timer::Timer::new(200); // Corresponds to the time needed, after any change to the frontend settings, for high-accuracy data.
             let mut filter_plus_frontend_set_up_timer = optical::timer::Timer::new(85 * 50 + 200); // Corresponds to the time needed for the filters to settle plus the time needed for high-accuracy data.
@@ -114,7 +115,7 @@ fn main() {
                         .unwrap()
                         .as_mut()
                         .unwrap()
-                        .calibrate_dc(ElectricPotential::new::<microvolt>(led as f32))
+                        .calibrate_dc(led)
                     {
                         frontend_set_up_timer.reset();
                         filter_plus_frontend_set_up_timer.reset();
@@ -122,13 +123,24 @@ fn main() {
 
                     // Process data.
                     if frontend_set_up_timer.is_expired() {
-                        // TODO: Normalise data (led / (2*R) - ambient / (2*R)).
+                        // Convert the data into current and remove the ambient light.
+                        let photodiode_current = led
+                            / (2.0 * ElectricalResistance::new::<kiloohm>(1000.0))
+                            - calibrators[i]
+                                .lock()
+                                .unwrap()
+                                .as_mut()
+                                .unwrap()
+                                .offset_current;
+                        let ambient_current =
+                            ambient / (2.0 * ElectricalResistance::new::<kiloohm>(1000.0));
+                        let refined_current = (photodiode_current - ambient_current).value;
 
                         // Filter dc data (lowpass).
-                        let dc_data = dc_filter[i].feed(led as f32) as i32;
+                        let dc_data = dc_filter[i].feed(refined_current);
 
                         // Filter ac data (bandpass).
-                        let ac_data = ac_filter[i].feed(led as f32) as i32;
+                        let ac_data = ac_filter[i].feed(refined_current);
 
                         // Find critical values
                         if filter_plus_frontend_set_up_timer.is_expired() {
@@ -164,7 +176,7 @@ fn main() {
                                     if let Some(previous_maximum) = previous_maximum[i] {
                                         let ac = previous_maximum.0 - amplitude;
                                         let dc = dc_data;
-                                        let perfusion_index = ac as f32 / dc as f32;
+                                        let perfusion_index = ac / dc;
                                         log::info!("PI{}: {}", i, perfusion_index);
                                     }
                                 }

@@ -1,23 +1,11 @@
 pub mod filters;
 
-use queues::{CircularBuffer, IsQueue};
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub(crate) enum CriticalValue {
     #[default]
     None,
     Minimum(i32, u128),
     Maximum(i32, u128),
-}
-
-impl CriticalValue {
-    pub(crate) fn into_bits(&self) -> u8 {
-        match self {
-            CriticalValue::None => 0b00000000,
-            CriticalValue::Minimum(_, _) => 0b00000001,
-            CriticalValue::Maximum(_, _) => 0b00000010,
-        }
-    }
 }
 
 pub(crate) struct CriticalHistory {

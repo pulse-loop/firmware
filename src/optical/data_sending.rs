@@ -1,4 +1,3 @@
-use esp_idf_sys::time;
 use std::{
     sync::{Arc, Mutex, RwLock},
     thread,

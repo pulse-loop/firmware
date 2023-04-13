@@ -1,3 +1,5 @@
+#![allow(clippy::excessive_precision)]
+
 use static_fir::impl_fir;
 
 // Implement a low-pass filter for the DC component.

@@ -5,7 +5,7 @@ use std::{
     time::Duration,
 };
 
-use afe4404::{device::AFE4404, modes::ThreeLedsMode, value_reading::Readings};
+use afe4404::{modes::ThreeLedsMode, value_reading::Readings};
 use uom::si::electric_potential::microvolt;
 
 use super::data_sending::RawData;

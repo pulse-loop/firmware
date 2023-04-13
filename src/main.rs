@@ -89,11 +89,6 @@ fn main() {
                 FirFilter::<optical::signal_processing::filters::AverageFir>::new(),
                 FirFilter::<optical::signal_processing::filters::AverageFir>::new(),
             ];
-            let mut ac_average_filter = [
-                FirFilter::<optical::signal_processing::filters::AverageFir>::new(),
-                FirFilter::<optical::signal_processing::filters::AverageFir>::new(),
-                FirFilter::<optical::signal_processing::filters::AverageFir>::new(),
-            ];
 
             let mut critical_history = [
                 optical::signal_processing::CriticalHistory::new(),
@@ -149,13 +144,13 @@ fn main() {
                                         let rr = time - previous_maximum.1;
                                         if rr > 250 && rr < 2000 {
                                             let averaged_rr = rr_average_filter[i].feed(rr as f32);
-                                            log::info!(
-                                                "RR{}: {} ms, BPM{}: {}",
-                                                i,
-                                                averaged_rr,
-                                                i,
-                                                60_000.0 / averaged_rr
-                                            );
+                                            if i == 0 {
+                                                log::info!(
+                                                    "BPM: {}, RR: {} ms",
+                                                    60_000.0 / averaged_rr,
+                                                    averaged_rr,
+                                                );
+                                            }
                                         } else {
                                             log::error!("RR{}: {} ms", i, rr);
                                         }
@@ -169,7 +164,8 @@ fn main() {
                                     if let Some(previous_maximum) = previous_maximum[i] {
                                         let ac = previous_maximum.0 - amplitude;
                                         let dc = dc_data;
-                                        // log::info!("AC{}: {} DC{}: {}", i, ac, i, dc);
+                                        let perfusion_index = ac as f32 / dc as f32;
+                                        log::info!("PI{}: {}", i, perfusion_index);
                                     }
                                 }
                                 optical::signal_processing::CriticalValue::None => {}

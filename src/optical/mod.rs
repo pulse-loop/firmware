@@ -16,7 +16,7 @@ use afe4404::{
     device::AFE4404,
     led_current::LedCurrentConfiguration,
     modes::ThreeLedsMode,
-    tia::values::ResistorValue,
+    tia::values::{CapacitorValue, ResistorValue},
     {
         clock::ClockConfiguration,
         measurement_window::{
@@ -85,6 +85,12 @@ pub(crate) fn initialise<P: Pin>(
             frontend
                 .set_tia_resistor2_enum(ResistorValue::R10k)
                 .expect("Cannot set TIA resistor 2.");
+            frontend
+                .set_tia_capacitor1_enum(CapacitorValue::C25p0)
+                .expect("Cannot set TIA capacitor 1.");
+            frontend
+                .set_tia_capacitor2_enum(CapacitorValue::C25p0)
+                .expect("Cannot set TIA capacitor 2.");
 
             frontend
                 .set_clock_source(ClockConfiguration::Internal)
@@ -146,7 +152,7 @@ pub(crate) fn initialise<P: Pin>(
 
     // Calibration.
     *CALIBRATOR_LED1.lock().unwrap() = Some(calibration::Calibrator::new(
-        23000.0,
+        12000.0,
         || {
             FRONTEND
                 .lock()
@@ -194,7 +200,7 @@ pub(crate) fn initialise<P: Pin>(
         },
     ));
     *CALIBRATOR_LED2.lock().unwrap() = Some(calibration::Calibrator::new(
-        1000.0,
+        350.0,
         || {
             FRONTEND
                 .lock()
@@ -242,7 +248,7 @@ pub(crate) fn initialise<P: Pin>(
         },
     ));
     *CALIBRATOR_LED3.lock().unwrap() = Some(calibration::Calibrator::new(
-        570.0,
+        350.0,
         || {
             FRONTEND
                 .lock()

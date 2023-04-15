@@ -4,31 +4,31 @@ Here are described the custom data types used in BLE communication. Data is sent
 
 ## Raw data
 
-A custom type that contains the ambient and LEDs readings from the frontend in microvolts.
+A custom type that contains the ambient and LEDs readings from the frontend.
 
 ### Format
 
 | Field                 | Type  | Length  |
 | --------------------- | ----- | ------- |
-| Ambient phase reading | `i32` | 4 bytes |
-| LED1 phase reading    | `i32` | 4 bytes |
-| LED2 phase reading    | `i32` | 4 bytes |
-| LED3 phase reading    | `i32` | 4 bytes |
+| Ambient phase reading | `f32` | 4 bytes |
+| LED1 phase reading    | `f32` | 4 bytes |
+| LED2 phase reading    | `f32` | 4 bytes |
+| LED3 phase reading    | `f32` | 4 bytes |
 
 ## Filtered data
 
-A custom type that contains the DC and AC filtered values in microvolts.
+A custom type that contains the DC and AC filtered values converted in amperes.
 
 ### Format
 
 | Field   | Type  | Length  |
 | ------- | ----- | ------- |
-| LED1 DC | `i32` | 4 bytes |
-| LED1 AC | `i32` | 4 bytes |
-| LED2 DC | `i32` | 4 bytes |
-| LED2 AC | `i32` | 4 bytes |
-| LED3 DC | `i32` | 4 bytes |
-| LED3 AC | `i32` | 4 bytes |
+| LED1 DC | `f32` | 4 bytes |
+| LED1 AC | `f32` | 4 bytes |
+| LED2 DC | `f32` | 4 bytes |
+| LED2 AC | `f32` | 4 bytes |
+| LED3 DC | `f32` | 4 bytes |
+| LED3 AC | `f32` | 4 bytes |
 
 ## Capacitor value
 

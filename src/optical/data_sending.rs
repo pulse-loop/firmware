@@ -4,7 +4,7 @@ use std::{
     time::Duration,
 };
 
-use uom::si::{electric_potential::microvolt, f32::ElectricPotential};
+use uom::si::f32::ElectricPotential;
 
 /// This struct contains the raw readings from the frontend that will be sent to the application via notifications.
 /// All the voltages are expressed in microvolts.
@@ -21,10 +21,10 @@ impl RawData {
         let mut data = [0; 16];
 
         // TODO: Remove microvolt as i32 after updating the readme file.
-        data[0..4].copy_from_slice(&(self.ambient.get::<microvolt>() as i32).to_le_bytes());
-        data[4..8].copy_from_slice(&(self.led1.get::<microvolt>() as i32).to_le_bytes());
-        data[8..12].copy_from_slice(&(self.led2.get::<microvolt>() as i32).to_le_bytes());
-        data[12..16].copy_from_slice(&(self.led3.get::<microvolt>() as i32).to_le_bytes());
+        data[0..4].copy_from_slice(&self.ambient.value.to_le_bytes());
+        data[4..8].copy_from_slice(&self.led1.value.to_le_bytes());
+        data[8..12].copy_from_slice(&self.led2.value.to_le_bytes());
+        data[12..16].copy_from_slice(&self.led3.value.to_le_bytes());
 
         data
     }
@@ -93,13 +93,12 @@ impl FilteredData {
     pub fn serialise(&self) -> [u8; 24] {
         let mut data = [0; 24];
 
-        // TODO: Remove picoampere as i32 after updating the readme file.
-        data[0..4].copy_from_slice(&((self.led1.0 * 1e12) as i32).to_le_bytes());
-        data[4..8].copy_from_slice(&((self.led1.1 * 1e12) as i32).to_le_bytes());
-        data[8..12].copy_from_slice(&((self.led2.0 * 1e12) as i32).to_le_bytes());
-        data[12..16].copy_from_slice(&((self.led2.1 * 1e12) as i32).to_le_bytes());
-        data[16..20].copy_from_slice(&((self.led3.0 * 1e12) as i32).to_le_bytes());
-        data[20..24].copy_from_slice(&((self.led3.1 * 1e12) as i32).to_le_bytes());
+        data[0..4].copy_from_slice(&self.led1.0.to_le_bytes());
+        data[4..8].copy_from_slice(&self.led1.1.to_le_bytes());
+        data[8..12].copy_from_slice(&self.led2.0.to_le_bytes());
+        data[12..16].copy_from_slice(&self.led2.1.to_le_bytes());
+        data[16..20].copy_from_slice(&self.led3.0.to_le_bytes());
+        data[20..24].copy_from_slice(&self.led3.1.to_le_bytes());
 
         data
     }

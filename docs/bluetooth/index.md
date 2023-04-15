@@ -67,8 +67,8 @@ Data from the optical frontend and other sensors.
 
 | Characteristic        | Access | Type                                      | UUID                                   | Description                                 | FW  | SW  |
 |-----------------------|--------|-------------------------------------------|----------------------------------------|---------------------------------------------|-----|-----|
-| Raw optical data      | Read   | [Raw](custom_types.md#raw-data)           | `26CB3CCA-F22E-4179-8125-55874E9153AD` | The latest readings from the frontend [µV]. | Yes | Yes |
-| Filtered optical data | Read   | [Filtered](custom_types.md#filtered-data) | `BDC0FC52-797B-4065-AABA-DC394F1DD0FD` | The DC and AC filtered data [µV].           | Yes | Yes |
+| Raw optical data      | Read   | [Raw](custom_types.md#raw-data)           | `26CB3CCA-F22E-4179-8125-55874E9153AD` | The latest readings from the frontend [V]. | Yes | Yes |
+| Filtered optical data | Read   | [Filtered](custom_types.md#filtered-data) | `BDC0FC52-797B-4065-AABA-DC394F1DD0FD` | The DC and AC filtered data [A].           | Yes | Yes |
 
 ### Calibration
 

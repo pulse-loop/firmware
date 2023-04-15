@@ -27,7 +27,7 @@ We also use some custom services for internal debugging and configuration.
 | Firmware upgrade               | `0BA1B4AC-734A-4E75-AD22-8D5BBDEA5025` | Firmware upgrade service.                                                         |
 | Historic data                  | `DE753059-8906-4F07-A192-12879BB84DA7` | Historic data that can be downloaded by the user.                                 |
 | Optical frontend configuration | `C8F276D4-E0DD-4660-8070-619FF734134B` | `[DEBUG ONLY]` Optical sensor configuration.                                      |
-| Results                        | `5BE2E901-D0EC-4A5F-9488-3C80CE223852` | Heart rate measurements, Sp02 measurements, wrist presence and perfusion indeces. |
+| Results                        | `5BE2E901-D0EC-4A5F-9488-3C80CE223852` | Heart rate measurements, Sp02 measurements, wrist presence and perfusion indices. |
 | Sensor data                    | `272DF1F7-9D28-4B8C-86F6-30DB30ACE42C` | `[DEBUG ONLY]` Optical sensor data, IMU data, system status and parameters.       |
 | Settings                       | `821198C8-3036-4E14-B01C-364F2B20C603` | Settings that can be changed by the user.                                         |
 | pulse.loop identifier          | `68D68245-CFD8-4A1C-9858-B27ABC4C382E` | pulse.loop BLE API version. Used for detection.                                   |
@@ -153,15 +153,15 @@ Analog frontend parameter configuration for testing and algorithm development.
 | TIA resistor 2               | Read/Write | `u8`  | `A3F694D1-C378-4124-BF56-468DFAFF14E6` | The value of TIA resistor 2 [[ResistorValue](custom_types.md#resistor-value)].    | Yes | Yes |
 | Total window length          | Read/Write | `f32` | `B904BD23-6082-4507-8BD2-7333EF6A2726` | The total length of the windows [s].                                              | Yes | Yes |
 
-### Resutls
+### Results
 
 Heart rate, blood oxygen saturation, wrist presence and perfusion indices measurements.
 
-| Characteristic          | Access | Type   | UUID                                   | Description                                            | FW | SW |
-|-------------------------|--------|--------|----------------------------------------|--------------------------------------------------------|----|----|
-| Blood oxygen saturation | Read   | `f32`  | `0776731c-a5f8-4b40-9500-e4f97f5958d9` | The blood oxygen saturation measurements [%].          | No | No |
-| Heart rate              | Read   | `f32`  | `d8ce0238-f60c-4c1d-908f-5554760aa1d6` | The heart rate measurements [bpm].                     | No | No |
-| LED1 perfusion index    | Read   | `f32`  | `459cab03-5240-4837-9742-b71a5d8112a3` | The AC to DC ratio of LED1.                            | No | No |
-| LED2 perfusion index    | Read   | `f32`  | `32d616c9-5721-4bf0-b5f3-b709c45225ee` | The AC to DC ratio of LED2.                            | No | No |
-| LED3 perfusion index    | Read   | `f32`  | `c11839d6-50e7-4210-ad45-e44c5ab085ac` | The AC to DC ratio of LED3.                            | No | No |
-| Wrist presence          | Read   | `bool` | `9439189d-c1c2-4970-bd64-b9f1932f159f` | A flag that indicates the wrist presence on the sensor. | No | No |
+| Characteristic          | Access | Type   | UUID                                   | Description                                             | FW  | SW  |
+|-------------------------|--------|--------|----------------------------------------|---------------------------------------------------------|-----|-----|
+| Blood oxygen saturation | Read   | `f32`  | `0776731C-A5F8-4B40-9500-E4F97F5958D9` | The blood oxygen saturation measurements [%].           | Yes | Yes |
+| Heart rate              | Read   | `f32`  | `D8CE0238-F60C-4C1D-908F-5554760AA1D6` | The heart rate measurements [bpm].                      | Yes | Yes |
+| LED1 perfusion index    | Read   | `f32`  | `459CAB03-5240-4837-9742-B71A5D8112A3` | The AC to DC ratio of LED1.                             | Yes | Yes |
+| LED2 perfusion index    | Read   | `f32`  | `32D616C9-5721-4BF0-B5F3-B709C45225EE` | The AC to DC ratio of LED2.                             | Yes | Yes |
+| LED3 perfusion index    | Read   | `f32`  | `C11839D6-50E7-4210-AD45-E44C5AB085AC` | The AC to DC ratio of LED3.                             | Yes | Yes |
+| Wrist presence          | Read   | `bool` | `9439189D-C1C2-4970-BD64-B9F1932F159F` | A flag that indicates the wrist presence on the sensor. | Yes | Yes |

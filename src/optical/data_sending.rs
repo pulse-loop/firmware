@@ -132,15 +132,33 @@ pub fn notify_task(
     ble_api: Arc<RwLock<crate::bluetooth::BluetoothAPI>>,
     raw_data: Arc<Mutex<RawData>>,
     filtered_data: Arc<Mutex<FilteredData>>,
+    heart_rate: Arc<Mutex<f32>>,
+    blood_oxygen_saturation: Arc<Mutex<f32>>,
+    perfusion_indices: Arc<Mutex<[f32; 3]>>,
+    wrist_presence: Arc<Mutex<bool>>,
 ) {
     let mut notify_timer = super::timer::Timer::new(50);
     loop {
         thread::sleep(Duration::from_millis(10));
 
         if notify_timer.is_expired() {
-            if let (Ok(ble_api), Ok(raw_data), Ok(filtered_data)) =
-                (ble_api.write(), raw_data.lock(), filtered_data.lock())
-            {
+            if let (
+                Ok(ble_api),
+                Ok(raw_data),
+                Ok(filtered_data),
+                Ok(heart_rate),
+                Ok(blood_oxygen_saturation),
+                Ok(perfusion_indices),
+                Ok(wrist_presence),
+            ) = (
+                ble_api.write(),
+                raw_data.lock(),
+                filtered_data.lock(),
+                heart_rate.lock(),
+                blood_oxygen_saturation.lock(),
+                perfusion_indices.lock(),
+                wrist_presence.lock(),
+            ) {
                 ble_api
                     .sensor_data
                     .raw_optical_data_characteristic
@@ -153,6 +171,43 @@ pub fn notify_task(
                     .write()
                     .unwrap()
                     .set_value(filtered_data.serialise());
+                ble_api
+                    .results
+                    .heart_rate_characteristic
+                    .write()
+                    .unwrap()
+                    .set_value(heart_rate.to_le_bytes());
+                ble_api
+                    .results
+                    .blood_oxygen_saturation_characteristic
+                    .write()
+                    .unwrap()
+                    .set_value(blood_oxygen_saturation.to_le_bytes());
+                ble_api
+                    .results
+                    .led1_perfusion_index_characteristic
+                    .write()
+                    .unwrap()
+                    .set_value(perfusion_indices[0].to_le_bytes());
+                ble_api
+                    .results
+                    .led1_perfusion_index_characteristic
+                    .write()
+                    .unwrap()
+                    .set_value(perfusion_indices[1].to_le_bytes());
+                ble_api
+                    .results
+                    .led1_perfusion_index_characteristic
+                    .write()
+                    .unwrap()
+                    .set_value(perfusion_indices[2].to_le_bytes());
+                ble_api
+                    .results
+                    .wrist_presence_characteristic
+                    .write()
+                    .unwrap()
+                    .set_value(((*wrist_presence) as u8).to_le_bytes());
+
                 notify_timer.reset();
             }
         }

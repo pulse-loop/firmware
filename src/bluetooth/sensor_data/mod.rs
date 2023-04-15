@@ -21,9 +21,9 @@ impl SensorDataServiceContainer {
         .max_value_length(16)
         .build();
 
-        let filtered_optical_data_characteristic = Characteristic::new(BleUuid::from_uuid128_string(
-            "BDC0FC52-797B-4065-AABA-DC394F1DD0FD",
-        ))
+        let filtered_optical_data_characteristic = Characteristic::new(
+            BleUuid::from_uuid128_string("BDC0FC52-797B-4065-AABA-DC394F1DD0FD"),
+        )
         .name("Filtered optical data")
         .show_name()
         .permissions(AttributePermissions::new().read())

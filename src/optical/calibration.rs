@@ -12,7 +12,7 @@ pub(crate) struct Calibrator {
     offset_current_max: ElectricCurrent,
 
     // Chaced Afe4404 values.
-    pub(crate)offset_current: ElectricCurrent,
+    pub(crate) offset_current: ElectricCurrent,
 
     // Dc calibration.
     alpha: f32, // The skin reflectance parameter (alpha = i_led / i_photodiode).

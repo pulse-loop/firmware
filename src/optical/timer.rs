@@ -24,5 +24,4 @@ impl Timer {
     pub(crate) fn is_expired(&self) -> bool {
         self.instant.elapsed().as_millis() >= self.duration
     }
-
 }

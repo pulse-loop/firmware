@@ -12,6 +12,7 @@ mod historic_data;
 mod optical_frontend_configuration;
 mod pulse_loop;
 mod pulse_oximeter;
+mod results;
 mod sensor_data;
 mod settings;
 
@@ -28,6 +29,7 @@ pub struct BluetoothAPI {
     pub(crate) optical_frontend_configuration:
         optical_frontend_configuration::OpticalFrontendConfigurationServiceContainer,
     pub(crate) calibration: calibration::CalibrationServiceContainer,
+    pub(crate) results: results::ResultsServiceContainer,
     // pub(crate) firmware_upgrade: firmware_upgrade::FirmwareUpgradeServiceContainer,
 }
 
@@ -63,6 +65,7 @@ impl BluetoothAPI {
         let sensor_data = sensor_data::SensorDataServiceContainer::initialise();
         let optical_frontend_configuration = optical_frontend_configuration::OpticalFrontendConfigurationServiceContainer::initialise();
         let calibration = calibration::CalibrationServiceContainer::initialise();
+        let results = results::ResultsServiceContainer::initialise();
         // let firmware_upgrade = firmware_upgrade::FirmwareUpgradeServiceContainer::initialise();
 
         Self {
@@ -70,6 +73,7 @@ impl BluetoothAPI {
             sensor_data,
             optical_frontend_configuration,
             calibration,
+            results,
         }
     }
 }

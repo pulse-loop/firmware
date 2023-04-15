@@ -41,6 +41,7 @@ impl BluetoothAPI {
             .service(&self.sensor_data.service)
             .service(&self.optical_frontend_configuration.service)
             .service(&self.calibration.service)
+            .service(&self.results.service)
             .build();
 
         GLOBAL_GATT_SERVER

@@ -191,13 +191,13 @@ pub fn notify_task(
                     .set_value(perfusion_indices[0].to_le_bytes());
                 ble_api
                     .results
-                    .led1_perfusion_index_characteristic
+                    .led2_perfusion_index_characteristic
                     .write()
                     .unwrap()
                     .set_value(perfusion_indices[1].to_le_bytes());
                 ble_api
                     .results
-                    .led1_perfusion_index_characteristic
+                    .led3_perfusion_index_characteristic
                     .write()
                     .unwrap()
                     .set_value(perfusion_indices[2].to_le_bytes());

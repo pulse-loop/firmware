@@ -54,7 +54,7 @@ fn main() {
     let latest_heart_rate: Arc<Mutex<f32>> = Arc::new(Mutex::new(0.0));
     let latest_blood_oxygen_saturation: Arc<Mutex<f32>> = Arc::new(Mutex::new(100.0));
     let latest_perfusion_indices: Arc<Mutex<[f32; 3]>> = Arc::new(Mutex::new([0.0; 3]));
-    let latest_wrist_presence: Arc<Mutex<bool>> = Arc::new(Mutex::new(false));
+    let latest_wrist_presence: Arc<Mutex<bool>> = Arc::new(Mutex::new(true));
 
     let ble_api_for_notify = ble_api;
     let latest_data_for_notify = latest_raw_data.clone();
@@ -190,7 +190,7 @@ fn main() {
                                     if let Some(previous_maximum) = previous_maximum[i] {
                                         let ac = previous_maximum.0 - amplitude;
                                         let dc = dc_data;
-                                        let perfusion_index = ac / dc;
+                                        let perfusion_index = ac / dc * 100.0;
                                         latest_perfusion_indices.lock().unwrap()[i] =
                                             perfusion_index;
                                         // log::info!("PI{}: {}", i, perfusion_index);

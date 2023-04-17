@@ -51,27 +51,15 @@ fn main() {
         Arc::new(Mutex::new(optical::data_sending::RawData::default()));
     let latest_filtered_data: Arc<Mutex<optical::data_sending::FilteredData>> =
         Arc::new(Mutex::new(optical::data_sending::FilteredData::default()));
-    let latest_heart_rate: Arc<Mutex<f32>> = Arc::new(Mutex::new(0.0));
-    let latest_blood_oxygen_saturation: Arc<Mutex<f32>> = Arc::new(Mutex::new(100.0));
-    let latest_perfusion_indices: Arc<Mutex<[f32; 3]>> = Arc::new(Mutex::new([0.0; 3]));
-    let latest_wrist_presence: Arc<Mutex<bool>> = Arc::new(Mutex::new(true));
 
-    let ble_api_for_notify = ble_api;
+    let ble_api_for_notify = ble_api.clone();
     let latest_data_for_notify = latest_raw_data.clone();
     let latest_filtered_data_for_notify = latest_filtered_data.clone();
-    let latest_heartrate_for_notify = latest_heart_rate.clone();
-    let latest_blood_oxygen_saturation_for_notify = latest_blood_oxygen_saturation.clone();
-    let latest_perfusion_indices_for_notify = latest_perfusion_indices.clone();
-    let latest_wrist_presence_for_notify = latest_wrist_presence.clone();
     thread::spawn(move || {
         optical::data_sending::notify_task(
             ble_api_for_notify,
             latest_data_for_notify,
             latest_filtered_data_for_notify,
-            latest_heartrate_for_notify,
-            latest_blood_oxygen_saturation_for_notify,
-            latest_perfusion_indices_for_notify,
-            latest_wrist_presence_for_notify,
         )
     });
 
@@ -164,21 +152,25 @@ fn main() {
                                     amplitude,
                                     time,
                                 ) => {
-                                    if let Some(previous_maximum) = previous_maximum[i] {
-                                        let rr = time - previous_maximum.1;
-                                        if rr > 250 && rr < 2000 {
-                                            let averaged_rr = rr_average_filter[i].feed(rr as f32);
-                                            if i == 0 {
-                                                *latest_heart_rate.lock().unwrap() =
-                                                    60_000.0 / averaged_rr;
-                                                // log::info!(
-                                                //     "BPM: {}, RR: {} ms",
-                                                //     60_000.0 / averaged_rr,
-                                                //     averaged_rr,
-                                                // );
+                                    // Calculate the heart rate only with the green LED.
+                                    if i == 0 {
+                                        if let Some(previous_maximum) = previous_maximum[i] {
+                                            let rr = time - previous_maximum.1;
+                                            if rr > 250 && rr < 2000 {
+                                                let averaged_rr =
+                                                    rr_average_filter[i].feed(rr as f32);
+                                                let heart_rate = 60_000.0 / averaged_rr;
+                                                ble_api
+                                                    .write()
+                                                    .unwrap()
+                                                    .results
+                                                    .heart_rate_characteristic
+                                                    .write()
+                                                    .unwrap()
+                                                    .set_value(heart_rate.to_le_bytes());
+                                            } else {
+                                                log::error!("RR{}: {} ms", i, rr);
                                             }
-                                        } else {
-                                            log::error!("RR{}: {} ms", i, rr);
                                         }
                                     }
                                     previous_maximum[i] = Some((amplitude, time));
@@ -191,9 +183,41 @@ fn main() {
                                         let ac = previous_maximum.0 - amplitude;
                                         let dc = dc_data;
                                         let perfusion_index = ac / dc * 100.0;
-                                        latest_perfusion_indices.lock().unwrap()[i] =
-                                            perfusion_index;
-                                        // log::info!("PI{}: {}", i, perfusion_index);
+                                        match i {
+                                            0 => {
+                                                ble_api
+                                                    .write()
+                                                    .unwrap()
+                                                    .results
+                                                    .led1_perfusion_index_characteristic
+                                                    .write()
+                                                    .unwrap()
+                                                    .set_value(perfusion_index.to_le_bytes());
+                                            }
+                                            1 => {
+                                                ble_api
+                                                    .write()
+                                                    .unwrap()
+                                                    .results
+                                                    .led2_perfusion_index_characteristic
+                                                    .write()
+                                                    .unwrap()
+                                                    .set_value(perfusion_index.to_le_bytes());
+                                            }
+                                            2 => {
+                                                ble_api
+                                                    .write()
+                                                    .unwrap()
+                                                    .results
+                                                    .led3_perfusion_index_characteristic
+                                                    .write()
+                                                    .unwrap()
+                                                    .set_value(perfusion_index.to_le_bytes());
+                                            }
+                                            _ => {}
+                                        }
+
+                                        log::info!("PI{}: {}", i, perfusion_index);
                                     }
                                 }
                                 optical::signal_processing::CriticalValue::None => {}

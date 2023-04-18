@@ -4,6 +4,7 @@ use std::{
     time::Duration,
 };
 
+use afe4404::{led_current::LedCurrentConfiguration, modes::ThreeLedsMode};
 use esp_idf_hal::{
     gpio::PinDriver,
     i2c::{config::Config, I2cDriver},
@@ -15,7 +16,11 @@ use esp_idf_hal::{
 use esp_idf_sys::{self as _, esp_get_free_heap_size, esp_get_free_internal_heap_size};
 
 use static_fir::FirFilter;
-use uom::si::{electrical_resistance::kiloohm, f32::ElectricalResistance};
+use uom::si::{
+    electric_current::{microampere, milliampere, nanoampere},
+    electrical_resistance::ohm,
+    f32::{ElectricCurrent, ElectricalResistance},
+};
 
 mod bluetooth;
 mod optical;
@@ -101,132 +106,198 @@ fn main() {
             let mut frontend_set_up_timer = optical::timer::Timer::new(200); // Corresponds to the time needed, after any change to the frontend settings, for high-accuracy data.
             let mut filter_plus_frontend_set_up_timer = optical::timer::Timer::new(85 * 50 + 200); // Corresponds to the time needed for the filters to settle plus the time needed for high-accuracy data.
 
+            let mut ir_offset_current = ElectricCurrent::new::<microampere>(-7.0);
+            let resistors = [
+                ElectricalResistance::new::<ohm>(optical::RESISTOR1),
+                ElectricalResistance::new::<ohm>(optical::RESISTOR2),
+                ElectricalResistance::new::<ohm>(optical::RESISTOR2),
+            ];
+
             optical::data_reading::reading_task(move |raw_data| {
                 let mut raw_data_iterator = raw_data.into_iter();
 
-                // Skip the ambient light.
+                // Read the ambient light.
                 let ambient = raw_data_iterator.next().unwrap();
+                let ambient_current =
+                    ambient / (2.0 * ElectricalResistance::new::<ohm>(optical::RESISTOR1));
 
-                // Iterate over the three leds.
-                for (i, led) in raw_data_iterator.enumerate() {
-                    // Calibrate.
-                    if calibrators[i]
-                        .lock()
-                        .unwrap()
-                        .as_mut()
-                        .unwrap()
-                        .calibrate_dc(led)
-                    {
-                        frontend_set_up_timer.reset();
-                        filter_plus_frontend_set_up_timer.reset();
-                    }
+                // Read the IR LED (LED 3).
+                let ir = raw_data.led3;
+                let ir_current = ir
+                    / (2.0 * ElectricalResistance::new::<ohm>(optical::RESISTOR2))
+                    - ir_offset_current
+                    - ambient_current;
 
-                    // Process data.
-                    if frontend_set_up_timer.is_expired() {
-                        // Convert the data into current and remove the ambient light.
-                        let photodiode_current = led
-                            / (2.0 * ElectricalResistance::new::<kiloohm>(1000.0))
-                            - calibrators[i]
+                log::info!("Ambient: {:?}, IR: {:?}", ambient_current, ir_current);
+
+                // Check if the wrist is present with the IR LED (LED 3) and the ambient light.
+                if ambient_current < ElectricCurrent::new::<microampere>(0.2)
+                    && ir_current > ElectricCurrent::new::<nanoampere>(0.0)
+                {
+                    // Wrist is present.
+                    // Iterate over the three leds.
+                    for (i, led) in raw_data_iterator.enumerate() {
+                        // Calibrate.
+                        if calibrators[i]
+                            .lock()
+                            .unwrap()
+                            .as_mut()
+                            .unwrap()
+                            .calibrate_dc(led)
+                        {
+                            frontend_set_up_timer.reset();
+                            filter_plus_frontend_set_up_timer.reset();
+                        }
+
+                        // Process data.
+                        if frontend_set_up_timer.is_expired() {
+                            // Convert the data into current and remove the ambient light.
+                            let offset_current = calibrators[i]
                                 .lock()
                                 .unwrap()
                                 .as_mut()
                                 .unwrap()
                                 .offset_current;
-                        let ambient_current =
-                            ambient / (2.0 * ElectricalResistance::new::<kiloohm>(1000.0));
-                        let refined_current = (photodiode_current - ambient_current).value;
+                            let photodiode_current = led
+                                / (2.0 * resistors[i])
+                                - offset_current;
+                            let refined_current = photodiode_current - ambient_current;
 
-                        // Filter dc data (lowpass).
-                        let dc_data = dc_filter[i].feed(refined_current);
-
-                        // Filter ac data (bandpass).
-                        let ac_data = ac_filter[i].feed(refined_current);
-
-                        // Find critical values
-                        if filter_plus_frontend_set_up_timer.is_expired() {
-                            match optical::signal_processing::find_critical_value(
-                                ac_data,
-                                &mut critical_history[i],
-                            ) {
-                                optical::signal_processing::CriticalValue::Maximum(
-                                    amplitude,
-                                    time,
-                                ) => {
-                                    // Calculate the heart rate only with the green LED.
-                                    if i == 0 {
-                                        if let Some(previous_maximum) = previous_maximum[i] {
-                                            let rr = time - previous_maximum.1;
-                                            if rr > 250 && rr < 2000 {
-                                                let averaged_rr =
-                                                    rr_average_filter[i].feed(rr as f32);
-                                                let heart_rate = 60_000.0 / averaged_rr;
-                                                ble_api
-                                                    .write()
-                                                    .unwrap()
-                                                    .results
-                                                    .heart_rate_characteristic
-                                                    .write()
-                                                    .unwrap()
-                                                    .set_value(heart_rate.to_le_bytes());
-                                            } else {
-                                                log::error!("RR{}: {} ms", i, rr);
-                                            }
-                                        }
-                                    }
-                                    previous_maximum[i] = Some((amplitude, time));
-                                }
-                                optical::signal_processing::CriticalValue::Minimum(
-                                    amplitude,
-                                    _time,
-                                ) => {
-                                    if let Some(previous_maximum) = previous_maximum[i] {
-                                        let ac = previous_maximum.0 - amplitude;
-                                        let dc = dc_data;
-                                        let perfusion_index = ac / dc * 100.0;
-                                        match i {
-                                            0 => {
-                                                ble_api
-                                                    .write()
-                                                    .unwrap()
-                                                    .results
-                                                    .led1_perfusion_index_characteristic
-                                                    .write()
-                                                    .unwrap()
-                                                    .set_value(perfusion_index.to_le_bytes());
-                                            }
-                                            1 => {
-                                                ble_api
-                                                    .write()
-                                                    .unwrap()
-                                                    .results
-                                                    .led2_perfusion_index_characteristic
-                                                    .write()
-                                                    .unwrap()
-                                                    .set_value(perfusion_index.to_le_bytes());
-                                            }
-                                            2 => {
-                                                ble_api
-                                                    .write()
-                                                    .unwrap()
-                                                    .results
-                                                    .led3_perfusion_index_characteristic
-                                                    .write()
-                                                    .unwrap()
-                                                    .set_value(perfusion_index.to_le_bytes());
-                                            }
-                                            _ => {}
-                                        }
-
-                                        log::info!("PI{}: {}", i, perfusion_index);
-                                    }
-                                }
-                                optical::signal_processing::CriticalValue::None => {}
+                            // Update IR offset current
+                            if i == 2 {
+                                ir_offset_current = offset_current;
                             }
-                        }
 
-                        // Send filtered data to the application.
-                        latest_filtered_data.lock().unwrap()[i] = (dc_data, ac_data);
+                            // Filter dc data (lowpass).
+                            let dc_data = dc_filter[i].feed(refined_current.value);
+
+                            // Filter ac data (bandpass).
+                            let ac_data = ac_filter[i].feed(refined_current.value);
+
+                            // Find critical values
+                            if filter_plus_frontend_set_up_timer.is_expired() {
+                                match optical::signal_processing::find_critical_value(
+                                    ac_data,
+                                    &mut critical_history[i],
+                                ) {
+                                    optical::signal_processing::CriticalValue::Maximum(
+                                        amplitude,
+                                        time,
+                                    ) => {
+                                        // Calculate the heart rate only with the green LED.
+                                        if i == 0 {
+                                            if let Some(previous_maximum) = previous_maximum[i] {
+                                                let rr = time - previous_maximum.1;
+                                                if rr > 250 && rr < 2000 {
+                                                    let averaged_rr =
+                                                        rr_average_filter[i].feed(rr as f32);
+                                                    let heart_rate = 60_000.0 / averaged_rr;
+                                                    ble_api
+                                                        .write()
+                                                        .unwrap()
+                                                        .results
+                                                        .heart_rate_characteristic
+                                                        .write()
+                                                        .unwrap()
+                                                        .set_value(heart_rate.to_le_bytes());
+                                                } else {
+                                                    log::error!("RR{}: {} ms", i, rr);
+                                                }
+                                            }
+                                        }
+                                        previous_maximum[i] = Some((amplitude, time));
+                                    }
+                                    optical::signal_processing::CriticalValue::Minimum(
+                                        amplitude,
+                                        _time,
+                                    ) => {
+                                        if let Some(previous_maximum) = previous_maximum[i] {
+                                            let ac = previous_maximum.0 - amplitude;
+                                            let dc = dc_data;
+                                            let perfusion_index = ac / dc * 100.0;
+                                            match i {
+                                                0 => {
+                                                    ble_api
+                                                        .write()
+                                                        .unwrap()
+                                                        .results
+                                                        .led1_perfusion_index_characteristic
+                                                        .write()
+                                                        .unwrap()
+                                                        .set_value(perfusion_index.to_le_bytes());
+                                                }
+                                                1 => {
+                                                    ble_api
+                                                        .write()
+                                                        .unwrap()
+                                                        .results
+                                                        .led2_perfusion_index_characteristic
+                                                        .write()
+                                                        .unwrap()
+                                                        .set_value(perfusion_index.to_le_bytes());
+                                                }
+                                                2 => {
+                                                    ble_api
+                                                        .write()
+                                                        .unwrap()
+                                                        .results
+                                                        .led3_perfusion_index_characteristic
+                                                        .write()
+                                                        .unwrap()
+                                                        .set_value(perfusion_index.to_le_bytes());
+                                                }
+                                                _ => {}
+                                            }
+
+                                            log::info!("PI{}: {}", i, perfusion_index);
+                                        }
+                                    }
+                                    optical::signal_processing::CriticalValue::None => {}
+                                }
+                            }
+
+                            // Send filtered data to the application.
+                            latest_filtered_data.lock().unwrap()[i] = (dc_data, ac_data);
+                        }
                     }
+                } else {
+                    // Writst is not present
+                    // Turn off the LEDs, wait for some time then check wrist presence with IR LED.
+
+                    log::info!("Wrist not present.");
+
+                    optical::FRONTEND
+                        .lock()
+                        .unwrap()
+                        .as_mut()
+                        .unwrap()
+                        .set_leds_current(&LedCurrentConfiguration::<ThreeLedsMode>::new(
+                            ElectricCurrent::new::<milliampere>(0.0),
+                            ElectricCurrent::new::<milliampere>(0.0),
+                            ElectricCurrent::new::<milliampere>(0.0),
+                        ))
+                        .expect("Cannot turn off LEDs.");
+
+                    thread::sleep(Duration::from_millis(1000));
+
+                    // Turn on the IR LED and set the offset current.
+                    optical::FRONTEND
+                        .lock()
+                        .unwrap()
+                        .as_mut()
+                        .unwrap()
+                        .set_led3_current(ElectricCurrent::new::<milliampere>(1.0))
+                        .expect("Cannot turn on LED3.");
+                    optical::FRONTEND
+                        .lock()
+                        .unwrap()
+                        .as_mut()
+                        .unwrap()
+                        .set_offset_led3_current(ElectricCurrent::new::<microampere>(-7.0))
+                        .expect("Cannot set LED3 offset current.");
+                    ir_offset_current = ElectricCurrent::new::<microampere>(-7.0);
+
+                    thread::sleep(Duration::from_millis(200));
                 }
 
                 // Send raw data to the application.

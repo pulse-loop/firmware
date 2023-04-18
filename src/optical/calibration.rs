@@ -11,7 +11,7 @@ pub(crate) struct Calibrator {
     offset_current_min: ElectricCurrent,
     offset_current_max: ElectricCurrent,
 
-    // Chaced Afe4404 values.
+    // Cached Afe4404 values.
     pub(crate) offset_current: ElectricCurrent,
 
     // Dc calibration.

@@ -43,8 +43,8 @@ lazy_static::lazy_static! {
 }
 
 // Afe4404 constants.
-static RESISTOR1: f32 = 500e3;
-static RESISTOR2: f32 = 10e3;
+pub(crate) static RESISTOR1: f32 = 500e3;
+pub(crate) static RESISTOR2: f32 = 10e3;
 
 /// Initialises the `FRONTEND` with default values.
 pub(crate) fn initialise<P: Pin>(

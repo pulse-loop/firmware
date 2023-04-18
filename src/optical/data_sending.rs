@@ -132,15 +132,19 @@ pub fn notify_task(
     ble_api: Arc<RwLock<crate::bluetooth::BluetoothAPI>>,
     raw_data: Arc<Mutex<RawData>>,
     filtered_data: Arc<Mutex<FilteredData>>,
+    wrist_presence: Arc<Mutex<bool>>,
 ) {
     let mut notify_timer = super::timer::Timer::new(50);
     loop {
         thread::sleep(Duration::from_millis(10));
 
         if notify_timer.is_expired() {
-            if let (Ok(ble_api), Ok(raw_data), Ok(filtered_data)) =
-                (ble_api.write(), raw_data.lock(), filtered_data.lock())
-            {
+            if let (Ok(ble_api), Ok(raw_data), Ok(filtered_data), Ok(wrist_presence)) = (
+                ble_api.write(),
+                raw_data.lock(),
+                filtered_data.lock(),
+                wrist_presence.lock(),
+            ) {
                 ble_api
                     .sensor_data
                     .raw_optical_data_characteristic
@@ -153,6 +157,12 @@ pub fn notify_task(
                     .write()
                     .unwrap()
                     .set_value(filtered_data.serialise());
+                ble_api
+                    .results
+                    .wrist_presence_characteristic
+                    .write()
+                    .unwrap()
+                    .set_value((*wrist_presence as u8).to_le_bytes());
 
                 notify_timer.reset();
             }

@@ -17,7 +17,7 @@ use esp_idf_sys::{self as _, esp_get_free_heap_size, esp_get_free_internal_heap_
 
 use static_fir::FirFilter;
 use uom::si::{
-    electric_current::{microampere, milliampere, nanoampere},
+    electric_current::{microampere, milliampere},
     electrical_resistance::ohm,
     f32::{ElectricCurrent, ElectricalResistance},
 };
@@ -56,15 +56,18 @@ fn main() {
         Arc::new(Mutex::new(optical::data_sending::RawData::default()));
     let latest_filtered_data: Arc<Mutex<optical::data_sending::FilteredData>> =
         Arc::new(Mutex::new(optical::data_sending::FilteredData::default()));
+    let latest_wrist_presence: Arc<Mutex<bool>> = Arc::new(Mutex::new(false));
 
     let ble_api_for_notify = ble_api.clone();
     let latest_data_for_notify = latest_raw_data.clone();
     let latest_filtered_data_for_notify = latest_filtered_data.clone();
+    let latest_wrist_presence_for_notify = latest_wrist_presence.clone();
     thread::spawn(move || {
         optical::data_sending::notify_task(
             ble_api_for_notify,
             latest_data_for_notify,
             latest_filtered_data_for_notify,
+            latest_wrist_presence_for_notify,
         )
     });
 
@@ -128,13 +131,13 @@ fn main() {
                     - ir_offset_current
                     - ambient_current;
 
-                log::info!("Ambient: {:?}, IR: {:?}", ambient_current, ir_current);
-
                 // Check if the wrist is present with the IR LED (LED 3) and the ambient light.
-                if ambient_current < ElectricCurrent::new::<microampere>(0.2)
-                    && ir_current > ElectricCurrent::new::<nanoampere>(0.0)
+                if ambient_current < ElectricCurrent::new::<microampere>(1.0)
+                     && ir_current > ElectricCurrent::new::<microampere>(10.0)
                 {
                     // Wrist is present.
+                    *latest_wrist_presence.lock().unwrap() = true;
+
                     // Iterate over the three leds.
                     for (i, led) in raw_data_iterator.enumerate() {
                         // Calibrate.
@@ -163,7 +166,8 @@ fn main() {
                                 - offset_current;
                             let refined_current = photodiode_current - ambient_current;
 
-                            // Update IR offset current
+                            // Update IR offset current for wrist detection.
+                            // This is done in order to avoid reading the offset from the AFE4404.
                             if i == 2 {
                                 ir_offset_current = offset_current;
                             }
@@ -248,8 +252,6 @@ fn main() {
                                                 }
                                                 _ => {}
                                             }
-
-                                            log::info!("PI{}: {}", i, perfusion_index);
                                         }
                                     }
                                     optical::signal_processing::CriticalValue::None => {}
@@ -257,15 +259,16 @@ fn main() {
                             }
 
                             // Send filtered data to the application.
-                            latest_filtered_data.lock().unwrap()[i] = (dc_data, ac_data);
+                            // TODO: Remove 1e-6 after application update.
+                            latest_filtered_data.lock().unwrap()[i] = (dc_data * 1e-6, ac_data * 1e-6);
                         }
                     }
                 } else {
-                    // Writst is not present
+                    // Writst is not present.
+                    *latest_wrist_presence.lock().unwrap() = false;
+                    log::info!("Wrist not detected.");
+                    
                     // Turn off the LEDs, wait for some time then check wrist presence with IR LED.
-
-                    log::info!("Wrist not present.");
-
                     optical::FRONTEND
                         .lock()
                         .unwrap()
@@ -278,25 +281,28 @@ fn main() {
                         ))
                         .expect("Cannot turn off LEDs.");
 
-                    thread::sleep(Duration::from_millis(1000));
+                    thread::sleep(Duration::from_millis(2000));
 
                     // Turn on the IR LED and set the offset current.
+                    let ir_max_current = *calibrators[2].lock().unwrap().as_mut().unwrap().led_current_max();
+                    let ir_min_offset_current = *calibrators[2].lock().unwrap().as_mut().unwrap().offset_current_min();
                     optical::FRONTEND
                         .lock()
                         .unwrap()
                         .as_mut()
                         .unwrap()
-                        .set_led3_current(ElectricCurrent::new::<milliampere>(1.0))
+                        .set_led3_current(ir_max_current)
                         .expect("Cannot turn on LED3.");
                     optical::FRONTEND
                         .lock()
                         .unwrap()
                         .as_mut()
                         .unwrap()
-                        .set_offset_led3_current(ElectricCurrent::new::<microampere>(-7.0))
+                        .set_offset_led3_current(ir_min_offset_current)
                         .expect("Cannot set LED3 offset current.");
-                    ir_offset_current = ElectricCurrent::new::<microampere>(-7.0);
+                    ir_offset_current = ir_min_offset_current;
 
+                    // Wait for the IR LED to turn on.
                     thread::sleep(Duration::from_millis(200));
                 }
 

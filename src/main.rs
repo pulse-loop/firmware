@@ -227,8 +227,14 @@ fn main() {
                                         if let Some(previous_maximum) = previous_maximum[i] {
                                             let ac = previous_maximum.0 - amplitude;
                                             let dc = dc_data;
+
+                                            // Update crossing threshold.
+                                            critical_history[i].crossing_threshold = -ac * 0.15;
+
                                             let perfusion_index = pi_average_filter[i]
                                                 .feed(pi_median_filter[i].consume(ac / dc * 100.0));
+
+                                            // Send the perfusion index to the application.
                                             match i {
                                                 0 => {
                                                     ble_api

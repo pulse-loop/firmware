@@ -32,6 +32,7 @@ afe4404 = { version = "0.2.4" }
 uom = { version = "0.33.0" }
 queues = { version = "1.0.2" }
 static_fir = { version = "0.2.0" }
+median = { version = "0.3.2" }
 
 # smart-leds = { version = "0.3.0" }
 # ws2812-esp32-rmt-driver = { git = "https://github.com/cat-in-136/ws2812-esp32-rmt-driver" }

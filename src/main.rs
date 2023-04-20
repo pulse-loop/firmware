@@ -73,7 +73,7 @@ fn main() {
 
     let builder = thread::Builder::new()
         .name("data_reading".to_string())
-        .stack_size(1024 * 10);
+        .stack_size(1024 * 16);
 
     builder
         .spawn(move || {
@@ -93,11 +93,22 @@ fn main() {
                 FirFilter::<optical::signal_processing::filters::AcFir>::new(),
                 FirFilter::<optical::signal_processing::filters::AcFir>::new(),
             ];
-            let mut rr_average_filter = [
+
+            let mut rr_average_filter =
+                FirFilter::<optical::signal_processing::filters::AverageFir>::new();
+            let mut pi_average_filter = [
                 FirFilter::<optical::signal_processing::filters::AverageFir>::new(),
                 FirFilter::<optical::signal_processing::filters::AverageFir>::new(),
                 FirFilter::<optical::signal_processing::filters::AverageFir>::new(),
             ];
+            let mut rr_median_filter = median::Filter::new(10);
+            let mut pi_median_filter: [median::Filter<f32>; 3] = [
+                median::Filter::new(10),
+                median::Filter::new(10),
+                median::Filter::new(10),
+            ];
+            let mut pi_red = None;
+            let mut pi_ir = None;
 
             let mut critical_history = [
                 optical::signal_processing::CriticalHistory::new(),
@@ -126,14 +137,13 @@ fn main() {
 
                 // Read the IR LED (LED 3).
                 let ir = raw_data.led3;
-                let ir_current = ir
-                    / (2.0 * ElectricalResistance::new::<ohm>(optical::RESISTOR2))
+                let ir_current = ir / (2.0 * ElectricalResistance::new::<ohm>(optical::RESISTOR2))
                     - ir_offset_current
                     - ambient_current;
 
                 // Check if the wrist is present with the IR LED (LED 3) and the ambient light.
                 if ambient_current < ElectricCurrent::new::<microampere>(1.0)
-                     && ir_current > ElectricCurrent::new::<microampere>(10.0)
+                    && ir_current > ElectricCurrent::new::<microampere>(10.0)
                 {
                     // Wrist is present.
                     *latest_wrist_presence.lock().unwrap() = true;
@@ -161,9 +171,7 @@ fn main() {
                                 .as_mut()
                                 .unwrap()
                                 .offset_current;
-                            let photodiode_current = led
-                                / (2.0 * resistors[i])
-                                - offset_current;
+                            let photodiode_current = led / (2.0 * resistors[i]) - offset_current;
                             let refined_current = photodiode_current - ambient_current;
 
                             // Update IR offset current for wrist detection.
@@ -193,9 +201,9 @@ fn main() {
                                             if let Some(previous_maximum) = previous_maximum[i] {
                                                 let rr = time - previous_maximum.1;
                                                 if rr > 250 && rr < 2000 {
-                                                    let averaged_rr =
-                                                        rr_average_filter[i].feed(rr as f32);
-                                                    let heart_rate = 60_000.0 / averaged_rr;
+                                                    let rr = rr_average_filter
+                                                        .feed(rr_median_filter.consume(rr) as f32);
+                                                    let heart_rate = 60_000.0 / rr;
                                                     ble_api
                                                         .write()
                                                         .unwrap()
@@ -204,8 +212,9 @@ fn main() {
                                                         .write()
                                                         .unwrap()
                                                         .set_value(heart_rate.to_le_bytes());
+                                                    log::info!("HR: {} bpm", heart_rate);
                                                 } else {
-                                                    log::error!("RR{}: {} ms", i, rr);
+                                                    log::error!("Wrong RR{}: {} ms", i, rr);
                                                 }
                                             }
                                         }
@@ -218,7 +227,8 @@ fn main() {
                                         if let Some(previous_maximum) = previous_maximum[i] {
                                             let ac = previous_maximum.0 - amplitude;
                                             let dc = dc_data;
-                                            let perfusion_index = ac / dc * 100.0;
+                                            let perfusion_index = pi_average_filter[i]
+                                                .feed(pi_median_filter[i].consume(ac / dc * 100.0));
                                             match i {
                                                 0 => {
                                                     ble_api
@@ -239,6 +249,7 @@ fn main() {
                                                         .write()
                                                         .unwrap()
                                                         .set_value(perfusion_index.to_le_bytes());
+                                                    pi_red = Some(perfusion_index);
                                                 }
                                                 2 => {
                                                     ble_api
@@ -249,8 +260,32 @@ fn main() {
                                                         .write()
                                                         .unwrap()
                                                         .set_value(perfusion_index.to_le_bytes());
+                                                    pi_ir = Some(perfusion_index);
                                                 }
                                                 _ => {}
+                                            }
+
+                                            // Calculate blood oxygen saturation.
+                                            if let (Some(current_pi_red), Some(current_pi_ir)) =
+                                                (pi_red, pi_ir)
+                                            {
+                                                let oxygen_saturation = (0.0
+                                                    - (-1.0) * (current_pi_red / current_pi_ir))
+                                                    * 100.0;
+
+                                                ble_api
+                                                    .write()
+                                                    .unwrap()
+                                                    .results
+                                                    .blood_oxygen_saturation_characteristic
+                                                    .write()
+                                                    .unwrap()
+                                                    .set_value(oxygen_saturation.to_le_bytes());
+
+                                                log::info!("O2: {}%", oxygen_saturation);
+
+                                                pi_red = None;
+                                                pi_ir = None;
                                             }
                                         }
                                     }
@@ -260,14 +295,15 @@ fn main() {
 
                             // Send filtered data to the application.
                             // TODO: Remove 1e-6 after application update.
-                            latest_filtered_data.lock().unwrap()[i] = (dc_data * 1e-6, ac_data * 1e-6);
+                            latest_filtered_data.lock().unwrap()[i] =
+                                (dc_data * 1e-6, ac_data * 1e-6);
                         }
                     }
                 } else {
                     // Writst is not present.
                     *latest_wrist_presence.lock().unwrap() = false;
                     log::info!("Wrist not detected.");
-                    
+
                     // Turn off the LEDs, wait for some time then check wrist presence with IR LED.
                     optical::FRONTEND
                         .lock()
@@ -284,8 +320,18 @@ fn main() {
                     thread::sleep(Duration::from_millis(2000));
 
                     // Turn on the IR LED and set the offset current.
-                    let ir_max_current = *calibrators[2].lock().unwrap().as_mut().unwrap().led_current_max();
-                    let ir_min_offset_current = *calibrators[2].lock().unwrap().as_mut().unwrap().offset_current_min();
+                    let ir_max_current = *calibrators[2]
+                        .lock()
+                        .unwrap()
+                        .as_mut()
+                        .unwrap()
+                        .led_current_max();
+                    let ir_min_offset_current = *calibrators[2]
+                        .lock()
+                        .unwrap()
+                        .as_mut()
+                        .unwrap()
+                        .offset_current_min();
                     optical::FRONTEND
                         .lock()
                         .unwrap()

@@ -34,6 +34,7 @@ impl OffsetCurrents {
                 frontend
                     .set_photodiode(State::Disabled)
                     .expect("Failed disconnect the photodiode.");
+                std::thread::sleep(std::time::Duration::from_millis(60));
 
                 // Measure offset currents.
                 for i in 0..31 {
@@ -52,6 +53,7 @@ impl OffsetCurrents {
                         / (2.0 * ElectricalResistance::new::<ohm>(crate::optical::RESISTOR2));
 
                     self.currents[i] = current;
+                    log::info!("Offset current: {}", current.get::<microampere>());
                 }
 
                 // Reconnect the photodiode.

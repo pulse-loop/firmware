@@ -48,8 +48,14 @@ fn main() {
 
     let mut interrupt_pin = PinDriver::input(peripherals.pins.gpio4).unwrap();
     let ble_api = Arc::new(RwLock::new(bluetooth::BluetoothAPI::initialise()));
+    let mut offset_currents = optical::calibration::offset_measuring::OffsetCurrents::new();
 
-    optical::initialise(i2c, &mut interrupt_pin, ble_api.clone());
+    optical::initialise(
+        i2c,
+        &mut interrupt_pin,
+        ble_api.clone(),
+        &mut offset_currents,
+    );
 
     // The latest data that will be sent to the application.
     let latest_raw_data: Arc<Mutex<optical::data_sending::RawData>> =
@@ -138,7 +144,7 @@ fn main() {
                 // Read the IR LED (LED 3).
                 let ir = raw_data.led3;
                 let ir_current = ir / (2.0 * ElectricalResistance::new::<ohm>(optical::RESISTOR2))
-                    - ir_offset_current
+                    - offset_currents.accurate(ir_offset_current)
                     - ambient_current;
 
                 // Check if the wrist is present with the IR LED (LED 3) and the ambient light.
@@ -165,12 +171,14 @@ fn main() {
                         // Process data.
                         if frontend_set_up_timer.is_expired() {
                             // Convert the data into current and remove the ambient light.
-                            let offset_current = calibrators[i]
-                                .lock()
-                                .unwrap()
-                                .as_mut()
-                                .unwrap()
-                                .offset_current;
+                            let offset_current = offset_currents.accurate(
+                                calibrators[i]
+                                    .lock()
+                                    .unwrap()
+                                    .as_mut()
+                                    .unwrap()
+                                    .offset_current,
+                            );
                             let photodiode_current = led / (2.0 * resistors[i]) - offset_current;
                             let refined_current = photodiode_current - ambient_current;
 

@@ -51,6 +51,7 @@ pub(crate) fn initialise<P: Pin>(
     i2c: I2cDriver<'static>,
     interrupt_pin: &mut PinDriver<P, Input>,
     ble_api: Arc<RwLock<BluetoothAPI>>,
+    offset_currents: &mut calibration::offset_measuring::OffsetCurrents,
 ) {
     // Interrupt pin.
     interrupt_pin
@@ -300,6 +301,9 @@ pub(crate) fn initialise<P: Pin>(
                 .unwrap()
         },
     ));
+
+    // Measure accurate offset currents.
+    offset_currents.measure();
 
     // Bluetooth.
     crate::optical::char_control::attach_optical_frontend_chars(

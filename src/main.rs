@@ -285,9 +285,8 @@ fn main() {
                                             if let (Some(current_pi_red), Some(current_pi_ir)) =
                                                 (pi_red, pi_ir)
                                             {
-                                                let oxygen_saturation = (0.0
-                                                    - (-1.0) * (current_pi_red / current_pi_ir))
-                                                    * 100.0;
+                                                let oxygen_saturation = 189.4351
+                                                    -131.54 * (current_pi_red / current_pi_ir);
 
                                                 ble_api
                                                     .write()

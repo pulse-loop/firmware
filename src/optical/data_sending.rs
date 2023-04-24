@@ -80,18 +80,21 @@ impl<'a> Iterator for RawDataIntoIterator<'a> {
     }
 }
 
-/// This struct contains the filtered readings in the format (dc, ac), that will be sent to the application via notifications.
-/// All the voltages are expressed in microvolts.
+/// This struct contains the filtered readings in the format (dc, ac) and the relative ac thresholds used to detect the ac amplitude.
+/// This data will be sent to the application via notifications.
 #[derive(Debug, Default, Clone, Copy)]
 pub struct FilteredData {
     pub(crate) led1: (f32, f32), // (dc, ac).
     pub(crate) led2: (f32, f32), // (dc, ac).
     pub(crate) led3: (f32, f32), // (dc, ac).
+    pub(crate) led1_threshold: f32,
+    pub(crate) led2_threshold: f32,
+    pub(crate) led3_threshold: f32,
 }
 
 impl FilteredData {
-    pub fn serialise(&self) -> [u8; 24] {
-        let mut data = [0; 24];
+    pub fn serialise(&self) -> [u8; 36] {
+        let mut data = [0; 36];
 
         data[0..4].copy_from_slice(&self.led1.0.to_le_bytes());
         data[4..8].copy_from_slice(&self.led1.1.to_le_bytes());
@@ -99,6 +102,9 @@ impl FilteredData {
         data[12..16].copy_from_slice(&self.led2.1.to_le_bytes());
         data[16..20].copy_from_slice(&self.led3.0.to_le_bytes());
         data[20..24].copy_from_slice(&self.led3.1.to_le_bytes());
+        data[24..28].copy_from_slice(&self.led1_threshold.to_le_bytes());
+        data[28..32].copy_from_slice(&self.led2_threshold.to_le_bytes());
+        data[32..36].copy_from_slice(&self.led3_threshold.to_le_bytes());
 
         data
     }

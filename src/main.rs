@@ -107,11 +107,11 @@ fn main() {
                 FirFilter::<optical::signal_processing::filters::AverageFir>::new(),
                 FirFilter::<optical::signal_processing::filters::AverageFir>::new(),
             ];
-            let mut rr_median_filter = median::Filter::new(10);
+            let mut rr_median_filter = median::Filter::new(21);
             let mut pi_median_filter: [median::Filter<f32>; 3] = [
-                median::Filter::new(10),
-                median::Filter::new(10),
-                median::Filter::new(10),
+                median::Filter::new(21),
+                median::Filter::new(21),
+                median::Filter::new(21),
             ];
             let mut pi_red = None;
             let mut pi_ir = None;
@@ -237,10 +237,12 @@ fn main() {
                                             let dc = dc_data;
 
                                             // Update crossing threshold.
-                                            critical_history[i].crossing_threshold = -ac * 0.15;
+                                            if i == 0 {
+                                                critical_history[i].crossing_threshold = -ac * 0.1;
+                                            }
 
-                                            let perfusion_index = pi_average_filter[i]
-                                                .feed(pi_median_filter[i].consume(ac / dc * 100.0));
+                                            let perfusion_index =
+                                                (pi_median_filter[i].consume(ac / dc * 100.0));
 
                                             // Send the perfusion index to the application.
                                             match i {
@@ -308,15 +310,18 @@ fn main() {
                             }
 
                             // Send filtered data to the application.
-                            // TODO: Remove 1e-6 after application update.
-                            latest_filtered_data.lock().unwrap()[i] =
-                                (dc_data * 1e-6, ac_data * 1e-6);
+                            latest_filtered_data.lock().unwrap()[i] = (dc_data, ac_data);
                         }
                     }
                 } else {
                     // Writst is not present.
                     *latest_wrist_presence.lock().unwrap() = false;
                     log::info!("Wrist not detected.");
+
+                    // Reset the critical history crossing threshold.
+                    critical_history.iter_mut().for_each(|history| {
+                        history.crossing_threshold = 0.0;
+                    });
 
                     // Turn off the LEDs, wait for some time then check wrist presence with IR LED.
                     optical::FRONTEND
@@ -360,6 +365,11 @@ fn main() {
 
                 // Send raw data to the application.
                 *latest_raw_data.lock().unwrap() = raw_data;
+                if let Ok(mut thresholds) = latest_filtered_data.lock() {
+                    thresholds.led1_threshold = critical_history[0].crossing_threshold;
+                    thresholds.led2_threshold = critical_history[1].crossing_threshold;
+                    thresholds.led3_threshold = critical_history[2].crossing_threshold;
+                }
             })
         })
         .unwrap();
@@ -370,7 +380,7 @@ fn main() {
         unsafe {
             let x = esp_get_free_heap_size();
             let y = esp_get_free_internal_heap_size();
-            log::info!("Free heap: {} bytes, free internal heap: {} bytes", x, y);
+            // log::info!("Free heap: {} bytes, free internal heap: {} bytes", x, y);
         }
     }
 }

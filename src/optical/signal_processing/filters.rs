@@ -196,9 +196,4 @@ impl_fir!(
 );
 
 // Implement a moving average filter for the RR measurements.
-impl_fir!(
-    AverageFir,
-    f32,
-    10,
-    [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
-);
+impl_fir!(AverageFir, f32, 5, [0.2, 0.2, 0.2, 0.2, 0.2]);

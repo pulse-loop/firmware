@@ -17,18 +17,21 @@ A custom type that contains the ambient and LEDs readings from the frontend.
 
 ## Filtered data
 
-A custom type that contains the DC and AC filtered values converted in amperes.
+A custom type that contains the DC and AC filtered values converted in amperes and the relative AC thresholds used for the AC amplitude detection.
 
 ### Format
 
-| Field   | Type  | Length  |
-| ------- | ----- | ------- |
-| LED1 DC | `f32` | 4 bytes |
-| LED1 AC | `f32` | 4 bytes |
-| LED2 DC | `f32` | 4 bytes |
-| LED2 AC | `f32` | 4 bytes |
-| LED3 DC | `f32` | 4 bytes |
-| LED3 AC | `f32` | 4 bytes |
+| Field          | Type  | Length  |
+| -------------- | ----- | ------- |
+| LED1 DC        | `f32` | 4 bytes |
+| LED1 AC        | `f32` | 4 bytes |
+| LED2 DC        | `f32` | 4 bytes |
+| LED2 AC        | `f32` | 4 bytes |
+| LED3 DC        | `f32` | 4 bytes |
+| LED3 AC        | `f32` | 4 bytes |
+| LED1 threshold | `f32` | 4 bytes |
+| LED2 threshold | `f32` | 4 bytes |
+| LED3 threshold | `f32` | 4 bytes |
 
 ## Capacitor value
 

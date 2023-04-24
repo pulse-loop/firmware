@@ -28,7 +28,7 @@ impl SensorDataServiceContainer {
         .show_name()
         .permissions(AttributePermissions::new().read())
         .properties(CharacteristicProperties::new().read().notify())
-        .max_value_length(24)
+        .max_value_length(36)
         .build();
 
         let service = Service::new(BleUuid::from_uuid128_string(

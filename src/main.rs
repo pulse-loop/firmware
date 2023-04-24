@@ -326,32 +326,24 @@ fn main() {
                     thread::sleep(Duration::from_millis(2000));
 
                     // Turn on the IR LED and set the offset current.
-                    let ir_max_current = *calibrators[2]
-                        .lock()
-                        .unwrap()
-                        .as_mut()
-                        .unwrap()
-                        .led_current_max();
-                    let ir_min_offset_current = *calibrators[2]
-                        .lock()
-                        .unwrap()
-                        .as_mut()
-                        .unwrap()
-                        .offset_current_min();
-                    optical::FRONTEND
-                        .lock()
-                        .unwrap()
-                        .as_mut()
-                        .unwrap()
-                        .set_led3_current(ir_max_current)
-                        .expect("Cannot turn on LED3.");
-                    optical::FRONTEND
-                        .lock()
-                        .unwrap()
-                        .as_mut()
-                        .unwrap()
-                        .set_offset_led3_current(ir_min_offset_current)
-                        .expect("Cannot set LED3 offset current.");
+                    let mut ir_max_current = Default::default();
+                    let mut ir_min_offset_current = Default::default();
+                    if let Ok(mut ir_calibrator) = calibrators[2].lock() {
+                        if let Some(ir_calibrator) = ir_calibrator.as_mut() {
+                            ir_max_current = *ir_calibrator.led_current_max();
+                            ir_min_offset_current = *ir_calibrator.offset_current_min();
+                        }
+                    };
+                    if let Ok(mut frontend) = optical::FRONTEND.lock() {
+                        if let Some(frontend) = frontend.as_mut() {
+                            frontend
+                                .set_led3_current(ir_max_current)
+                                .expect("Cannot turn on LED3.");
+                            frontend
+                                .set_offset_led3_current(ir_min_offset_current)
+                                .expect("Cannot set LED3 offset current.");
+                        }
+                    }
                     ir_offset_current = ir_min_offset_current;
 
                     // Wait for the IR LED to turn on.

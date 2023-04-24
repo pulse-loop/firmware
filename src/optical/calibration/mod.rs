@@ -1,3 +1,5 @@
+pub mod offset_measuring;
+
 use uom::si::{
     electric_current::{microampere, milliampere},
     electric_potential::millivolt,

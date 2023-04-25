@@ -1,4 +1,5 @@
 pub mod filters;
+pub mod standard_deviation;
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub(crate) enum CriticalValue {

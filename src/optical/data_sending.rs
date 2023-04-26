@@ -133,23 +133,32 @@ impl std::ops::IndexMut<usize> for FilteredData {
     }
 }
 
+#[derive(Debug, Default, Clone, Copy)]
+pub struct Results {
+    pub(crate) wrist_presence: bool,
+    pub(crate) spo2: f32,
+    pub(crate) green_pi: f32,
+    pub(crate) red_pi: f32,
+    pub(crate) ir_pi: f32,
+}
+
 /// This funtion should be called in a separate thread to send the readings from the AFE4404.
 pub fn notify_task(
     ble_api: Arc<RwLock<crate::bluetooth::BluetoothAPI>>,
     raw_data: Arc<Mutex<RawData>>,
     filtered_data: Arc<Mutex<FilteredData>>,
-    wrist_presence: Arc<Mutex<bool>>,
+    results: Arc<Mutex<Results>>,
 ) {
     let mut notify_timer = super::timer::Timer::new(50);
     loop {
         thread::sleep(Duration::from_millis(10));
 
         if notify_timer.is_expired() {
-            if let (Ok(ble_api), Ok(raw_data), Ok(filtered_data), Ok(wrist_presence)) = (
+            if let (Ok(ble_api), Ok(raw_data), Ok(filtered_data), Ok(results)) = (
                 ble_api.write(),
                 raw_data.lock(),
                 filtered_data.lock(),
-                wrist_presence.lock(),
+                results.lock(),
             ) {
                 ble_api
                     .sensor_data
@@ -168,7 +177,31 @@ pub fn notify_task(
                     .wrist_presence_characteristic
                     .write()
                     .unwrap()
-                    .set_value((*wrist_presence as u8).to_le_bytes());
+                    .set_value((results.wrist_presence as u8).to_le_bytes());
+                ble_api
+                    .results
+                    .blood_oxygen_saturation_characteristic
+                    .write()
+                    .unwrap()
+                    .set_value((results.spo2).to_le_bytes());
+                ble_api
+                    .results
+                    .led1_perfusion_index_characteristic
+                    .write()
+                    .unwrap()
+                    .set_value((results.green_pi).to_le_bytes());
+                ble_api
+                    .results
+                    .led2_perfusion_index_characteristic
+                    .write()
+                    .unwrap()
+                    .set_value((results.red_pi).to_le_bytes());
+                ble_api
+                    .results
+                    .led3_perfusion_index_characteristic
+                    .write()
+                    .unwrap()
+                    .set_value((results.ir_pi).to_le_bytes());
 
                 notify_timer.reset();
             }

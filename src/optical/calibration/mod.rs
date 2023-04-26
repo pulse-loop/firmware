@@ -53,7 +53,7 @@ impl Calibrator {
         let calibrator = Calibrator {
             // TODO: Change to optimal initial value.
             led_current_min: ElectricCurrent::new::<milliampere>(0.0),
-            led_current_max: ElectricCurrent::new::<milliampere>(50.0),
+            led_current_max: ElectricCurrent::new::<milliampere>(30.0),
             offset_current_min: ElectricCurrent::new::<microampere>(-7.0),
             offset_current_max: ElectricCurrent::new::<microampere>(7.0),
             offset_current: ElectricCurrent::new::<microampere>(-7.0),
@@ -188,7 +188,7 @@ impl Calibrator {
 
             self.offset_current =
                 (self.set_offset_current)(if requested_offset_current < self.offset_current_min {
-                    log::warn!("Offset too low");
+                    // log::warn!("Offset too low");
                     self.offset_current_min
                 } else if requested_offset_current > self.offset_current_max {
                     log::warn!("Offset too high");

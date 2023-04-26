@@ -101,12 +101,8 @@ fn main() {
                 FirFilter::<optical::signal_processing::filters::AcFir>::new(),
             ];
 
-            let mut rr_median_filter: median::Filter<u128> = median::Filter::new(15);
-            // let mut pi_median_filter: [median::Filter<f32>; 3] = [
-            //     median::Filter::new(21),
-            //     median::Filter::new(21),
-            //     median::Filter::new(21),
-            // ];
+            let mut hr_median_filter: median::Filter<u128> = median::Filter::new(21);
+            let mut r_median_filter: median::Filter<f32> = median::Filter::new(21);
 
             let mut critical_history = optical::signal_processing::CriticalHistory::new();
             let mut previous_maximum: Option<(f32, u128)> = None;
@@ -114,6 +110,7 @@ fn main() {
             let mut frontend_set_up_timer = optical::timer::Timer::new(200); // Corresponds to the time needed, after any change to the frontend settings, for high-accuracy data.
             let mut filter_plus_frontend_set_up_timer =
                 optical::timer::Timer::new(85 * 50 + 200 + 200); // Corresponds to the time needed for the filters to settle plus the time needed for high-accuracy data.
+            let mut threshold_timer = optical::timer::Timer::new(5000); // The timer that resets the crossing threshold.
 
             let mut ir_offset_current = ElectricCurrent::new::<microampere>(-7.0);
             let resistors = [
@@ -236,6 +233,8 @@ fn main() {
 
                             if i == 10 {
                                 results.spo2 = r / 10.0;
+                                // results.spo2 = r_median_filter.consume(r / 10.0);
+
                                 r = 0.0;
                                 i = 0;
                                 log::info!("R: {}", results.spo2);
@@ -243,6 +242,9 @@ fn main() {
                         }
 
                         // Heart rate calculation.
+                        if threshold_timer.is_expired() {
+                            critical_history.crossing_threshold = 0.0;
+                        }
                         match optical::signal_processing::find_critical_value(
                             latest_filtered_data.lock().unwrap()[0].1,
                             &mut critical_history,
@@ -251,7 +253,7 @@ fn main() {
                                 if let Some(previous_maximum) = previous_maximum {
                                     let rr = time - previous_maximum.1;
                                     if rr > 250 && rr < 2000 {
-                                        let rr = rr_median_filter.consume(rr);
+                                        let rr = hr_median_filter.consume(rr);
                                         let heart_rate = 60_000.0 / rr as f32;
                                         ble_api
                                             .write()
@@ -278,6 +280,7 @@ fn main() {
 
                                     // Update crossing threshold.
                                     critical_history.crossing_threshold = -ac * 0.15;
+                                    threshold_timer.reset();
                                 }
                             }
                             optical::signal_processing::CriticalValue::None => {}

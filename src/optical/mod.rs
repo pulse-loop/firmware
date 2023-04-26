@@ -92,10 +92,10 @@ pub(crate) fn initialise<P: Pin>(
                 .set_tia_resistor2(ElectricalResistance::new::<ohm>(RESISTOR2))
                 .expect("Cannot set TIA resistor 2.");
             frontend
-                .set_tia_capacitor1(Capacitance::new::<picofarad>(25.0))
+                .set_tia_capacitor1(Capacitance::new::<picofarad>(2.5))
                 .expect("Cannot set TIA capacitor 1.");
             frontend
-                .set_tia_capacitor2(Capacitance::new::<picofarad>(25.0))
+                .set_tia_capacitor2(Capacitance::new::<picofarad>(2.5))
                 .expect("Cannot set TIA capacitor 2.");
 
             frontend

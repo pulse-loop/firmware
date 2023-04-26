@@ -16,10 +16,13 @@ use esp_idf_hal::{
 use esp_idf_sys::{self as _, esp_get_free_heap_size, esp_get_free_internal_heap_size};
 
 use static_fir::FirFilter;
-use uom::si::{
-    electric_current::{microampere, milliampere},
-    electrical_resistance::ohm,
-    f32::{ElectricCurrent, ElectricalResistance},
+use uom::{
+    si::{
+        electric_current::{microampere, milliampere},
+        electrical_resistance::ohm,
+        f32::{ElectricCurrent, ElectricalResistance},
+    },
+    ConversionFactor,
 };
 
 mod bluetooth;
@@ -110,7 +113,7 @@ fn main() {
             let mut frontend_set_up_timer = optical::timer::Timer::new(200); // Corresponds to the time needed, after any change to the frontend settings, for high-accuracy data.
             let mut filter_plus_frontend_set_up_timer =
                 optical::timer::Timer::new(85 * 50 + 200 + 200); // Corresponds to the time needed for the filters to settle plus the time needed for high-accuracy data.
-            let mut threshold_timer = optical::timer::Timer::new(5000); // The timer that resets the crossing threshold.
+            let mut threshold_timer = optical::timer::Timer::new(2000); // The timer that resets the crossing threshold.
 
             let mut ir_offset_current = ElectricCurrent::new::<microampere>(-7.0);
             let resistors = [
@@ -132,8 +135,15 @@ fn main() {
                     200,
                 );
 
-            let mut r = 0.0;
-            let mut i = 0;
+            let mut rr = 1000; // The time between two peak values, corresponds to the period of the heart rate wave.
+            let mut r = 0.0; // The ratio between the red pi and the ir pi.
+            let mut i = 0; // The index used for averaging the r value.
+
+            let mut red_notch_filter =
+                optical::signal_processing::dot_product::SineProduct::new(1.0, 50e-3, 5.0);
+            let mut ir_notch_filter =
+                optical::signal_processing::dot_product::SineProduct::new(1.0, 50e-3, 5.0);
+            let mut done = false;
 
             optical::data_reading::reading_task(move |raw_data| {
                 let mut raw_data_iterator = raw_data.into_iter();
@@ -202,6 +212,77 @@ fn main() {
                     }
 
                     if filter_plus_frontend_set_up_timer.is_expired() {
+                        // Heart rate calculation.
+                        if threshold_timer.is_expired() {
+                            critical_history.crossing_threshold = 0.0;
+                        }
+                        match optical::signal_processing::find_critical_value(
+                            latest_filtered_data.lock().unwrap()[0].1,
+                            &mut critical_history,
+                        ) {
+                            optical::signal_processing::CriticalValue::Maximum(amplitude, time) => {
+                                if let Some(previous_maximum) = previous_maximum {
+                                    let current_rr = time - previous_maximum.1;
+                                    if current_rr > 250 && current_rr < 2000 {
+                                        rr = hr_median_filter.consume(current_rr);
+                                        let heart_rate = 60_000.0 / rr as f32;
+                                        ble_api
+                                            .write()
+                                            .unwrap()
+                                            .results
+                                            .heart_rate_characteristic
+                                            .write()
+                                            .unwrap()
+                                            .set_value(heart_rate.to_le_bytes());
+                                        log::info!("HR: {} bpm", heart_rate);
+                                    } else {
+                                        log::error!("Wrong RR: {} ms", rr);
+                                    }
+                                }
+
+                                previous_maximum = Some((amplitude, time));
+                            }
+                            optical::signal_processing::CriticalValue::Minimum(
+                                amplitude,
+                                _time,
+                            ) => {
+                                // Update crossing threshold.
+                                if let Some(previous_maximum) = previous_maximum {
+                                    let ac = previous_maximum.0 - amplitude;
+
+                                    // critical_history.crossing_threshold = -ac * 0.2;
+                                    threshold_timer.reset();
+                                }
+
+                                // The signal has phase equal to zero.
+                                if done {
+                                    log::info!("Reset notch filters.");
+                                    log::info!("red notch info: {:?}", red_notch_filter);
+                                    red_notch_filter.reset(1000.0 / rr as f32);
+                                    ir_notch_filter.reset(1000.0 / rr as f32);
+                                    done = false;
+                                }
+                            }
+                            optical::signal_processing::CriticalValue::None => {}
+                        }
+
+                        // NEW spO2 calculation.
+                        if !done {
+                            if let Ok(filtered_data) = latest_filtered_data.lock() {
+                                if let (Some(red_ac_amplitude), Some(ir_ac_amplitude)) = (
+                                    red_notch_filter.process(filtered_data.led2.1),
+                                    ir_notch_filter.process(filtered_data.led3.1),
+                                ) {
+                                    log::info!(
+                                        "red: {}, ir: {}",
+                                        red_ac_amplitude,
+                                        ir_ac_amplitude
+                                    );
+                                    done = true;
+                                }
+                            }
+                        }
+
                         // SpO2 calculation.
                         let (
                             green_ac_amplitude,
@@ -239,51 +320,6 @@ fn main() {
                                 i = 0;
                                 log::info!("R: {}", results.spo2);
                             }
-                        }
-
-                        // Heart rate calculation.
-                        if threshold_timer.is_expired() {
-                            critical_history.crossing_threshold = 0.0;
-                        }
-                        match optical::signal_processing::find_critical_value(
-                            latest_filtered_data.lock().unwrap()[0].1,
-                            &mut critical_history,
-                        ) {
-                            optical::signal_processing::CriticalValue::Maximum(amplitude, time) => {
-                                if let Some(previous_maximum) = previous_maximum {
-                                    let rr = time - previous_maximum.1;
-                                    if rr > 250 && rr < 2000 {
-                                        let rr = hr_median_filter.consume(rr);
-                                        let heart_rate = 60_000.0 / rr as f32;
-                                        ble_api
-                                            .write()
-                                            .unwrap()
-                                            .results
-                                            .heart_rate_characteristic
-                                            .write()
-                                            .unwrap()
-                                            .set_value(heart_rate.to_le_bytes());
-                                        log::info!("HR: {} bpm", heart_rate);
-                                    } else {
-                                        log::error!("Wrong RR: {} ms", rr);
-                                    }
-                                }
-
-                                previous_maximum = Some((amplitude, time));
-                            }
-                            optical::signal_processing::CriticalValue::Minimum(
-                                amplitude,
-                                _time,
-                            ) => {
-                                if let Some(previous_maximum) = previous_maximum {
-                                    let ac = previous_maximum.0 - amplitude;
-
-                                    // Update crossing threshold.
-                                    critical_history.crossing_threshold = -ac * 0.15;
-                                    threshold_timer.reset();
-                                }
-                            }
-                            optical::signal_processing::CriticalValue::None => {}
                         }
                     }
                 } else {
@@ -338,6 +374,8 @@ fn main() {
                 *latest_raw_data.lock().unwrap() = raw_data;
                 if let Ok(mut thresholds) = latest_filtered_data.lock() {
                     thresholds.led1_threshold = critical_history.crossing_threshold;
+                    thresholds.led2_threshold = red_notch_filter.s * 0.03e-6;
+                    thresholds.led3_threshold = ir_notch_filter.s * 0.06e-6;
                 }
             })
         })

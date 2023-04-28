@@ -105,7 +105,7 @@ fn main() {
             ];
 
             let mut hr_median_filter: median::Filter<u128> = median::Filter::new(21);
-            let mut r_median_filter: median::Filter<f32> = median::Filter::new(21);
+            let mut r_median_filter: median::Filter<f32> = median::Filter::new(51);
 
             let mut critical_history = optical::signal_processing::CriticalHistory::new();
             let mut previous_maximum: Option<(f32, u128)> = None;
@@ -138,12 +138,6 @@ fn main() {
             let mut rr = 1000; // The time between two peak values, corresponds to the period of the heart rate wave.
             let mut r = 0.0; // The ratio between the red pi and the ir pi.
             let mut i = 0; // The index used for averaging the r value.
-
-            let mut red_notch_filter =
-                optical::signal_processing::dot_product::SineProduct::new(1.0, 50e-3, 5.0);
-            let mut ir_notch_filter =
-                optical::signal_processing::dot_product::SineProduct::new(1.0, 50e-3, 5.0);
-            let mut done = false;
 
             optical::data_reading::reading_task(move |raw_data| {
                 let mut raw_data_iterator = raw_data.into_iter();
@@ -249,38 +243,11 @@ fn main() {
                                 // Update crossing threshold.
                                 if let Some(previous_maximum) = previous_maximum {
                                     let ac = previous_maximum.0 - amplitude;
-
-                                    // critical_history.crossing_threshold = -ac * 0.2;
+                                    critical_history.crossing_threshold = -ac * 0.2;
                                     threshold_timer.reset();
-                                }
-
-                                // The signal has phase equal to zero.
-                                if done {
-                                    log::info!("Reset notch filters.");
-                                    log::info!("red notch info: {:?}", red_notch_filter);
-                                    red_notch_filter.reset(1000.0 / rr as f32);
-                                    ir_notch_filter.reset(1000.0 / rr as f32);
-                                    done = false;
                                 }
                             }
                             optical::signal_processing::CriticalValue::None => {}
-                        }
-
-                        // NEW spO2 calculation.
-                        if !done {
-                            if let Ok(filtered_data) = latest_filtered_data.lock() {
-                                if let (Some(red_ac_amplitude), Some(ir_ac_amplitude)) = (
-                                    red_notch_filter.process(filtered_data.led2.1),
-                                    ir_notch_filter.process(filtered_data.led3.1),
-                                ) {
-                                    log::info!(
-                                        "red: {}, ir: {}",
-                                        red_ac_amplitude,
-                                        ir_ac_amplitude
-                                    );
-                                    done = true;
-                                }
-                            }
                         }
 
                         // SpO2 calculation.
@@ -309,12 +276,16 @@ fn main() {
                             results.red_pi = red_ac_amplitude / red_dc_amplitude * 100.0;
                             results.ir_pi = ir_ac_amplitude / ir_dc_amplitude * 100.0;
 
-                            r += results.red_pi / results.ir_pi;
+                            if results.red_pi > 0.04 {
+                            r += r_median_filter.consume(results.red_pi / results.ir_pi);
                             i += 1;
+                            }
+                            else {
+                                log::warn!("Unable to measure spO2, red PI too low: {}", results.red_pi);
+                            }
 
-                            if i == 10 {
-                                results.spo2 = r / 10.0;
-                                // results.spo2 = r_median_filter.consume(r / 10.0);
+                            if i == 20 {
+                                results.spo2 = r / 20.0;
 
                                 r = 0.0;
                                 i = 0;
@@ -374,8 +345,6 @@ fn main() {
                 *latest_raw_data.lock().unwrap() = raw_data;
                 if let Ok(mut thresholds) = latest_filtered_data.lock() {
                     thresholds.led1_threshold = critical_history.crossing_threshold;
-                    thresholds.led2_threshold = red_notch_filter.s * 0.03e-6;
-                    thresholds.led3_threshold = ir_notch_filter.s * 0.06e-6;
                 }
             })
         })

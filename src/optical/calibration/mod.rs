@@ -203,4 +203,12 @@ impl Calibrator {
             false
         }
     }
+
+    /// Resets the calibrator by reading the LED current and setting it back.
+    /// It is useful when the calibrator has been changed from external functions.
+    pub fn reset(&mut self) {
+        let led_current = (self.get_led_current)();
+        (self.set_led_current)(led_current);
+    }
+
 }

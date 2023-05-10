@@ -28,18 +28,17 @@ use afe4404::{
 
 use crate::bluetooth::BluetoothAPI;
 
-pub(crate) mod calibration;
-pub(crate) mod char_control;
-pub(crate) mod data_reading;
-pub(crate) mod data_sending;
-pub(crate) mod signal_processing;
-pub(crate) mod timer;
+pub mod calibration;
+pub mod char_control;
+pub mod data_reading;
+pub mod data_sending;
+pub mod signal_processing;
+pub mod timer;
 
 lazy_static::lazy_static! {
     pub static ref FRONTEND: Arc<Mutex<Option<AFE4404<I2cDriver<'static>, ThreeLedsMode>>>> = Arc::new(Mutex::new(None));
     pub(crate) static ref CALIBRATOR_LED1: Arc<Mutex<Option<calibration::Calibrator>>> = Arc::new(Mutex::new(None));
-    pub(crate) static ref CALIBRATOR_LED2: Arc<Mutex<Option<calibration::Calibrator>>> = Arc::new(Mutex::new(None));
-    pub(crate) static ref CALIBRATOR_LED3: Arc<Mutex<Option<calibration::Calibrator>>> = Arc::new(Mutex::new(None));
+    pub(crate) static ref CALIBRATOR_LED2_LED3: Arc<Mutex<Option<calibration::Calibrator>>> = Arc::new(Mutex::new(None));
 }
 
 // Afe4404 constants.
@@ -205,55 +204,7 @@ pub(crate) fn initialise<P: Pin>(
                 .unwrap()
         },
     ));
-    *CALIBRATOR_LED2.lock().unwrap() = Some(calibration::Calibrator::new(
-        350.0,
-        || {
-            FRONTEND
-                .lock()
-                .unwrap()
-                .as_mut()
-                .unwrap()
-                .get_led2_current()
-                .unwrap()
-        },
-        |current| {
-            FRONTEND
-                .lock()
-                .unwrap()
-                .as_mut()
-                .unwrap()
-                .set_led2_current(current)
-                .unwrap()
-        },
-        || {
-            FRONTEND
-                .lock()
-                .unwrap()
-                .as_mut()
-                .unwrap()
-                .get_offset_led2_current()
-                .unwrap()
-        },
-        |current| {
-            FRONTEND
-                .lock()
-                .unwrap()
-                .as_mut()
-                .unwrap()
-                .set_offset_led2_current(current)
-                .unwrap()
-        },
-        || {
-            FRONTEND
-                .lock()
-                .unwrap()
-                .as_mut()
-                .unwrap()
-                .get_tia_resistor2()
-                .unwrap()
-        },
-    ));
-    *CALIBRATOR_LED3.lock().unwrap() = Some(calibration::Calibrator::new(
+    *CALIBRATOR_LED2_LED3.lock().unwrap() = Some(calibration::Calibrator::new(
         350.0,
         || {
             FRONTEND
@@ -326,8 +277,7 @@ pub(crate) fn initialise<P: Pin>(
     );
     crate::optical::char_control::attach_optical_calibration_chars(
         &CALIBRATOR_LED1,
-        &CALIBRATOR_LED2,
-        &CALIBRATOR_LED3,
+        &CALIBRATOR_LED2_LED3,
         &mut ble_api.write().unwrap(),
     );
 

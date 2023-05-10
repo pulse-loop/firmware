@@ -3,13 +3,13 @@ use std::f32::consts::PI;
 // Used to perform a dot product between a sine wave and a signal.
 #[derive(Debug)]
 pub struct SineProduct {
-    pub(crate) sine_frequency: f32,
-    pub(crate) sampling_period: f32,
-    pub(crate) window_period: f32,
-    pub(crate) time: f32,
-    pub(crate) result: f32,
+    pub sine_frequency: f32,
+    pub sampling_period: f32,
+    pub window_period: f32,
+    pub time: f32,
+    pub result: f32,
 
-    pub(crate) s: f32,
+    pub s: f32,
 }
 
 impl SineProduct {

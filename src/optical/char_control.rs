@@ -709,7 +709,6 @@ pub(crate) fn attach_optical_frontend_chars(
 pub(crate) fn attach_optical_calibration_chars(
     calibrator1: &'static Arc<Mutex<Option<super::calibration::Calibrator>>>,
     calibrator2: &'static Arc<Mutex<Option<super::calibration::Calibrator>>>,
-    calibrator3: &'static Arc<Mutex<Option<super::calibration::Calibrator>>>,
     ble_api: &mut crate::bluetooth::BluetoothAPI,
 ) {
     attach_char!(
@@ -849,76 +848,6 @@ pub(crate) fn attach_optical_calibration_chars(
         optical calibration,
         (ble_api.calibration.led2_alpha),
         calibrator2,
-        alpha_mut,
-        alpha
-    );
-    attach_char!(
-        optical calibration,
-        (ble_api.calibration.led3_current_min),
-        calibrator3,
-        led_current_min_mut,
-        led_current_min,
-        ElectricCurrent,
-        ampere
-    );
-    attach_char!(
-        optical calibration,
-        (ble_api.calibration.led3_current_max),
-        calibrator3,
-        led_current_max_mut,
-        led_current_max,
-        ElectricCurrent,
-        ampere
-    );
-    attach_char!(
-        optical calibration,
-        (ble_api.calibration.led3_offset_current_min),
-        calibrator3,
-        offset_current_min_mut,
-        offset_current_min,
-        ElectricCurrent,
-        ampere
-    );
-    attach_char!(
-        optical calibration,
-        (ble_api.calibration.led3_offset_current_max),
-        calibrator3,
-        offset_current_max_mut,
-        offset_current_max,
-        ElectricCurrent,
-        ampere
-    );
-    attach_char!(
-        optical calibration,
-        (ble_api.calibration.led3_offset_current_set_point),
-        calibrator3,
-        offset_current_set_point_mut,
-        offset_current_set_point,
-        ElectricCurrent,
-        ampere
-    );
-    attach_char!(
-        optical calibration,
-        (ble_api.calibration.led3_adc_set_point),
-        calibrator3,
-        adc_set_point_mut,
-        adc_set_point,
-        ElectricPotential,
-        volt
-    );
-    attach_char!(
-        optical calibration,
-        (ble_api.calibration.led3_adc_working_threshold),
-        calibrator3,
-        adc_working_threshold_mut,
-        adc_working_threshold,
-        ElectricPotential,
-        volt
-    );
-    attach_char!(
-        optical calibration,
-        (ble_api.calibration.led3_alpha),
-        calibrator3,
         alpha_mut,
         alpha
     );

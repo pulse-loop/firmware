@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # read data from a txt file and take milliseconds R value.
-# Example input: I (<milliseconds>) firmware: R: <R value>%
-# Example output: <milliseconds>,<R value>
+# Example input: I (<milliseconds>) firmware: R: [<value>]
+# Example output: <milliseconds>,<value>
 
 # Usage: ./filter.sh <input file> <output file>
 
@@ -20,13 +20,12 @@ fi
 
 # Read input file line by line
 while read line; do
-    # Check if line contains R value
-    if [[ $line == *"R:"* ]]; then
-        # Get milliseconds value
-        milliseconds=$(echo $line | grep -oP '(?<=I \().*(?=ms firmware: R:)')
-        # Get R value
-        r_value=$(echo $line | grep -oP '(?<=R: ).*(?=%)')
+    # Check if line contains "firmware: R:"
+    if [[ $line == *"firmware: R:"* ]]; then
+        # Extract milliseconds and R value
+        ms=$(echo $line | grep -oP '(?<=I \().*(?=\))')
+        r=$(echo $line | grep -oP '(?<=firmware: R: \[).*(?=\])')
         # Write to output file
-        echo "$milliseconds,$r_value" >> $2
+        echo "$ms,$r" >> $2
     fi
 done < $1

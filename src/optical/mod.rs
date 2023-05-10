@@ -270,6 +270,13 @@ pub(crate) fn initialise<P: Pin>(
                 .unwrap()
                 .as_mut()
                 .unwrap()
+                .set_led2_current(current)
+                .unwrap();
+            FRONTEND
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
                 .set_led3_current(current)
                 .unwrap()
         },
@@ -283,6 +290,13 @@ pub(crate) fn initialise<P: Pin>(
                 .unwrap()
         },
         |current| {
+            FRONTEND
+                .lock()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .set_offset_led2_current(current)
+                .unwrap();
             FRONTEND
                 .lock()
                 .unwrap()

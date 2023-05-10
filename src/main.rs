@@ -163,22 +163,24 @@ fn main() {
                     // Iterate over the three leds.
                     for (i, led) in raw_data_iterator.enumerate() {
                         // Calibrate.
-                        if calibrators[i]
-                            .lock()
-                            .unwrap()
-                            .as_mut()
-                            .unwrap()
-                            .calibrate_dc(led)
-                        {
-                            frontend_set_up_timer.reset();
-                            filter_plus_frontend_set_up_timer.reset();
+                        if i != 1 {
+                            if calibrators[i]
+                                .lock()
+                                .unwrap()
+                                .as_mut()
+                                .unwrap()
+                                .calibrate_dc(led)
+                            {
+                                log::info!("Calibrated LED {}", i + 1);
+                                frontend_set_up_timer.reset();
+                                filter_plus_frontend_set_up_timer.reset();
+                            }
                         }
-
                         // Process data.
                         if frontend_set_up_timer.is_expired() {
                             // Convert the data into current and remove the ambient light.
                             let offset_current = offset_currents.accurate(
-                                calibrators[i]
+                                calibrators[if i != 1 {i} else {2}]
                                     .lock()
                                     .unwrap()
                                     .as_mut()
@@ -228,9 +230,9 @@ fn main() {
                                             .write()
                                             .unwrap()
                                             .set_value(heart_rate.to_le_bytes());
-                                        log::info!("HR: {} bpm", heart_rate);
+                                        // log::info!("HR: {} bpm", heart_rate);
                                     } else {
-                                        log::error!("Wrong RR: {} ms", rr);
+                                        // log::error!("Wrong RR: {} ms", rr);
                                     }
                                 }
 
@@ -276,20 +278,23 @@ fn main() {
                             results.red_pi = red_ac_amplitude / red_dc_amplitude * 100.0;
                             results.ir_pi = ir_ac_amplitude / ir_dc_amplitude * 100.0;
 
-                            if results.red_pi > 0.04 {
-                            r += r_median_filter.consume(results.red_pi / results.ir_pi);
-                            i += 1;
-                            }
-                            else {
-                                log::warn!("Unable to measure spO2, red PI too low: {}", results.red_pi);
+                            if results.red_pi > 0.005 {
+                                r += r_median_filter.consume(results.red_pi / results.ir_pi);
+                                i += 1;
+                            } else {
+                                log::warn!(
+                                    "Unable to measure spO2, red PI too low: {}",
+                                    results.red_pi
+                                );
                             }
 
                             if i == 20 {
-                                results.spo2 = r / 20.0;
-
+                                let averaged_r = r / 20.0;
                                 r = 0.0;
                                 i = 0;
-                                log::info!("R: {}", results.spo2);
+                                log::info!("R: [{}]", averaged_r);
+
+                                results.spo2 = -53.5799 * averaged_r + 123.9541;
                             }
                         }
                     }

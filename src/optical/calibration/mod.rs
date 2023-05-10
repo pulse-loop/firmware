@@ -157,7 +157,6 @@ impl Calibrator {
     /// Calibrates the DC component of the signal by changing the LED current and the offset current.
     /// The calibration is firstly performed on the LED current for larger changes, then on the offset current for better accuracy.
     /// Returns true if the calibration was performed, false otherwise.
-    // TODO: Handle unwrap fails.
     pub(crate) fn calibrate_dc(&mut self, sample: ElectricPotential) -> bool {
         // Calibrate only if the sample is out of the working threshold.
         if sample < self.adc_set_point - self.adc_working_threshold
@@ -197,7 +196,7 @@ impl Calibrator {
                     requested_offset_current
                 });
 
-            log::info!("Calibrated DC");
+            log::info!("Calibrated DC: {}", led_current.value);
 
             true
         } else {

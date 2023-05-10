@@ -783,7 +783,7 @@ pub(crate) fn attach_optical_calibration_chars(
     );
     attach_char!(
         optical calibration,
-        (ble_api.calibration.led2_current_min),
+        (ble_api.calibration.led2_led3_current_min),
         calibrator2,
         led_current_min_mut,
         led_current_min,
@@ -792,7 +792,7 @@ pub(crate) fn attach_optical_calibration_chars(
     );
     attach_char!(
         optical calibration,
-        (ble_api.calibration.led2_current_max),
+        (ble_api.calibration.led2_led3_current_max),
         calibrator2,
         led_current_max_mut,
         led_current_max,
@@ -801,7 +801,7 @@ pub(crate) fn attach_optical_calibration_chars(
     );
     attach_char!(
         optical calibration,
-        (ble_api.calibration.led2_offset_current_min),
+        (ble_api.calibration.led2_led3_offset_current_min),
         calibrator2,
         offset_current_min_mut,
         offset_current_min,
@@ -810,7 +810,7 @@ pub(crate) fn attach_optical_calibration_chars(
     );
     attach_char!(
         optical calibration,
-        (ble_api.calibration.led2_offset_current_max),
+        (ble_api.calibration.led2_led3_offset_current_max),
         calibrator2,
         offset_current_max_mut,
         offset_current_max,
@@ -819,7 +819,7 @@ pub(crate) fn attach_optical_calibration_chars(
     );
     attach_char!(
         optical calibration,
-        (ble_api.calibration.led2_offset_current_set_point),
+        (ble_api.calibration.led2_led3_offset_current_set_point),
         calibrator2,
         offset_current_set_point_mut,
         offset_current_set_point,
@@ -828,7 +828,7 @@ pub(crate) fn attach_optical_calibration_chars(
     );
     attach_char!(
         optical calibration,
-        (ble_api.calibration.led2_adc_set_point),
+        (ble_api.calibration.led2_led3_adc_set_point),
         calibrator2,
         adc_set_point_mut,
         adc_set_point,
@@ -837,7 +837,7 @@ pub(crate) fn attach_optical_calibration_chars(
     );
     attach_char!(
         optical calibration,
-        (ble_api.calibration.led2_adc_working_threshold),
+        (ble_api.calibration.led2_led3_adc_working_threshold),
         calibrator2,
         adc_working_threshold_mut,
         adc_working_threshold,
@@ -846,7 +846,7 @@ pub(crate) fn attach_optical_calibration_chars(
     );
     attach_char!(
         optical calibration,
-        (ble_api.calibration.led2_alpha),
+        (ble_api.calibration.led2_led3_alpha),
         calibrator2,
         alpha_mut,
         alpha

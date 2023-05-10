@@ -7,7 +7,7 @@ pub struct ResultsServiceContainer {
     pub(crate) service: Arc<RwLock<Service>>,
     pub(crate) blood_oxygen_saturation_characteristic: Arc<RwLock<Characteristic>>,
     pub(crate) heart_rate_characteristic: Arc<RwLock<Characteristic>>,
-    pub(crate) led1_perfusion_index_characteristic: Arc<RwLock<Characteristic>>,
+    pub(crate) r: Arc<RwLock<Characteristic>>,
     pub(crate) led2_perfusion_index_characteristic: Arc<RwLock<Characteristic>>,
     pub(crate) led3_perfusion_index_characteristic: Arc<RwLock<Characteristic>>,
     pub(crate) wrist_presence_characteristic: Arc<RwLock<Characteristic>>,
@@ -24,7 +24,7 @@ impl ResultsServiceContainer {
             ("D8CE0238-F60C-4C1D-908F-5554760AA1D6", "Heart rate", 4),
             (
                 "459CAB03-5240-4837-9742-B71A5D8112A3",
-                "LED1 perfusion index",
+                "R",
                 4,
             ),
             (
@@ -68,7 +68,7 @@ impl ResultsServiceContainer {
             service,
             blood_oxygen_saturation_characteristic: characteristics[0].clone(),
             heart_rate_characteristic: characteristics[1].clone(),
-            led1_perfusion_index_characteristic: characteristics[2].clone(),
+            r: characteristics[2].clone(),
             led2_perfusion_index_characteristic: characteristics[3].clone(),
             led3_perfusion_index_characteristic: characteristics[4].clone(),
             wrist_presence_characteristic: characteristics[5].clone(),

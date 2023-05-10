@@ -137,7 +137,7 @@ impl std::ops::IndexMut<usize> for FilteredData {
 pub struct Results {
     pub(crate) wrist_presence: bool,
     pub(crate) spo2: f32,
-    pub(crate) green_pi: f32,
+    pub(crate) r: f32,
     pub(crate) red_pi: f32,
     pub(crate) ir_pi: f32,
 }
@@ -186,10 +186,10 @@ pub fn notify_task(
                     .set_value((results.spo2).to_le_bytes());
                 ble_api
                     .results
-                    .led1_perfusion_index_characteristic
+                    .r
                     .write()
                     .unwrap()
-                    .set_value((results.green_pi).to_le_bytes());
+                    .set_value((results.r).to_le_bytes());
                 ble_api
                     .results
                     .led2_perfusion_index_characteristic

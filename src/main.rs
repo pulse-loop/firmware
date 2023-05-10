@@ -89,12 +89,12 @@ fn main() {
                 &optical::CALIBRATOR_LED2_LED3,
             ];
 
-            let mut dc_filter = [
+            let mut dc_filters = [
                 FirFilter::<optical::signal_processing::filters::DcFir>::new(),
                 FirFilter::<optical::signal_processing::filters::DcFir>::new(),
                 FirFilter::<optical::signal_processing::filters::DcFir>::new(),
             ];
-            let mut ac_filter = [
+            let mut ac_filters = [
                 FirFilter::<optical::signal_processing::filters::AcFir>::new(),
                 FirFilter::<optical::signal_processing::filters::AcFir>::new(),
                 FirFilter::<optical::signal_processing::filters::AcFir>::new(),
@@ -113,11 +113,11 @@ fn main() {
 
             let mut red_deviation =
                 crate::optical::signal_processing::standard_deviation::MovingStandardDeviation::new(
-                    200,
+                    300,
                 );
             let mut ir_deviation =
                 crate::optical::signal_processing::standard_deviation::MovingStandardDeviation::new(
-                    200,
+                    300,
                 );
 
             let mut r = 0.0; // The ratio between the red pi and the ir pi.
@@ -200,10 +200,10 @@ fn main() {
                             [green_current, red_current, ir_current].iter().enumerate()
                         {
                             // Filter dc data (lowpass).
-                            let dc_data = dc_filter[i].feed(refined_current.value);
+                            let dc_data = dc_filters[i].feed(refined_current.value);
 
                             // Filter ac data (bandpass).
-                            let ac_data = ac_filter[i].feed(refined_current.value);
+                            let ac_data = ac_filters[i].feed(refined_current.value);
 
                             filtered_data[i] = (dc_data, ac_data);
                         }
@@ -300,12 +300,12 @@ fn main() {
                                 );
                             }
 
-                            if r_index == 20 {
-                                let averaged_r = r / 20.0;
+                            if r_index == 30 {
+                                let averaged_r = r / 30.0;
                                 r = 0.0;
                                 r_index = 0;
                                 log::info!("R: [{}]", averaged_r);
-
+                                results.r = averaged_r;
                                 results.spo2 = -53.5799 * averaged_r + 123.9541;
                             }
                         }

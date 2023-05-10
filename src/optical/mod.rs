@@ -103,7 +103,7 @@ pub(crate) fn initialise<P: Pin>(
 
             frontend
                 .set_measurement_window(&MeasurementWindowConfiguration::<ThreeLedsMode>::new(
-                    Time::new::<microsecond>(50_000.0),
+                    Time::new::<microsecond>(30_000.0),
                     ActiveTiming::<ThreeLedsMode>::new(
                         LedTiming {
                             lighting_st: Time::new::<microsecond>(600.0),
@@ -111,7 +111,7 @@ pub(crate) fn initialise<P: Pin>(
                             sample_st: Time::new::<microsecond>(680.0),
                             sample_end: Time::new::<microsecond>(890.0),
                             reset_st: Time::new::<microsecond>(3200.0),
-                            reset_end: Time::new::<microsecond>(3208.0),
+                            reset_end: Time::new::<microsecond>(3209.0),
                             conv_st: Time::new::<microsecond>(3210.0),
                             conv_end: Time::new::<microsecond>(3690.0),
                         },
@@ -121,7 +121,7 @@ pub(crate) fn initialise<P: Pin>(
                             sample_st: Time::new::<microsecond>(80.0),
                             sample_end: Time::new::<microsecond>(290.0),
                             reset_st: Time::new::<microsecond>(2200.0),
-                            reset_end: Time::new::<microsecond>(2208.0),
+                            reset_end: Time::new::<microsecond>(2209.0),
                             conv_st: Time::new::<microsecond>(2210.0),
                             conv_end: Time::new::<microsecond>(2690.0),
                         },
@@ -131,7 +131,7 @@ pub(crate) fn initialise<P: Pin>(
                             sample_st: Time::new::<microsecond>(380.0),
                             sample_end: Time::new::<microsecond>(590.0),
                             reset_st: Time::new::<microsecond>(2700.0),
-                            reset_end: Time::new::<microsecond>(2708.0),
+                            reset_end: Time::new::<microsecond>(2709.0),
                             conv_st: Time::new::<microsecond>(2710.0),
                             conv_end: Time::new::<microsecond>(3190.0),
                         },
@@ -139,14 +139,14 @@ pub(crate) fn initialise<P: Pin>(
                             sample_st: Time::new::<microsecond>(980.0),
                             sample_end: Time::new::<microsecond>(1190.0),
                             reset_st: Time::new::<microsecond>(3700.0),
-                            reset_end: Time::new::<microsecond>(3708.0),
+                            reset_end: Time::new::<microsecond>(3709.0),
                             conv_st: Time::new::<microsecond>(3710.0),
                             conv_end: Time::new::<microsecond>(4190.0),
                         },
                     ),
                     PowerDownTiming {
                         power_down_st: Time::new::<microsecond>(4400.0),
-                        power_down_end: Time::new::<microsecond>(49_800.0),
+                        power_down_end: Time::new::<microsecond>(29_800.0),
                     },
                 ))
                 .expect("Cannot set timing window.");

@@ -290,7 +290,7 @@ fn main() {
                             results.red_pi = red_ac_amplitude / red_dc_amplitude * 100.0;
                             results.ir_pi = ir_ac_amplitude / ir_dc_amplitude * 100.0;
 
-                            if results.red_pi > 0.005 {
+                            if results.red_pi > 0.006 {
                                 r += r_median_filter.consume(results.red_pi / results.ir_pi);
                                 r_index += 1;
                             } else {
@@ -300,13 +300,20 @@ fn main() {
                                 );
                             }
 
-                            if r_index == 30 {
-                                let averaged_r = r / 30.0;
+                            // Calculate the averaged R value.
+                            if r_index == 60 {
+                                let averaged_r = r / 60.0;
                                 r = 0.0;
                                 r_index = 0;
+
                                 log::info!("R: [{}]", averaged_r);
                                 results.r = averaged_r;
-                                results.spo2 = -53.5799 * averaged_r + 123.9541;
+                                
+                                // let spo2 = -53.5799 * averaged_r + 123.9541; // Finger.
+                                let spo2 = -75.2050 * averaged_r + 160.8698; // Writst.
+                                if spo2 < 100.0 && spo2 > 80.0 {
+                                    results.spo2 = spo2;
+                                }
                             }
                         }
                     }

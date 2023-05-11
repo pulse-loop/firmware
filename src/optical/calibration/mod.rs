@@ -52,15 +52,15 @@ impl Calibrator {
     {
         let calibrator = Calibrator {
             // TODO: Change to optimal initial value.
-            led_current_min: ElectricCurrent::new::<milliampere>(0.0),
+            led_current_min: ElectricCurrent::new::<milliampere>(5.0),
             led_current_max: ElectricCurrent::new::<milliampere>(30.0),
             offset_current_min: ElectricCurrent::new::<microampere>(-7.0),
             offset_current_max: ElectricCurrent::new::<microampere>(7.0),
             offset_current: ElectricCurrent::new::<microampere>(-7.0),
             alpha,
             offset_current_set_point: ElectricCurrent::new::<microampere>(-7.0),
-            adc_set_point: ElectricPotential::new::<millivolt>(600.0),
-            adc_working_threshold: ElectricPotential::new::<millivolt>(400.0),
+            adc_set_point: ElectricPotential::new::<millivolt>(750.0),
+            adc_working_threshold: ElectricPotential::new::<millivolt>(250.0),
             get_led_current: Box::new(get_led_current),
             set_led_current: Box::new(set_led_current),
             get_offset_current: Box::new(get_offset_current),

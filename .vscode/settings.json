@@ -1,3 +1,4 @@
 {
     "rust-analyzer.checkOnSave.command": "clippy",
+    "cortex-debug.gdbPath.linux": "/home/fabio/.espressif/tools/riscv32-esp-elf-gdb/12.1_20221002/riscv32-esp-elf-gdb/bin/riscv32-esp-elf-gdb"
 }

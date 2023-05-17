@@ -2,41 +2,69 @@
 
 Here are described the custom data types used in BLE communication. Data is sent as a byte buffer and all values are serialised in little-endian order.
 
-## Aggregated data
+## Raw data
 
-A custom type that contains the LEDs and ambient phase readings, the calibration upper and lower thresholds for each channel and a flag for indicating critical points on LED channels.
-
-### Format
-
-| Field                   | Type                              | Length  |
-|-------------------------|-----------------------------------|---------|
-| Ambient phase reading   | `i32`                             | 4 bytes |
-| LED1 ADC reading        | `i32`                             | 4 bytes |
-| LED2 ADC reading        | `i32`                             | 4 bytes |
-| LED3 ADC reading        | `i32`                             | 4 bytes |
-| Ambient lower threshold | `i32`                             | 4 bytes |
-| Ambient upper threshold | `i32`                             | 4 bytes |
-| LED1 lower threshold    | `i32`                             | 4 bytes |
-| LED1 upper threshold    | `i32`                             | 4 bytes |
-| LED2 lower threshold    | `i32`                             | 4 bytes |
-| LED2 upper threshold    | `i32`                             | 4 bytes |
-| LED3 lower threshold    | `i32`                             | 4 bytes |
-| LED3 upper threshold    | `i32`                             | 4 bytes |
-| Padding                 | -                                 | 2 bits  |
-| LED1 critical point     | [Critical point](#critical-point) | 2 bits  |
-| LED2 critical point     | [Critical point](#critical-point) | 2 bits  |
-| LED3 critical point     | [Critical point](#critical-point) | 2 bits  |
-
-## Critical point
-
-A custom type which could assume three possible values: Maximum, Minimum and None.
-Each value is coded with two bits.
+A custom type that contains the ambient and LEDs readings from the frontend.
 
 ### Format
 
-| Coding | Value      |
-|--------|------------|
-| 00     | None       |
-| 01     | Minimum    |
-| 10     | Maximum    |
-| 11     | Do not use |
+| Field                 | Type  | Length  |
+| --------------------- | ----- | ------- |
+| Ambient phase reading | `f32` | 4 bytes |
+| LED1 phase reading    | `f32` | 4 bytes |
+| LED2 phase reading    | `f32` | 4 bytes |
+| LED3 phase reading    | `f32` | 4 bytes |
+
+## Filtered data
+
+A custom type that contains the DC and AC filtered values converted in amperes and the relative AC thresholds used for the AC amplitude detection.
+
+### Format
+
+| Field          | Type  | Length  |
+| -------------- | ----- | ------- |
+| LED1 DC        | `f32` | 4 bytes |
+| LED1 AC        | `f32` | 4 bytes |
+| LED2 DC        | `f32` | 4 bytes |
+| LED2 AC        | `f32` | 4 bytes |
+| LED3 DC        | `f32` | 4 bytes |
+| LED3 AC        | `f32` | 4 bytes |
+| LED1 threshold | `f32` | 4 bytes |
+| LED2 threshold | `f32` | 4 bytes |
+| LED3 threshold | `f32` | 4 bytes |
+
+## Capacitor value
+
+A custom type that represents the possible values of the frontend capacitors.
+The value is encoded as follows.
+
+### Encoding
+
+| Value | Capacitor |
+| ----- | --------- |
+| 0     | 5 pF      |
+| 1     | 2.5 pF    |
+| 2     | 10 pF     |
+| 3     | 7.5 pF    |
+| 4     | 20 pF     |
+| 5     | 17.5 pF   |
+| 6     | 25 pF     |
+| 7     | 22.5 pF   |
+
+## Resistor value
+
+A custom type that represents the possible values of the frontend resistors.
+The value is encoded as follows.
+
+### Encoding
+
+| Value | Resistor |
+| ----- | -------- |
+| 0     | 500 kOhm |
+| 1     | 250 kOhm |
+| 2     | 100 kOhm |
+| 3     | 50 kOhm  |
+| 4     | 25 kOhm  |
+| 5     | 10 kOhm  |
+| 6     | 1 MOhm   |
+| 7     | 2 MOhm   |

@@ -1,0 +1,30 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+      {
+        // more info at: https://github.com/Marus/cortex-debug/blob/master/package.json
+        "name": "Attach",
+        "type": "cortex-debug",
+        "request": "attach", // attach instead of launch, because otherwise flash write is attempted, but fails
+        "cwd": "${workspaceRoot}",
+        "executable": "target/riscv32imc-esp-espidf/debug/firmware", //
+        "servertype": "openocd",
+        "interface": "jtag",
+        "svdFile": "../../esp-pacs/esp32c3/svd/esp32c3.svd",
+        "toolchainPrefix": "riscv32-esp-elf",
+        "openOCDPreConfigLaunchCommands": ["set ESP_RTOS none"],
+        "serverpath": "/home/fabio/.espressif/tools/openocd-esp32/v0.12.0-esp32-20230313/openocd-esp32/bin/openocd",
+        "configFiles": ["board/esp32c3-builtin.cfg"],
+        "overrideAttachCommands": [
+          "set remote hardware-watchpoint-limit 2",
+          "mon halt",
+          "flushregs"
+        ],
+        "overrideRestartCommands": ["mon reset halt", "flushregs", "c"]
+      }
+    ]
+  }
+  

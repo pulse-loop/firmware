@@ -3,6 +3,7 @@
 use bluedroid::gatt_server::{Profile, GLOBAL_GATT_SERVER};
 
 mod battery;
+mod calibration;
 mod current_time;
 mod device_information;
 mod firmware_upgrade;
@@ -11,7 +12,8 @@ mod historic_data;
 mod optical_frontend_configuration;
 mod pulse_loop;
 mod pulse_oximeter;
-mod raw_sensor_data;
+mod results;
+mod sensor_data;
 mod settings;
 
 pub struct BluetoothAPI {
@@ -23,9 +25,11 @@ pub struct BluetoothAPI {
     // pub(crate) current_time: current_time::CurrentTimeServiceContainer,
     // pub(crate) battery: battery::BatteryServiceContainer,
     pub(crate) pulse_loop: pulse_loop::PulseLoopServiceContainer,
-    pub(crate) raw_sensor_data: raw_sensor_data::RawSensorDataServiceContainer,
+    pub(crate) sensor_data: sensor_data::SensorDataServiceContainer,
     pub(crate) optical_frontend_configuration:
         optical_frontend_configuration::OpticalFrontendConfigurationServiceContainer,
+    pub(crate) calibration: calibration::CalibrationServiceContainer,
+    pub(crate) results: results::ResultsServiceContainer,
     // pub(crate) firmware_upgrade: firmware_upgrade::FirmwareUpgradeServiceContainer,
 }
 
@@ -34,8 +38,10 @@ impl BluetoothAPI {
         let profile = Profile::new(0x0001)
             .name("Main profile")
             .service(&self.pulse_loop.service)
-            .service(&self.raw_sensor_data.service)
+            .service(&self.sensor_data.service)
             .service(&self.optical_frontend_configuration.service)
+            .service(&self.calibration.service)
+            .service(&self.results.service)
             .build();
 
         GLOBAL_GATT_SERVER
@@ -57,14 +63,18 @@ impl BluetoothAPI {
         // let current_time = current_time::CurrentTimeServiceContainer::initialise();
         // let battery = battery::BatteryServiceContainer::initialise();
         let pulse_loop = pulse_loop::PulseLoopServiceContainer::initialise();
-        let raw_sensor_data = raw_sensor_data::RawSensorDataServiceContainer::initialise();
+        let sensor_data = sensor_data::SensorDataServiceContainer::initialise();
         let optical_frontend_configuration = optical_frontend_configuration::OpticalFrontendConfigurationServiceContainer::initialise();
+        let calibration = calibration::CalibrationServiceContainer::initialise();
+        let results = results::ResultsServiceContainer::initialise();
         // let firmware_upgrade = firmware_upgrade::FirmwareUpgradeServiceContainer::initialise();
 
         Self {
             pulse_loop,
-            raw_sensor_data,
+            sensor_data,
             optical_frontend_configuration,
+            calibration,
+            results,
         }
     }
 }
